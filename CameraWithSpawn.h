@@ -5,8 +5,8 @@
 #include "GameFramework/Pawn.h"
 #include "CameraWithSpawn.generated.h"
 
-const int NUM_OBJECT = 15;
-const int NUM_MATERIAL = 3;
+const int NUM_OBJECT = 72;
+const int NUM_MATERIAL = 12;
 
 UCLASS()
 class MYTEST_API ACameraWithSpawn : public APawn
