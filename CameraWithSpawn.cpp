@@ -3,10 +3,10 @@
 #include "MyTest.h"
 #include "CameraWithSpawn.h"
 
-const TCHAR* sceneName = _T("MyTest");
+const int startVariationIndex = 0;
 
 const TCHAR* objectList[NUM_OBJECT] = {
-    // 1 個目
+    // 1 個目 (InfinityBladeAdversaries)
     _T("/Game/Assets/Enemy_Bear_100.Enemy_Bear_100"),
     _T("/Game/Assets/Enemy_Bear_076.Enemy_Bear_076"),
     _T("/Game/Assets/Enemy_Bear_058.Enemy_Bear_058"),
@@ -35,7 +35,6 @@ const TCHAR* objectList[NUM_OBJECT] = {
     _T("/Game/Assets/SK_Enemy_Clot_Worm_033.SK_Enemy_Clot_Worm_033"),
     _T("/Game/Assets/SK_Enemy_Clot_Worm_025.SK_Enemy_Clot_Worm_025"),
 
-    // 5 個目
     _T("/Game/Assets/SK_EXO_Creature_Spider02_100.SK_EXO_Creature_Spider02_100"),
     _T("/Game/Assets/SK_EXO_Creature_Spider02_076.SK_EXO_Creature_Spider02_076"),
     _T("/Game/Assets/SK_EXO_Creature_Spider02_058.SK_EXO_Creature_Spider02_058"),
@@ -43,13 +42,7 @@ const TCHAR* objectList[NUM_OBJECT] = {
     _T("/Game/Assets/SK_EXO_Creature_Spider02_033.SK_EXO_Creature_Spider02_033"),
     _T("/Game/Assets/SK_EXO_Creature_Spider02_025.SK_EXO_Creature_Spider02_025"),
 
-    _T("/Game/Assets/Forge_King_100.Forge_King_100"),
-    _T("/Game/Assets/Forge_King_076.Forge_King_076"),
-    _T("/Game/Assets/Forge_King_058.Forge_King_058"),
-    _T("/Game/Assets/Forge_King_044.Forge_King_044"),
-    _T("/Game/Assets/Forge_King_033.Forge_King_033"),
-    _T("/Game/Assets/Forge_King_025.Forge_King_025"),
-
+    // 6 個目
     _T("/Game/Assets/SK_Enemy_FrostGiant_Captain_100.SK_Enemy_FrostGiant_Captain_100"),
     _T("/Game/Assets/SK_Enemy_FrostGiant_Captain_076.SK_Enemy_FrostGiant_Captain_076"),
     _T("/Game/Assets/SK_Enemy_FrostGiant_Captain_058.SK_Enemy_FrostGiant_Captain_058"),
@@ -71,7 +64,6 @@ const TCHAR* objectList[NUM_OBJECT] = {
     _T("/Game/Assets/SK_Greater_Spider_033.SK_Greater_Spider_033"),
     _T("/Game/Assets/SK_Greater_Spider_025.SK_Greater_Spider_025"),
 
-    // 10 個目
     _T("/Game/Assets/SK_Greater_Spider_Boss_100.SK_Greater_Spider_Boss_100"),
     _T("/Game/Assets/SK_Greater_Spider_Boss_076.SK_Greater_Spider_Boss_076"),
     _T("/Game/Assets/SK_Greater_Spider_Boss_058.SK_Greater_Spider_Boss_058"),
@@ -86,51 +78,241 @@ const TCHAR* objectList[NUM_OBJECT] = {
     _T("/Game/Assets/SK_Exodus_Gruntling_033.SK_Exodus_Gruntling_033"),
     _T("/Game/Assets/SK_Exodus_Gruntling_025.SK_Exodus_Gruntling_025"),
 
-    // 12 個目
+    // 11 個目
+    _T("/Game/Assets/SK_Gruntling_Avalanche_100.SK_Gruntling_Avalanche_100"),
+    _T("/Game/Assets/SK_Gruntling_Avalanche_076.SK_Gruntling_Avalanche_076"),
+    _T("/Game/Assets/SK_Gruntling_Avalanche_058.SK_Gruntling_Avalanche_058"),
+    _T("/Game/Assets/SK_Gruntling_Avalanche_044.SK_Gruntling_Avalanche_044"),
+    _T("/Game/Assets/SK_Gruntling_Avalanche_033.SK_Gruntling_Avalanche_033"),
+    _T("/Game/Assets/SK_Gruntling_Avalanche_025.SK_Gruntling_Avalanche_025"),
+
+    _T("/Game/Assets/SK_Gruntling_Glacer_100.SK_Gruntling_Glacer_100"),
+    _T("/Game/Assets/SK_Gruntling_Glacer_076.SK_Gruntling_Glacer_076"),
+    _T("/Game/Assets/SK_Gruntling_Glacer_058.SK_Gruntling_Glacer_058"),
+    _T("/Game/Assets/SK_Gruntling_Glacer_044.SK_Gruntling_Glacer_044"),
+    _T("/Game/Assets/SK_Gruntling_Glacer_033.SK_Gruntling_Glacer_033"),
+    _T("/Game/Assets/SK_Gruntling_Glacer_025.SK_Gruntling_Glacer_025"),
+
+    _T("/Game/Assets/SK_Gruntling_Guardian_100.SK_Gruntling_Guardian_100"),
+    _T("/Game/Assets/SK_Gruntling_Guardian_076.SK_Gruntling_Guardian_076"),
+    _T("/Game/Assets/SK_Gruntling_Guardian_058.SK_Gruntling_Guardian_058"),
+    _T("/Game/Assets/SK_Gruntling_Guardian_044.SK_Gruntling_Guardian_044"),
+    _T("/Game/Assets/SK_Gruntling_Guardian_033.SK_Gruntling_Guardian_033"),
+    _T("/Game/Assets/SK_Gruntling_Guardian_025.SK_Gruntling_Guardian_025"),
+
+    _T("/Game/Assets/SK_Gruntling_Scud_100.SK_Gruntling_Scud_100"),
+    _T("/Game/Assets/SK_Gruntling_Scud_076.SK_Gruntling_Scud_076"),
+    _T("/Game/Assets/SK_Gruntling_Scud_058.SK_Gruntling_Scud_058"),
+    _T("/Game/Assets/SK_Gruntling_Scud_044.SK_Gruntling_Scud_044"),
+    _T("/Game/Assets/SK_Gruntling_Scud_033.SK_Gruntling_Scud_033"),
+    _T("/Game/Assets/SK_Gruntling_Scud_025.SK_Gruntling_Scud_025"),
+
+    _T("/Game/Assets/SK_Master_Grunt_100.SK_Master_Grunt_100"),
+    _T("/Game/Assets/SK_Master_Grunt_076.SK_Master_Grunt_076"),
+    _T("/Game/Assets/SK_Master_Grunt_058.SK_Master_Grunt_058"),
+    _T("/Game/Assets/SK_Master_Grunt_044.SK_Master_Grunt_044"),
+    _T("/Game/Assets/SK_Master_Grunt_033.SK_Master_Grunt_033"),
+    _T("/Game/Assets/SK_Master_Grunt_025.SK_Master_Grunt_025"),
+
+    // 16 個目
+    _T("/Game/Assets/SK_Robo_Golem_100.SK_Robo_Golem_100"),
+    _T("/Game/Assets/SK_Robo_Golem_076.SK_Robo_Golem_076"),
+    _T("/Game/Assets/SK_Robo_Golem_058.SK_Robo_Golem_058"),
+    _T("/Game/Assets/SK_Robo_Golem_044.SK_Robo_Golem_044"),
+    _T("/Game/Assets/SK_Robo_Golem_033.SK_Robo_Golem_033"),
+    _T("/Game/Assets/SK_Robo_Golem_025.SK_Robo_Golem_025"),
+        
+    _T("/Game/Assets/SK_Spiderling_100.SK_Spiderling_100"),
+    _T("/Game/Assets/SK_Spiderling_076.SK_Spiderling_076"),
+    _T("/Game/Assets/SK_Spiderling_058.SK_Spiderling_058"),
+    _T("/Game/Assets/SK_Spiderling_044.SK_Spiderling_044"),
+    _T("/Game/Assets/SK_Spiderling_033.SK_Spiderling_033"),
+    _T("/Game/Assets/SK_Spiderling_025.SK_Spiderling_025"),
+        
+    _T("/Game/Assets/Enemy_Task_Master_100.Enemy_Task_Master_100"),
+    _T("/Game/Assets/Enemy_Task_Master_076.Enemy_Task_Master_076"),
+    _T("/Game/Assets/Enemy_Task_Master_058.Enemy_Task_Master_058"),
+    _T("/Game/Assets/Enemy_Task_Master_044.Enemy_Task_Master_044"),
+    _T("/Game/Assets/Enemy_Task_Master_033.Enemy_Task_Master_033"),
+    _T("/Game/Assets/Enemy_Task_Master_025.Enemy_Task_Master_025"),
+        
+    _T("/Game/Assets/SK_Troll_Poison_100.SK_Troll_Poison_100"),
+    _T("/Game/Assets/SK_Troll_Poison_076.SK_Troll_Poison_076"),
+    _T("/Game/Assets/SK_Troll_Poison_058.SK_Troll_Poison_058"),
+    _T("/Game/Assets/SK_Troll_Poison_044.SK_Troll_Poison_044"),
+    _T("/Game/Assets/SK_Troll_Poison_033.SK_Troll_Poison_033"),
+    _T("/Game/Assets/SK_Troll_Poison_025.SK_Troll_Poison_025"),
+
+    _T("/Game/Assets/SK_Enemy_Wolf_Armored_100.SK_Enemy_Wolf_Armored_100"),
+    _T("/Game/Assets/SK_Enemy_Wolf_Armored_076.SK_Enemy_Wolf_Armored_076"),
+    _T("/Game/Assets/SK_Enemy_Wolf_Armored_058.SK_Enemy_Wolf_Armored_058"),
+    _T("/Game/Assets/SK_Enemy_Wolf_Armored_044.SK_Enemy_Wolf_Armored_044"),
+    _T("/Game/Assets/SK_Enemy_Wolf_Armored_033.SK_Enemy_Wolf_Armored_033"),
+    _T("/Game/Assets/SK_Enemy_Wolf_Armored_025.SK_Enemy_Wolf_Armored_025"),
+        /*
+    // 21 個目 (InfinityBladeWarriors) 
     _T("/Game/Assets/SK_CharM_Barbarous_100.SK_CharM_Barbarous_100"),
     _T("/Game/Assets/SK_CharM_Barbarous_076.SK_CharM_Barbarous_076"),
     _T("/Game/Assets/SK_CharM_Barbarous_058.SK_CharM_Barbarous_058"),
     _T("/Game/Assets/SK_CharM_Barbarous_044.SK_CharM_Barbarous_044"),
     _T("/Game/Assets/SK_CharM_Barbarous_033.SK_CharM_Barbarous_033"),
     _T("/Game/Assets/SK_CharM_Barbarous_025.SK_CharM_Barbarous_025"),
+        
+    _T("/Game/Assets/sk_CharM_Base_100.sk_CharM_Base_100"),
+    _T("/Game/Assets/sk_CharM_Base_076.sk_CharM_Base_076"),
+    _T("/Game/Assets/sk_CharM_Base_058.sk_CharM_Base_058"),
+    _T("/Game/Assets/sk_CharM_Base_044.sk_CharM_Base_044"),
+    _T("/Game/Assets/sk_CharM_Base_033.sk_CharM_Base_033"),
+    _T("/Game/Assets/sk_CharM_Base_025.sk_CharM_Base_025"),
+        
+    _T("/Game/Assets/SK_CharM_Bladed_100.SK_CharM_Bladed_100"),
+    _T("/Game/Assets/SK_CharM_Bladed_076.SK_CharM_Bladed_076"),
+    _T("/Game/Assets/SK_CharM_Bladed_058.SK_CharM_Bladed_058"),
+    _T("/Game/Assets/SK_CharM_Bladed_044.SK_CharM_Bladed_044"),
+    _T("/Game/Assets/SK_CharM_Bladed_033.SK_CharM_Bladed_033"),
+    _T("/Game/Assets/SK_CharM_Bladed_025.SK_CharM_Bladed_025"),
+        
+    _T("/Game/Assets/SK_CharM_Cardboard_100.SK_CharM_Cardboard_100"),
+    _T("/Game/Assets/SK_CharM_Cardboard_076.SK_CharM_Cardboard_076"),
+    _T("/Game/Assets/SK_CharM_Cardboard_058.SK_CharM_Cardboard_058"),
+    _T("/Game/Assets/SK_CharM_Cardboard_044.SK_CharM_Cardboard_044"),
+    _T("/Game/Assets/SK_CharM_Cardboard_033.SK_CharM_Cardboard_033"),
+    _T("/Game/Assets/SK_CharM_Cardboard_025.SK_CharM_Cardboard_025"),
+        
+    _T("/Game/Assets/SK_CharM_Forge_100.SK_CharM_Forge_100"),
+    _T("/Game/Assets/SK_CharM_Forge_076.SK_CharM_Forge_076"),
+    _T("/Game/Assets/SK_CharM_Forge_058.SK_CharM_Forge_058"),
+    _T("/Game/Assets/SK_CharM_Forge_044.SK_CharM_Forge_044"),
+    _T("/Game/Assets/SK_CharM_Forge_033.SK_CharM_Forge_033"),
+    _T("/Game/Assets/SK_CharM_Forge_025.SK_CharM_Forge_025"),
+
+     // 26 個目
+    _T("/Game/Assets/SK_CharM_FrostGiant_100.SK_CharM_FrostGiant_100"),
+    _T("/Game/Assets/SK_CharM_FrostGiant_076.SK_CharM_FrostGiant_076"),
+    _T("/Game/Assets/SK_CharM_FrostGiant_058.SK_CharM_FrostGiant_058"),
+    _T("/Game/Assets/SK_CharM_FrostGiant_044.SK_CharM_FrostGiant_044"),
+    _T("/Game/Assets/SK_CharM_FrostGiant_033.SK_CharM_FrostGiant_033"),
+    _T("/Game/Assets/SK_CharM_FrostGiant_025.SK_CharM_FrostGiant_025"),
+        
+    _T("/Game/Assets/SK_CharM_Golden_100.SK_CharM_Golden_100"),
+    _T("/Game/Assets/SK_CharM_Golden_076.SK_CharM_Golden_076"),
+    _T("/Game/Assets/SK_CharM_Golden_058.SK_CharM_Golden_058"),
+    _T("/Game/Assets/SK_CharM_Golden_044.SK_CharM_Golden_044"),
+    _T("/Game/Assets/SK_CharM_Golden_033.SK_CharM_Golden_033"),
+    _T("/Game/Assets/SK_CharM_Golden_025.SK_CharM_Golden_025"),
+        
+    _T("/Game/Assets/SK_CharM_Natural_100.SK_CharM_Natural_100"),
+    _T("/Game/Assets/SK_CharM_Natural_076.SK_CharM_Natural_076"),
+    _T("/Game/Assets/SK_CharM_Natural_058.SK_CharM_Natural_058"),
+    _T("/Game/Assets/SK_CharM_Natural_044.SK_CharM_Natural_044"),
+    _T("/Game/Assets/SK_CharM_Natural_033.SK_CharM_Natural_033"),
+    _T("/Game/Assets/SK_CharM_Natural_025.SK_CharM_Natural_025"),
+        
+    _T("/Game/Assets/SK_CharM_Pit_100.SK_CharM_Pit_100"),
+    _T("/Game/Assets/SK_CharM_Pit_076.SK_CharM_Pit_076"),
+    _T("/Game/Assets/SK_CharM_Pit_058.SK_CharM_Pit_058"),
+    _T("/Game/Assets/SK_CharM_Pit_044.SK_CharM_Pit_044"),
+    _T("/Game/Assets/SK_CharM_Pit_033.SK_CharM_Pit_033"),
+    _T("/Game/Assets/SK_CharM_Pit_025.SK_CharM_Pit_025"),
+        
+    _T("/Game/Assets/SK_CharM_Ragged0_100.SK_CharM_Ragged0_100"),
+    _T("/Game/Assets/SK_CharM_Ragged0_076.SK_CharM_Ragged0_076"),
+    _T("/Game/Assets/SK_CharM_Ragged0_058.SK_CharM_Ragged0_058"),
+    _T("/Game/Assets/SK_CharM_Ragged0_044.SK_CharM_Ragged0_044"),
+    _T("/Game/Assets/SK_CharM_Ragged0_033.SK_CharM_Ragged0_033"),
+    _T("/Game/Assets/SK_CharM_Ragged0_025.SK_CharM_Ragged0_025"),
+        
+     // 31 個目
+    _T("/Game/Assets/SK_CharM_RaggedElite_100.SK_CharM_RaggedElite_100"),
+    _T("/Game/Assets/SK_CharM_RaggedElite_076.SK_CharM_RaggedElite_076"),
+    _T("/Game/Assets/SK_CharM_RaggedElite_058.SK_CharM_RaggedElite_058"),
+    _T("/Game/Assets/SK_CharM_RaggedElite_044.SK_CharM_RaggedElite_044"),
+    _T("/Game/Assets/SK_CharM_RaggedElite_033.SK_CharM_RaggedElite_033"),
+    _T("/Game/Assets/SK_CharM_RaggedElite_025.SK_CharM_RaggedElite_025"),
+        
+    _T("/Game/Assets/SK_CharM_Ram_100.SK_CharM_Ram_100"),
+    _T("/Game/Assets/SK_CharM_Ram_076.SK_CharM_Ram_076"),
+    _T("/Game/Assets/SK_CharM_Ram_058.SK_CharM_Ram_058"),
+    _T("/Game/Assets/SK_CharM_Ram_044.SK_CharM_Ram_044"),
+    _T("/Game/Assets/SK_CharM_Ram_033.SK_CharM_Ram_033"),
+    _T("/Game/Assets/SK_CharM_Ram_025.SK_CharM_Ram_025"),
+        
+    _T("/Game/Assets/SK_CharM_Robo_100.SK_CharM_Robo_100"),
+    _T("/Game/Assets/SK_CharM_Robo_076.SK_CharM_Robo_076"),
+    _T("/Game/Assets/SK_CharM_Robo_058.SK_CharM_Robo_058"),
+    _T("/Game/Assets/SK_CharM_Robo_044.SK_CharM_Robo_044"),
+    _T("/Game/Assets/SK_CharM_Robo_033.SK_CharM_Robo_033"),
+    _T("/Game/Assets/SK_CharM_Robo_025.SK_CharM_Robo_025"),
+        
+    _T("/Game/Assets/SK_CharM_Shell_100.SK_CharM_Shell_100"),
+    _T("/Game/Assets/SK_CharM_Shell_076.SK_CharM_Shell_076"),
+    _T("/Game/Assets/SK_CharM_Shell_058.SK_CharM_Shell_058"),
+    _T("/Game/Assets/SK_CharM_Shell_044.SK_CharM_Shell_044"),
+    _T("/Game/Assets/SK_CharM_Shell_033.SK_CharM_Shell_033"),
+    _T("/Game/Assets/SK_CharM_Shell_025.SK_CharM_Shell_025"),
+ 
+    _T("/Game/Assets/SK_CharM_solid_100.SK_CharM_solid_100"),
+    _T("/Game/Assets/SK_CharM_solid_076.SK_CharM_solid_076"),
+    _T("/Game/Assets/SK_CharM_solid_058.SK_CharM_solid_058"),
+    _T("/Game/Assets/SK_CharM_solid_044.SK_CharM_solid_044"),
+    _T("/Game/Assets/SK_CharM_solid_033.SK_CharM_solid_033"),
+    _T("/Game/Assets/SK_CharM_solid_025.SK_CharM_solid_025"),
+
+     // 36 個目
+    _T("/Game/Assets/SK_CharM_Standard_100.SK_CharM_Standard_100"),
+    _T("/Game/Assets/SK_CharM_Standard_076.SK_CharM_Standard_076"),
+    _T("/Game/Assets/SK_CharM_Standard_058.SK_CharM_Standard_058"),
+    _T("/Game/Assets/SK_CharM_Standard_044.SK_CharM_Standard_044"),
+    _T("/Game/Assets/SK_CharM_Standard_033.SK_CharM_Standard_033"),
+    _T("/Game/Assets/SK_CharM_Standard_025.SK_CharM_Standard_025"),
+        
+    _T("/Game/Assets/SK_CharM_Tusk_100.SK_CharM_Tusk_100"),
+    _T("/Game/Assets/SK_CharM_Tusk_076.SK_CharM_Tusk_076"),
+    _T("/Game/Assets/SK_CharM_Tusk_058.SK_CharM_Tusk_058"),
+    _T("/Game/Assets/SK_CharM_Tusk_044.SK_CharM_Tusk_044"),
+    _T("/Game/Assets/SK_CharM_Tusk_033.SK_CharM_Tusk_033"),
+    _T("/Game/Assets/SK_CharM_Tusk_025.SK_CharM_Tusk_025"),
+        */
 };
 
 const TCHAR* materialList[NUM_MATERIAL] = {
-    // 1 個目
+    // 1 個目 (InfinityBladeAdversaries)
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Bear/Materials/M_Bear_Master.M_Bear_Master"),
     _T("/Game/InfinityBladeAdversaries/Enemy/Elemental_Robot/Materials/M_Elemental_Robot_Master.M_Elemental_Robot_Master"),
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Chicken/Materials/M_EnemyChicken.M_EnemyChicken"),
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Clot_Worm/Materials/M_Clot_Worm.M_Clot_Worm"),
-    // 5 個目
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Creature_Spider/Materials/CharM_Creature_Spider.CharM_Creature_Spider"),
-    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Forge_King/Materials/Weapon.Weapon"),
+    // 6 個目
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Frost_Giant/Materials/CharM_Frost_Giant.CharM_Frost_Giant"),
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Golem/Materials/CharM_Fire_Golem.CharM_Fire_Golem"),
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Great_Spider/Materials/CharM_Greater_Spider.CharM_Greater_Spider"),
-    // 10 個目
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Greater_Spider_Boss/Materials/CharM_Greater_Spider_Boss.CharM_Greater_Spider_Boss"),
     _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Gruntling/Materials/CharM_Gruntling.CharM_Gruntling"),
+    // 11 個目
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Gruntling_Avalanche/Materials/CharM_Gruntling_Avalanche.CharM_Gruntling_Avalanche"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Gruntling_Glacer/Materials/CharM_Gruntling_Glacer.CharM_Gruntling_Glacer"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Gruntling_Guardian/Materials/CharM_Gruntling_Guardian.CharM_Gruntling_Guardian"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Gruntling_Scud/Materials/CharM_Gruntling_Scud_C.CharM_Gruntling_Scud_C"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Master_Grunt/Materials/CharM_Master_Grunt.CharM_Master_Grunt"),
+    // 16 個目
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Robo_Golem/Materials/CharM_Robo_Golem.CharM_Robo_Golem"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Spiderling/Materials/CharM_Spiderling.CharM_Spiderling"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Task_Master/Materials/M_Enemy_Task_Master.M_Enemy_Task_Master"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Troll/Materials/CharM_Troll.CharM_Troll"),
+    _T("/Game/InfinityBladeAdversaries/Enemy/Enemy_Wolf/Materials/CharM_Enemy_Wolf.CharM_Enemy_Wolf"),
 
-    // 12 個目
-    _T("/Game/InfinityBladeWarriors/Character/CompleteCharacters/Textures_Materials/CharM_Barbarous/M_Char_Barbrous.M_Char_Barbrous"),
-};
-
-const int materialIndices[NUM_MATERIAL] = {
-    6,  12, 18, 24, 30, 36, 42, 48, 54, 60,
-    66,
-    72,
+    // 21 個目 (InfinityBladeWarriors) 
+//    _T("/Game/InfinityBladeWarriors/Character/CompleteCharacters/Textures_Materials/CharM_Barbarous/M_Char_Barbrous.M_Char_Barbrous"),
 };
 
 const float scaleList[NUM_MATERIAL] = {
-    1.0f, 1.2f, 8.0f, 1.0f, 1.3f, 0.5f, 0.9f, 1.3f, 0.7f, 0.65f,
-    2.0f,
-    1.2f,
+    1.0f, 1.2f, 8.0f, 1.0f, 1.3f, 0.7f, 1.3f, 0.9f, 0.7f, 1.9f,
+    1.8f, 1.9f, 2.0f, 2.0f, 1.1f, 0.6f, 1.2f, 1.0f, 0.9f, 1.3f,
 };
 
 const float xRotateList[NUM_MATERIAL] = {
-    0.0f, 90.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f,
-    0.0f,
+    0.0f, -90.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
 };
 
 // Sets default values
@@ -158,6 +340,7 @@ ACameraWithSpawn::ACameraWithSpawn(const FObjectInitializer& ObjectInitializer)
         if (pMaterialAsset->Succeeded())
         {
             mMaterial[i] = pMaterialAsset->Object;
+            UE_LOG(LogTemp, Warning, TEXT("output : %s %s"), materialList[i], L"マテリアルロードに成功しました");
         }
         else
         {
@@ -165,17 +348,14 @@ ACameraWithSpawn::ACameraWithSpawn(const FObjectInitializer& ObjectInitializer)
         }
     }
 
-    materialIndex = 0;
+    materialIndex = variationIndex = 0;
     for (size_t i = 0; i < NUM_OBJECT; i++)
     {
         ConstructorHelpers::FObjectFinder<UStaticMesh>* pMeshAsset = new ConstructorHelpers::FObjectFinder<UStaticMesh>(objectList[i]);
         if (pMeshAsset->Succeeded())
         {
-            if (materialIndices[materialIndex] == i)
-                materialIndex++;
-
             mStaticMesh[i] = pMeshAsset->Object;
-            mStaticMesh[i]->Materials[0] = mMaterial[materialIndex];
+            mStaticMesh[i]->Materials[0] = mMaterial[i / NUM_LOD];
             UE_LOG(LogTemp, Warning, TEXT("output : %s %s"), objectList[i], L"メッシュロードに成功しました");
         }
         else
@@ -216,29 +396,28 @@ void ACameraWithSpawn::Tick(float DeltaTime)
             objectIndex = remeshIndex = materialIndex = 0;
             mStaticMeshComponent->SetStaticMesh(mStaticMesh[0]);
             mStaticMeshComponent->SetRelativeScale3D(FVector(scaleList[materialIndex]));
-            mStaticMeshComponent->SetRelativeRotation(FRotator(xRotateList[materialIndex], currentYRotation, 0.0f));
+            mStaticMeshComponent->SetRelativeRotation(FRotator(0.0f, currentYRotation, 0.0f));
         }
         else if (accumulateTime > timeToNextObject)
         {
-            // ローテーションのバリエーションを行う
-            if (currentYRotation >= 270.0f)
+            if (currentYRotation > 270.0f)
             {
                 objectIndex++; remeshIndex++;
-                int numObject = (materialIndex == 0) ? materialIndices[0] : materialIndices[materialIndex] - materialIndices[materialIndex-1];
-                if (remeshIndex == numObject)
+                if (remeshIndex == NUM_LOD)
                 {
                     // 次のジオメトリに飛ぶ
                     remeshIndex = 0;
                     variationIndex++;
                     materialIndex++;
+                    currentYRotation = FMath::RandRange(0.1f, 89.f);
                 }
                 else
                 {
                     // 次のリメッシュに飛ぶ
                     variationIndex -= 3;
+                    currentYRotation -= 270.0f;
                 }
                 accumulateTime = 0.0f;
-                currentYRotation = 0.0f;
                 UE_LOG(LogTemp, Warning, TEXT("object index is %d"), objectIndex);
                 mStaticMeshComponent->SetStaticMesh(mStaticMesh[objectIndex]);
             }
@@ -250,7 +429,7 @@ void ACameraWithSpawn::Tick(float DeltaTime)
                 currentYRotation += 90.0f;
             }
             mStaticMeshComponent->SetRelativeScale3D(FVector(scaleList[materialIndex]));
-            mStaticMeshComponent->SetRelativeRotation(FRotator(xRotateList[materialIndex], currentYRotation, 0.0f));
+            mStaticMeshComponent->SetRelativeRotation(FRotator(0.0f, currentYRotation, xRotateList[materialIndex]));
 
             screenShotFlag = true;
         }
@@ -259,12 +438,19 @@ void ACameraWithSpawn::Tick(float DeltaTime)
             TCHAR tmpchar[128];
             FString filename;
             // 比較を行うバリエーション / リメッシュのバリエーション
-            _stprintf_s(tmpchar, sizeof(tmpchar), _T("%s_%.5d_%.1d.png"), sceneName, variationIndex, remeshIndex);
-            filename.AppendChars(tmpchar, sizeof(tmpchar));
+            if (!firstObjectFlag)
+            {
+                _stprintf_s(tmpchar, sizeof(tmpchar), _T("%.7d_%.1d.png"), startVariationIndex + variationIndex, remeshIndex);
+                filename.AppendChars(tmpchar, sizeof(tmpchar));
 
-            // スクリーンショットの撮影
-            FScreenshotRequest screenshot = FScreenshotRequest();
-            screenshot.RequestScreenshot(filename, false, false);
+                // スクリーンショットの撮影
+                FScreenshotRequest screenshot = FScreenshotRequest();
+                screenshot.RequestScreenshot(filename, false, false);
+            }
+            else {
+                firstObjectFlag = false;
+                variationIndex--;
+            }
             screenShotFlag = false;
         }
         else {
@@ -331,7 +517,7 @@ void ACameraWithSpawn::StartCapture()
     UE_LOG(LogTemp, Warning, TEXT("start capture"));
     accumulateTime = 0;
     objectIndex = 0;
-    bStartCapture = screenShotFlag = true;
-    variationIndex = materialIndex = remeshIndex = 0;
-    currentYRotation = 0.0f;
+    bStartCapture = screenShotFlag = firstObjectFlag = true;
+    materialIndex = remeshIndex = 0;
+    currentYRotation = 0.1f;
 }

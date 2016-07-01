@@ -5,8 +5,9 @@
 #include "GameFramework/Pawn.h"
 #include "CameraWithSpawn.generated.h"
 
-const int NUM_OBJECT = 72;
-const int NUM_MATERIAL = 12;
+const int NUM_LOD = 6;
+const int NUM_MATERIAL = 20;
+const int NUM_OBJECT = NUM_MATERIAL * NUM_LOD;
 
 UCLASS()
 class MYTEST_API ACameraWithSpawn : public APawn
@@ -35,7 +36,7 @@ public:
     int objectIndex;
 
     // スクリーンショットの変数
-    bool screenShotFlag;
+    bool screenShotFlag, firstObjectFlag;
     int variationIndex, remeshIndex, materialIndex;
     int currentYRotation;
 
