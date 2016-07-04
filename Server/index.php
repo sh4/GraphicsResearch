@@ -12,6 +12,7 @@ if ($number !== null && $number > 0) {
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<script type="text/javascript" src="js/jquery-3.0.0.js"></script>
 <link rel="stylesheet" type="text/css" href="index.css">
 <title>Test</title>
 </head>
@@ -62,8 +63,9 @@ function renderTestItem($no, $page, $model) {
 }
 
 $displayTestCount = 0;
+$num = $number;
 foreach ($page->getRandomizeOrderTest() as $i => $model) {
-    if ($number !== null && --$number < 0) {
+    if ($num !== null && --$num < 0) {
         break;
     }
     $displayTestCount++;
@@ -79,7 +81,7 @@ foreach ($page->getRandomizeOrderTest() as $i => $model) {
 
 <p><a href="index.php">New Test Session</a></p>
 
-<?php else: ?>
+<?php elseif ($number > 1): ?>
 
 <div style="margin-top:5em">
     <input type="submit" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
@@ -91,6 +93,13 @@ foreach ($page->getRandomizeOrderTest() as $i => $model) {
 
 <script type="text/javascript">
 (function () {
+
+<?php if ($number == 1): ?>
+$(".radio-button").on("change", "input", function () {
+    $(this).parents("form:first").submit();
+});
+<?php endif ?>
+
 })();
 </script>
 
