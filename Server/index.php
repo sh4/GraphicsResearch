@@ -18,50 +18,54 @@ if ($number !== null && $number > 0) {
 <body>
 
 <form method="post" action="<?php echo $action ?>">
-<input type="hidden" name="testSessionId" value="<?php echo $page->getSessionId() ?>">
 
 <div class="answer-region">
 
 <?php
-$displayTestCount = 0;
-foreach ($page->getRandomizeOrderTest() as $i => $model) {
-    if ($number !== null && --$number < 0) {
-        break;
-    }
 
-    $displayTestCount++;
-
-    echo '<h2>No.', ($i+1), '</h2>';
-
+function renderTestItem($no, $page, $model) {
     $modelId = $model["id"];
-    $lods = $model["lod"];
-
-    shuffle($lods);
-    $lod1 = 0;
-    $lod2 = $lods[0];
-
-    $file1 = $page->getModelPath($modelId, $lod1);
-    $file2 = $page->getModelPath($modelId, $lod2);
+    $lods = array_reverse($model["lod"]);
 
     echo '<div style="margin-bottom:3em">';
+
+    echo '<div class="question">';
+    echo 'Quality of central character on right image gradually increase from A to E order.';
+    echo '<br>';
+    echo 'When you compare image pair from A to E order, which alphabet image pair firstly becomes completely same.';
+    echo '</div>';
+
     echo '<table style="width:100%">';
-    echo '<tr>';
 
-    echo '<td style="width:50%; text-align: center"><img style="width:100%" src="', $file1, '"></td>';
-    echo '<td style="width:50%; text-align: center"><img style="width:100%" src="', $file2, '"></td>';
+    $baseFile = $page->getModelPath($modelId, 0);
+    $choices = ["A", "B", "C", "D", "E"];
+    foreach ($lods as $i => $lod) {
+        echo '<tr>';
+        echo '<td colspan="2"><h3>', $choices[$i], '</h3></td>';
+        echo '</tr>';
+        echo '<tr class="test-item">';
+        $compareFile = $page->getModelPath($modelId, $lod);
+        echo '<td><img src="', $baseFile, '"></td>';
+        echo '<td><img src="', $compareFile, '"></td>';
+        echo '</tr>';
+    }
 
-    echo '</tr>';
-    echo '<tr>';
-
+    echo "<tr>";
     echo '<td colspan="2" style="text-align: center; padding-top:2em">';
 
-    echo '<div class="question">Could you see ANY visible differences between left and right image.</div>';
+    foreach ([
+        6 => "Image pair looks completely same from <b>A</b>",
+        5 => "Image pair looks completely same from <b>B</b>", 
+        4 => "Image pair looks completely same from <b>C</b>",
+        3 => "Image pair looks completely same from <b>D</b>",
+        2 => "Image pair looks completely same from <b>E</b>",
+        1 => "All image pairs have slightly visible differences",
+    ] as $i => $ans) {
+        $value = implode(",", [$modelId, $i]);
+        $id = "answer-form-$no-$i";
 
-    foreach (\Model\TestConstants::JudgeList as $ans) {
-        $value = implode(",", [$modelId, $lod2, $ans]);
-        $id = "answer-form-$i-$ans";
         echo '<div class="radio-button">';
-        echo '<input autocomplete="off" type="radio" id="', $id, '" name="answer[', $i, ']" value="', $value, '">';
+        echo '<input autocomplete="off" type="radio" id="', $id, '" name="answer[', $no, ']" value="', $value, '">';
         echo '<label for="', $id, '">', $ans, '</label>';
         echo '</div>';
     }
@@ -70,6 +74,16 @@ foreach ($page->getRandomizeOrderTest() as $i => $model) {
     echo '</tr>';
     echo '</table>';
     echo '</div>';
+}
+
+$displayTestCount = 0;
+foreach ($page->getRandomizeOrderTest() as $i => $model) {
+    if ($number !== null && --$number < 0) {
+        break;
+    }
+    $displayTestCount++;
+    echo '<h2>No.', ($i+1), '</h2>';
+    renderTestItem($i, $page, $model);
 }
 ?>
 </div>

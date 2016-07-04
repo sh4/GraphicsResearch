@@ -7,8 +7,9 @@ class Index {
     private $modelTestSession;
 
     public function __construct() {
-         $this->modelTestSuite = new \Model\TestSuite(TEST_IMAGE_DIRECTORY);
-         $this->modelTestSession = $this->createOrUpdateSession();
+        session_start();
+        $this->modelTestSuite = new \Model\TestSuite(TEST_IMAGE_DIRECTORY);
+        $this->modelTestSession = $this->createOrUpdateSession();
     }
 
     public function getRandomizeOrderTest() {
@@ -27,10 +28,11 @@ class Index {
     }
 
     private function createOrUpdateSession() {
-        if ($sessionId = \Form::post("testSessionId")) {
+        if (!\Form::get("reset") && isset($_SESSION["testSessionId"])) {
+            $sessionId = $_SESSION["testSessionId"];
             $modelTestSession = new \Model\TestSession(TEST_SESSION_DIRECTORY, $sessionId);
             // 回答データがポストされていればそれを保存
-            if ($answerRawData = \Form::post("answer", [])) { // ["ModelID,LOD,Judge", ...]
+            if ($answerRawData = \Form::post("answer", [])) { // ["ModelID,JudgeLOD", ...]
                 $answerData = self::ensureAnswerDataFormat($answerRawData);
                 if (!empty($answerData)) {
                     $modelTestSession->writeSessionData($answerData);
@@ -38,6 +40,7 @@ class Index {
             }
         } else {
             $modelTestSession = \Model\TestSession::createNewSession(TEST_SESSION_DIRECTORY);
+            $_SESSION["testSessionId"] = $modelTestSession->getSessionId();
         }
         return $modelTestSession;
     }
@@ -45,15 +48,14 @@ class Index {
     private static function ensureAnswerDataFormat($answerRawData) {
         $answerData = [];
         foreach ($answerRawData as $answer) {
-            list($modelId, $lod, $judge) = explode(",", $answer);
+            list($modelId, $judgeLod) = explode(",", $answer);
             if (is_numeric($modelId) 
-                && is_numeric($lod)
-                && in_array($judge, \Model\TestConstants::JudgeList))
+                && is_numeric($judgeLod)
+                && in_array($judgeLod, \Model\TestConstants::JudgeList))
             {
                 $answerData[(int)$modelId] = [
                     "id" => $modelId,
-                    "lod" => $lod,
-                    "judge" => $judge,
+                    "judge" => $judgeLod,
                 ];
             }
         }

@@ -1,21 +1,39 @@
 h2 {
     font-family: arial;
-    font-size: 150%;
+    font-size: 200%;
     padding: 10px 20px;
     margin: 15px 0;
     border: 1px solid #606060;
     background-color: #eee;
 }
+h3 {
+    font-family: arial;
+    font-size: 190%;
+    padding: 0;
+    margin: 0.5em 0;
+    color: #303030;
+    text-align: center;
+}
+.test-item {
+}
+.test-item > td {
+    width: 50%;
+    text-align: center;
+}
+.test-item > td > img {
+    width: 100%;
+}
 .question {
+    text-align: center;
     font-family: arial;
     font-size: 150%;
-    margin-bottom: 1.6em;
+    margin-bottom: 0.5em;
     letter-spacing: 0.1em;
 }
 .radio-button {
     display: inline-block;
-    width: 25%;
-    margin: 0 2em;
+    width: 90%;
+    margin: 0.4em 2em;
 }
 .radio-button > input {
     display: none;

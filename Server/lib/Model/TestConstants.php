@@ -4,7 +4,11 @@ namespace Model;
 
 class TestConstants {
     const JudgeList = [
-        "Yes",
-        "No",
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
     ];
 }

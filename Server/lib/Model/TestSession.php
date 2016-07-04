@@ -27,7 +27,7 @@ class TestSession {
         return $modelIds;
     }
 
-    // $answers = [ ModelID => ["id" => ModelID, "lod" => LOD, "judge" => Judge], ...]
+    // $answers = [ ModelID => ["id" => ModelID, "judge" => JudgeLod], ...]
     public function writeSessionData($answers) {
         foreach ($this->readSessionData() as $answer) {
             list ($modelId) = $answer;
@@ -37,7 +37,7 @@ class TestSession {
         }
         $data = "";
         foreach ($answers as $modelId => $answerData) {
-            $data .= implode(",", [$modelId, $answerData["lod"], $answerData["judge"]]);
+            $data .= implode(",", [$modelId, $answerData["judge"]]);
             $data .= "\r\n";
         }
         file_put_contents($this->testSessionPath, $data, FILE_APPEND | LOCK_EX);
