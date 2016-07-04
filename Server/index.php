@@ -25,43 +25,28 @@ if ($number !== null && $number > 0) {
 
 function renderTestItem($no, $page, $model) {
     $modelId = $model["id"];
-    $lods = array_reverse($model["lod"]);
+    shuffle($model["lod"]);
+    $lod = $model["lod"][0];
 
     echo '<div style="margin-bottom:3em">';
-
-    echo '<div class="question">';
-    echo 'Quality of central character on right image gradually increase from A to E order.';
-    echo '<br>';
-    echo 'When you compare image pair from A to E order, which alphabet image pair firstly becomes completely same.';
-    echo '</div>';
+    
+    echo '<div class="question">Could you see ANY visible differences between left and right image.</div>';
 
     echo '<table style="width:100%">';
 
     $baseFile = $page->getModelPath($modelId, 0);
-    $choices = ["A", "B", "C", "D", "E"];
-    foreach ($lods as $i => $lod) {
-        echo '<tr>';
-        echo '<td colspan="2"><h3>', $choices[$i], '</h3></td>';
-        echo '</tr>';
-        echo '<tr class="test-item">';
-        $compareFile = $page->getModelPath($modelId, $lod);
-        echo '<td><img src="', $baseFile, '"></td>';
-        echo '<td><img src="', $compareFile, '"></td>';
-        echo '</tr>';
-    }
+    $compareFile = $page->getModelPath($modelId, $lod);
+    echo '<tr class="test-item">';
+    echo '<td><img src="', $baseFile, '"></td>';
+    echo '<td><img src="', $compareFile, '"></td>';
+    echo '</tr>';
 
     echo "<tr>";
     echo '<td colspan="2" style="text-align: center; padding-top:2em">';
 
-    foreach ([
-        6 => "Image pair looks completely same from <b>A</b>",
-        5 => "Image pair looks completely same from <b>B</b>", 
-        4 => "Image pair looks completely same from <b>C</b>",
-        3 => "Image pair looks completely same from <b>D</b>",
-        2 => "Image pair looks completely same from <b>E</b>",
-        1 => "All image pairs have slightly visible differences",
-    ] as $i => $ans) {
-        $value = implode(",", [$modelId, $i]);
+    $choices = \Model\TestConstants::JudgeList;
+    foreach ($choices as $i => $ans) {
+        $value = implode(",", [$modelId, $lod, $ans]);
         $id = "answer-form-$no-$i";
 
         echo '<div class="radio-button">';

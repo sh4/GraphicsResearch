@@ -27,13 +27,13 @@ h3 {
     text-align: center;
     font-family: arial;
     font-size: 150%;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.8em;
     letter-spacing: 0.1em;
 }
 .radio-button {
     display: inline-block;
-    width: 90%;
-    margin: 0.4em 2em;
+    width: 40%;
+    margin: 0 2em;
 }
 .radio-button > input {
     display: none;

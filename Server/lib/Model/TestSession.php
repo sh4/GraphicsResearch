@@ -37,7 +37,7 @@ class TestSession {
         }
         $data = "";
         foreach ($answers as $modelId => $answerData) {
-            $data .= implode(",", [$modelId, $answerData["judge"]]);
+            $data .= implode(",", [$modelId, $answerData["lod"], $answerData["judge"]]);
             $data .= "\r\n";
         }
         file_put_contents($this->testSessionPath, $data, FILE_APPEND | LOCK_EX);

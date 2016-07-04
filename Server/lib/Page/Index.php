@@ -32,7 +32,7 @@ class Index {
             $sessionId = $_SESSION["testSessionId"];
             $modelTestSession = new \Model\TestSession(TEST_SESSION_DIRECTORY, $sessionId);
             // 回答データがポストされていればそれを保存
-            if ($answerRawData = \Form::post("answer", [])) { // ["ModelID,JudgeLOD", ...]
+            if ($answerRawData = \Form::post("answer", [])) { // ["ModelID,LOD,Judge", ...]
                 $answerData = self::ensureAnswerDataFormat($answerRawData);
                 if (!empty($answerData)) {
                     $modelTestSession->writeSessionData($answerData);
@@ -48,14 +48,15 @@ class Index {
     private static function ensureAnswerDataFormat($answerRawData) {
         $answerData = [];
         foreach ($answerRawData as $answer) {
-            list($modelId, $judgeLod) = explode(",", $answer);
+            list($modelId, $lod, $judge) = explode(",", $answer);
             if (is_numeric($modelId) 
-                && is_numeric($judgeLod)
-                && in_array($judgeLod, \Model\TestConstants::JudgeList))
+                && is_numeric($lod)
+                && in_array($judge, \Model\TestConstants::JudgeList))
             {
                 $answerData[(int)$modelId] = [
                     "id" => $modelId,
-                    "judge" => $judgeLod,
+                    "lod" => $lod,
+                    "judge" => $judge,
                 ];
             }
         }
