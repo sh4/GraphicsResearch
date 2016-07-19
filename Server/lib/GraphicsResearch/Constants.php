@@ -1,8 +1,8 @@
 <?php
 
-namespace Model;
+namespace GraphicsResearch;
 
-class TestConstants {
+class Constants {
     const JudgeList = [
         "Yes",
         "No",

@@ -1,29 +1,31 @@
 <?php
 
-namespace Page;
+namespace GraphicsResearch\Page;
+
+use GraphicsResearch\Form;
 
 class Upload {
     public function __construct() {
     }
 
     public function isValidUploadKey() {
-        $uploadKey = \Form::post("uploadKey", "");
+        $uploadKey = Form::post("uploadKey", "");
         return $uploadKey != "" && $uploadKey === UPLOAD_KEY;
     }
 
     public function uploadModelFile() {
-        $file = \Form::file("file");
+        $file = Form::file("file");
         if ($file === null) {
             return false;
         }
         $fileName = $file["name"];
-        $filePath = TEST_IMAGE_DIRECTORY."/$fileName";
-        return \Form::saveFile("file", $filePath);
+        $filePath = JUDGEMENT_IMAGES."/$fileName";
+        return Form::saveFile("file", $filePath);
     }
 
     public function listModelFile() {
         $files = [];
-        foreach (scandir(TEST_IMAGE_DIRECTORY) as $file) {
+        foreach (scandir(JUDGEMENT_IMAGES) as $file) {
             if (!preg_match('#\.(?:gif|png|jpe?g)$#iu', $file)) {
                 continue;
             }
@@ -38,7 +40,7 @@ class Upload {
             if (!preg_match('#^[a-z0-9_\-\.]+$#iu', $removeFile)) {
                 continue;
             }
-            $targetFilePath = TEST_IMAGE_DIRECTORY."/$removeFile";
+            $targetFilePath = JUDGEMENT_IMAGES."/$removeFile";
             if (!file_exists($targetFilePath)) {
                 continue;
             }

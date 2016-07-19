@@ -1,0 +1,247 @@
+<?php
+
+use GraphicsResearch\Job;
+use GraphicsResearch\Form;
+
+?><!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Admin</title>
+    <link rel="stylesheet" type="text/css" href="<?php echo Router::Path() ?>/css/bootstrap.css">
+    <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-3.0.0.js"></script>
+    <style type="text/css">
+    label {
+        display: block;
+        margin: 0.5em 0;
+    }
+    .longfield {
+        width: 100%;
+    }
+    textarea.longfield {
+        height: 8em;
+    }
+    .numeric {
+    }
+    .validate {
+        display: none;
+    }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+<a href="<?php echo Router::Path("admin/logout") ?>">Logout</a>
+
+<h1>Admin</h1>
+
+<?php include "_flash_alert.php" ?>
+
+<h2>Job List</h2>
+
+<table class="table table-hover job-list-table">
+<thead class="thead-inverse">
+    <tr>
+        <th>Title</th>
+        <th># of Questions</th>
+        <th># of Max Assignments</th>
+        <th>Progress (%)</th>
+        <th>Created Date</th>
+        <th>Menu</th>
+    </tr>
+</thead>
+<tbody>
+<?php
+foreach (Job::getJobs() as $job):
+    $progressPercent = round($job->getAnswerProgress() * 100, 2);
+    ?>
+    <tr class="<?php if ((int)$progressPercent === 100): ?>table-success<?php endif ?>">
+        <td><a href="<?php echo Router::Path("admin/jobs") ?>/?jobId=<?php echo $job->getJobId() ?>"><?php Form::e($job->getTitle()) ?></a></td>
+        <td><?php echo $job->getQuestions() ?></td>
+        <td><?php echo $job->getMaxAssignments() ?></td>
+        <td><?php echo $progressPercent ?></td>
+        <td><?php echo $job->createdOn()->format("Y/m/d H:i:s") ?></td>
+        <td>
+            <ul class="nav">
+                <li class="nav-item"><a class="nav-link" href="https://make.crowdflower.com/jobs/<?php echo $job->getCrowdFlowerJobId() ?>" target="_blank">CrowdFlower Job Page</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("download") ?>?jobId=<?php echo $job->getJobId() ?>">Download CSV</a></li>
+                <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
+                <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
+            </ul>
+        </td>
+    </tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+
+<h2><a href="<?php echo Router::Path("/download") ?>" target="_blank">Download CSV (All)</a></h2>
+
+<h2>Create New Job</h2>
+
+<?php
+$jobForm = Form::session("job");
+if (!is_array($jobForm)) {
+    $jobForm = [];
+}
+$jobForm = array_merge($jobForm, [
+    "title" => "",
+    "instructions" => "",
+    "questions" => "10",
+    "max_assignments" => "10",
+    "reward_amount_usd" => "0.50",
+]);
+?>
+
+<form method="post" id="form-create-new-job" action="<?php echo Router::Path("admin/jobs") ?>">
+    <?php Form::enableCSRF() ?>
+
+    <div class="form-group">
+        <label for="new-job-title">Title</label>
+        <input type="text" class="form-control longfield" id="new-job-title" name="job[title]" value="<?php Form::e($jobForm["title"]) ?>">
+        <label for="new-job-title" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-instructions">Instructions (HTML)</label>
+        <textarea class="form-control longfield" id="new-job-instructions" name="job[instructions]"><?php Form::e($jobForm["instructions"]) ?></textarea>
+        <label for="new-job-instructions" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-num-question"># of Questions (Judgements)</label>
+        <input type="text" class="form-control numeric" id="new-job-num-question" name="job[questions]" value="<?php Form::e($jobForm["questions"]) ?>">
+        <label for="new-job-num-question" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-num-assignments"># of Max assignments (Contributors)</label>
+        <input type="text" class="form-control numeric" id="new-job-num-assignments" name="job[max_assignments]" value="<?php Form::e($jobForm["max_assignments"]) ?>">
+        <label for="new-job-num-assignments" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-reward-amount">Reward Amount (USD)</label>
+        <input type="text" class="form-control numeric" id="new-job-reward-amount" name="job[reward_amount_usd]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["reward_amount_usd"]) ?>">
+        &nbsp; USD each assignment
+        <label for="new-job-reward-amount" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <input id="submit-create-new-job" type="submit">
+    </div>
+</form>
+
+</div>
+
+<script type="text/javascript">
+(function ($) {
+
+function onError($el, text) {
+    $el.siblings(".validate:first").show().text(text);
+    $el.parent().addClass("has-danger");
+}
+
+function clearError($el) {
+    $el.siblings(".validate:first").hide();
+    $el.parent().removeClass("has-danger");
+}
+
+var validateRules = {
+    "#new-job-title": function () {
+        var $el = $("#new-job-title");
+        var titleLength = ($el.val() || "").length;
+        if (titleLength < 5) {
+            onError($el, "Enter at least 5 characters.");
+            return false;
+        } else if (titleLength > 255) {
+            onError($el, "Enter less than 255 characters.");
+            return false;
+        } else {
+            clearError($el);
+            return true;
+        }
+    },
+    "#new-job-instructions": function () {
+        var $el = $("#new-job-instructions");
+        if ($el.val().length === 0) {
+            onError($el, "Enter the job instructions.");
+            return false;
+        }
+        clearError($el);
+        return true;
+    },
+    "#new-job-num-question": function () {
+        var $el = $("#new-job-num-question");
+        var num = parseInt($el.val(), 10);
+        if (num <= 0) {
+            onError($el, "One or more the number of questions.");
+            return false;
+        } else if (num > 9999) {
+            onError($el, "Less than 10,000 is the number of questions.");
+            return false;
+        } else {
+            clearError($el);
+            return true;
+        }
+    },
+    "#max_assignments": function () {
+        var $el = $("#max_assignments");
+        var num = parseInt($el.val(), 10);
+        if (num <= 0) {
+            onError($el, "One or more the max assignments.");
+            return false;
+        } else if (num > 1000) {
+            onError($el, "Less than 1,000 is the max assignments.");
+            return false;
+        } else {
+            clearError($el);
+            return true;
+        }
+    },
+    "#new-job-reward-amount": function () {
+        var $el = $("#new-job-reward-amount");
+        var maxAssignments = parseInt($("#max_assignments").val(), 10);
+        var amount = parseFloat($el.val());
+        if (amount < 0.1) {
+            onError($el, "Reward amount must be above 10 cents.");
+            return false;
+        } else if (amount * maxAssignments > 1000) {
+            onError($el, "Reward amount limit exceeded: 1,000 dollars");
+            return false;
+        } else {
+            clearError($el);
+            return true;
+        }
+    },
+};
+
+for (var elemId in validateRules) {
+    $(elemId).change(validateRules[elemId]);
+}
+
+$("#form-create-new-job").submit(function () {
+    for (var elemId in validateRules) {
+        var ok = (validateRules[elemId])();
+        if (!ok) {
+            return false;
+        }
+    }
+    // 二重 submit 防止
+    $("#submit-create-new-job").attr("disabled", "disabled");
+});
+
+$(".job-list-table").on("click", ".launch-job", function () {
+    var scope = "";
+    var matches = $(this).text().match(/\([^\)]+\)/);
+    if (matches !== null) {
+        scope = matches[0];
+    }
+    return confirm("Are you want to launch the job? " + scope);
+});
+
+})(jQuery);
+</script>
+
+</body>
+</html>

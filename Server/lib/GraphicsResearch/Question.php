@@ -1,8 +1,8 @@
 <?php
 
-namespace Model;
+namespace GraphicsResearch;
 
-class TestSuite {
+class Question {
     // ModelId => [lod1, lod2, ...]
     private $modelLodMap;
     // ModelID => [lod1 => path1, lod2 => path2, ...]
@@ -12,16 +12,29 @@ class TestSuite {
         $this->buildModelGroup($relativeModelDirectory);
     }
 
-    public function createRandomizeOrderTest($testSession) {
+    public function createRandomizeOrderQuestions(Unit $session) {
         // マスターデータのキーリスト(ModelID のリスト) だけに含まれる ModelID を得る
         // (残りテストが必要な　ModelID のリストを返す) 
-        $answeredIds = $testSession->getAnsweredModelIds();
+        $answeredIds = [];
+        foreach ($session->getJudgementData() as $data) {
+            $answeredIds[] = (int)$data["id"];
+        }
         $remainTestModelIds = array_diff(array_keys($this->modelLodMap), $answeredIds);
         shuffle($remainTestModelIds);
         $no = count($answeredIds);
         foreach ($remainTestModelIds as $i => $modelId) {
             yield ($no+$i) => ["id" => $modelId, "lod" => $this->modelLodMap[$modelId]];
         }
+    }
+
+    public function answerProgress(Unit $unit) {
+        $answeredIdCount = count($unit->getJudgementData());
+        $remainTestModelIds = count($this->modelLodMap) - $answeredIdCount;
+        $progress = new \stdClass();
+        $progress->remain = $remainTestModelIds;
+        $progress->answered = $answeredIdCount;
+        $progress->total = $progress->remain + $progress->answered;
+        return $progress;
     }
 
     public function modelPath($modelId, $lod) {

@@ -1,0 +1,41 @@
+<?php
+use GraphicsResearch\Page;
+
+$unit = Page\Index::loadUnit();
+
+?><!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Test Completed!</title>
+    <style type="text/css">
+        body {
+            margin: 1em;
+            font-size: 130%;
+            font-family: Arial;
+        }
+        h2 {
+            font-size: 2em;
+            margin: 0.5em;
+        }
+        #survey-code {
+            border: 1px solid #aaa;
+            padding: 0.2em;
+            font-size: 250%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Test Completed!</h1>
+
+<p>Copy &amp; Paste below survey code to CrowdFlower question page.</p>
+
+<div style="text-align: center; margin: 0em auto; padding-bottom: 2em; border: 4px solid #606060; background: #eee">
+    <h2>Survey Code</h2>
+    <input type="text" id="survey-code" value="<?php echo $unit->getVerificationCode() ?>" onfocus="this.select()">
+</div>
+
+</body>
+</html>
