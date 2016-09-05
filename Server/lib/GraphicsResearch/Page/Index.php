@@ -58,15 +58,15 @@ class Index {
         return $this->unit->getUnitId();
     }
 
-    public function getModelPath($modelId, $lod) {
-        return $this->question->modelPath($modelId, $lod);
+    public function getModelPath($modelId, $rotation, $lod) {
+        return $this->question->modelPath($modelId, $rotation, $lod);
     }
     
-    public function getAnswers($modelId, $lod) {
+    public function getAnswers($modelId, $rotation, $lod) {
         $choices = Constants::JudgeList;
         foreach ($choices as $i => $ans) {
             $input = new \stdClass();
-            $input->value = implode(",", [$modelId, $lod, $ans]);
+            $input->value = implode(",", [$modelId, $rotation, $lod, $ans]);
             $input->id = "answer-form-$modelId-$i";
             $input->answer = $ans;
             yield $input;
@@ -90,7 +90,7 @@ class Index {
             $unit = Unit::createNewSession();
         }
         // 回答データがポストされていればそれを保存
-        if ($answerRawData = Form::post("answer", [])) { // ["ModelID,LOD,Judge", ...]
+        if ($answerRawData = Form::post("answer", [])) { // ["ModelID,Rotation,LOD,Judge", ...]
             $answerData = self::ensureAnswerDataFormat($answerRawData);
             if (!empty($answerData)) {
                 $unit->writeJudgeData($answerData);
@@ -103,13 +103,15 @@ class Index {
     private static function ensureAnswerDataFormat($answerRawData) {
         $answerData = [];
         foreach ($answerRawData as $answer) {
-            list($modelId, $lod, $judge) = explode(",", $answer);
+            list($modelId, $rotation, $lod, $judge) = explode(",", $answer);
             if (is_numeric($modelId) 
                 && is_numeric($lod)
+                && is_numeric($rotation)
                 && in_array($judge, Constants::JudgeList))
             {
                 $answerData[(int)$modelId] = [
                     "id" => $modelId,
+                    "rotation" => $rotation,
                     "lod" => $lod,
                     "judge" => $judge,
                 ];

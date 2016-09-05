@@ -10,20 +10,20 @@ if ($progress->remain === 0) {
 
 function question(Page\Index $page, $model) {
     $modelId = $model["id"];
-    shuffle($model["lod"]);
-    $lod = $model["lod"][0];
+    $lod = $model["lod"];
+    $rotation = $model["rotation"];
     $root = Router::Path();
 ?>
     <div style="margin-bottom:3em">
     <div class="question">Could you see ANY visible differences between left and right image.</div>
     <table style="width:100%">
         <tr class="test-item">
-            <td><img src="<?php echo $root, "/", $page->getModelPath($modelId, 0); ?>"></td>
-            <td><img src="<?php echo $root, "/", $page->getModelPath($modelId, $lod); ?>"></td>
+            <td><img src="<?php echo $root, "/", $page->getModelPath($modelId, $rotation, 0); ?>"></td>
+            <td><img src="<?php echo $root, "/", $page->getModelPath($modelId, $rotation, $lod); ?>"></td>
             </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top:2em">
-            <?php foreach ($page->getAnswers($modelId, $lod) as $input): ?>
+            <?php foreach ($page->getAnswers($modelId, $rotation, $lod) as $input): ?>
             <div class="radio-button">
                 <input autocomplete="off" type="radio" id="<?php echo $input->id ?>" name="answer[]" value="<?php echo $input->value ?>">
                 <label for="<?php echo $input->id ?>"><?php echo $input->answer ?></label>

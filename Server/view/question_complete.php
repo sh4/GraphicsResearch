@@ -30,12 +30,16 @@ $unit = Page\Index::loadUnit();
 
 <h1>Test Completed!</h1>
 
+<?php if ($unit): ?>
 <p>Copy &amp; Paste below survey code to CrowdFlower question page.</p>
 
 <div style="text-align: center; margin: 0em auto; padding-bottom: 2em; border: 4px solid #606060; background: #eee">
     <h2>Survey Code</h2>
     <input type="text" id="survey-code" value="<?php echo $unit->getVerificationCode() ?>" onfocus="this.select()">
 </div>
+<?php else: ?>
+<p>Invalid test state, Please contact website administrator.</p>
+<?php endif ?>
 
 </body>
 </html>

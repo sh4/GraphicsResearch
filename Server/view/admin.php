@@ -228,7 +228,7 @@ $("#form-create-new-job").submit(function () {
         }
     }
     // 二重 submit 防止
-    $("#submit-create-new-job").attr("disabled", "disabled");
+    $("#submit-create-new-job").prop("disabled", tru);
 });
 
 $(".job-list-table").on("click", ".launch-job", function () {

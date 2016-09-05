@@ -5,7 +5,7 @@ namespace GraphicsResearch;
 class Question {
     // ModelId => [lod1, lod2, ...]
     private $modelLodMap;
-    // ModelID => [lod1 => path1, lod2 => path2, ...]
+    // "<ModelID>-<Lod>-<Rotation>" => path1, ...
     private $modelFileMap;
 
     public function __construct($relativeModelDirectory) {
@@ -20,10 +20,17 @@ class Question {
             $answeredIds[] = (int)$data["id"];
         }
         $remainTestModelIds = array_diff(array_keys($this->modelLodMap), $answeredIds);
-        shuffle($remainTestModelIds);
+        shuffle($remainTestModelIds); // ModelID のリストをシャッフル
         $no = count($answeredIds);
         foreach ($remainTestModelIds as $i => $modelId) {
-            yield ($no+$i) => ["id" => $modelId, "lod" => $this->modelLodMap[$modelId]];
+            $lodMap = $this->modelLodMap[$modelId];
+            $lod = array_rand($lodMap);
+            $rotation = $lodMap[$lod][array_rand($lodMap[$lod])];
+            yield ($no+$i) => [
+                "id" => $modelId,
+                "rotation" => $rotation,
+                "lod" => $lod,
+            ];
         }
     }
 
@@ -37,8 +44,8 @@ class Question {
         return $progress;
     }
 
-    public function modelPath($modelId, $lod) {
-        return $this->modelFileMap[(int)$modelId][(int)$lod];
+    public function modelPath($modelId, $rotation, $lod) {
+        return $this->modelFileMap["$modelId-$lod-$rotation"];
     }
 
     private function buildModelGroup($relativeModelDirectory) {
@@ -46,26 +53,27 @@ class Question {
         $this->modelLodMap = [];
         $this->modelFileMap = [];
         foreach ($modelFiles as $modelFile) {
-            // [SceneID_]<ModelID>_<LOD>.gif|png|jpe?g
-            if (!preg_match('#^(?:[^_]+_)?(\d+)_(\d+)\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
+            // [SceneID_]<ModelID>_<RotationID>_<LOD>.gif|png|jpe?g
+            if (!preg_match('#^(?:[^_]+_)?(\d+)_(\d+)_(\d+)\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
                 continue;
             }
 
-            list (, $modelId, $lod) = $matches;
+            list (, $modelId, $rotationId, $lod) = $matches;
             $modelId = (int)$modelId;
             $lod = (int)$lod;
+            $rotationId = (int)$rotationId;
 
             if (!isset($this->modelLodMap[$modelId])) {
                 $this->modelLodMap[$modelId] = [];
             }
             // LOD が 0 同士の組み合わせを生成するなら if の条件文をコメントアウトする
             if ($lod != 0) {
-                $this->modelLodMap[$modelId][] = $lod;
+                if (!isset($this->modelLodMap[$modelId][$lod])) {
+                    $this->modelLodMap[$modelId][$lod] = [];
+                }
+                $this->modelLodMap[$modelId][$lod][] = $rotationId;
             }
-            if (!isset($this->modelFileMap[$modelId])) {
-                $this->modelFileMap[$modelId] = [];
-            }
-            $this->modelFileMap[$modelId][$lod] = "$relativeModelDirectory/$modelFile";
+            $this->modelFileMap["$modelId-$lod-$rotationId"] = "$relativeModelDirectory/$modelFile";
         }
     }
 }
