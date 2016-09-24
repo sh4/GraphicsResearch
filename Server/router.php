@@ -273,11 +273,19 @@ class Router {
             // すべての判定データ
             $rows = DB::instance()->each("SELECT judgement_data_json FROM job_unit");
         }
+        echo implode(",", [
+            "ModelID",
+            "RotationID",
+            "LOD",
+            "ContainDifferences",
+        ]);
+        echo "\r\n";
         foreach ($rows as $row) {
             $judgementData = json_decode($row["judgement_data_json"]);
             foreach ($judgementData as $data) {
                 echo implode(",", [
                     $data->id,
+                    $data->rotation,
                     $data->lod,
                     $data->judge,
                 ]);

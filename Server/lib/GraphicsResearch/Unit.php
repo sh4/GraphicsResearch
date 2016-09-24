@@ -50,7 +50,12 @@ class Unit {
         return $this->judgementData;
     }
 
-    // $answers = [ ModelID => ["id" => ModelID, "lod" => judgeLOD, "judge" => judge(yes/no)], ...]
+    // $answers = [ ModelID => [
+    //   "id" => ModelID,
+    //   "lod" => judgeLOD,
+    //   "rotation" => RotationID,
+    //   "judge" => judge(yes/no),
+    // ], ...]
     public function writeJudgeData($answers) {
         foreach ($this->judgementData as $answer) {
             $modelId = $answer["id"];
