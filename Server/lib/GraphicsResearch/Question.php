@@ -7,9 +7,12 @@ class Question {
     private $modelLodMap;
     // "<ModelID>-<Lod>-<Rotation>" => path1, ...
     private $modelFileMap;
+    private $testAvailableModelIds;
+    private $invalidModelSet;
 
     public function __construct($relativeModelDirectory) {
-        $this->buildModelGroup($relativeModelDirectory);
+        $this->buildModelSet($relativeModelDirectory);
+        $this->removeInvalidModelSet();
     }
 
     public function createRandomizeOrderQuestions(Unit $session) {
@@ -19,16 +22,22 @@ class Question {
         foreach ($session->getJudgementData() as $data) {
             $answeredIds[] = (int)$data["id"];
         }
-        $remainTestModelIds = array_diff(array_keys($this->modelLodMap), $answeredIds);
+        // テスト対象のデータは、LOD0 + それ以外のLOD のモデルの最低 2 つ以上が存在していることが必須
+        $remainTestModelIds = array_diff(
+            $this->testAvailableModelIds,
+            $answeredIds);
         shuffle($remainTestModelIds); // ModelID のリストをシャッフル
         $no = count($answeredIds);
         foreach ($remainTestModelIds as $i => $modelId) {
-            $lodMap = $this->modelLodMap[$modelId];
-            $lod = array_rand($lodMap);
-            $rotation = $lodMap[$lod][array_rand($lodMap[$lod])];
+            $rotationSet = $this->modelLodMap[$modelId];
+            $rotationId = array_rand($rotationSet);
+
+            $lodMapWithoutLodZero = $rotationSet[$rotationId];
+            $lod = array_rand($lodMapWithoutLodZero);
+
             yield ($no+$i) => [
                 "id" => $modelId,
-                "rotation" => $rotation,
+                "rotation" => $rotationId,
                 "lod" => $lod,
             ];
         }
@@ -48,8 +57,18 @@ class Question {
         return $this->modelFileMap["$modelId-$lod-$rotation"];
     }
 
-    private function buildModelGroup($relativeModelDirectory) {
+    // テストに利用できない無効なデータセットを返す
+    public function invalidModelInfos() {
+        return $this->invalidModelSet;
+    }
+
+    public function availableModelCount() {
+        return count($this->testAvailableModelIds);
+    }
+
+    private function buildModelSet($relativeModelDirectory) {
         $modelFiles = scandir($relativeModelDirectory, SCANDIR_SORT_ASCENDING);
+        $this->modelIdsOfContainLod0 = [];
         $this->modelLodMap = [];
         $this->modelFileMap = [];
         foreach ($modelFiles as $modelFile) {
@@ -60,20 +79,58 @@ class Question {
 
             list (, $modelId, $rotationId, $lod) = $matches;
             $modelId = (int)$modelId;
-            $lod = (int)$lod;
             $rotationId = (int)$rotationId;
+            $lod = (int)$lod;
 
             if (!isset($this->modelLodMap[$modelId])) {
                 $this->modelLodMap[$modelId] = [];
             }
-            // LOD が 0 同士の組み合わせを生成するなら if の条件文をコメントアウトする
-            if ($lod != 0) {
-                if (!isset($this->modelLodMap[$modelId][$lod])) {
-                    $this->modelLodMap[$modelId][$lod] = [];
-                }
-                $this->modelLodMap[$modelId][$lod][] = $rotationId;
+            if (!isset($this->modelLodMap[$modelId][$rotationId])) {
+                $this->modelLodMap[$modelId][$rotationId] = [];
             }
+            // lod == 0 のテストデータは removeInvalidModelSet で削除される
+            // (ここでデータ挿入をスキップしないのは、LOD0 がないデータ、LOD0 しかないデータを洗い出すため)
+            $this->modelLodMap[$modelId][$rotationId][$lod] = true;
             $this->modelFileMap["$modelId-$lod-$rotationId"] = "$relativeModelDirectory/$modelFile";
+        }
+    }
+
+    private function removeInvalidModelSet() {
+        $this->testAvailableModelIds = [];
+        $this->invalidModelSet = [];
+
+        foreach ($this->modelLodMap as $modelId => $rotationSet) {
+            foreach ($rotationSet as $rotationId => $lodMap) {
+                $invalidRotationSet = false;
+                if (!isset($lodMap[0])) {
+                    // LOD0 が存在しない
+                    $invalidRotationSet = true;
+                    $this->invalidModelSet[] = [
+                        "file" => sprintf("%07d", $modelId)."_{$rotationId}_0.jpg",
+                        "message" => "LOD Level 0 model not found.",
+                    ];
+                } else if (count($lodMap) < 2) {
+                    // モデルが 2つ以上存在しない (LOD0 しかない)
+                    $invalidRotationSet = true;
+                    $this->invalidModelSet[] = [
+                        "file" => sprintf("%07d", $modelId)."_{$rotationId}_X.jpg",
+                        "message" => "Only LOD Level 0 model exists.",
+                    ];
+                }
+                // 無効なデータセットならテスト対象から除外
+                if ($invalidRotationSet) {
+                    unset($this->modelLodMap[$modelId][$rotationId]);
+                    continue;
+                }
+                // LOD0 は比較先データとしては使用しない（常に比較元となるため)ので削除
+                unset($this->modelLodMap[$modelId][$rotationId][0]);
+            }
+            if (count($this->modelLodMap[$modelId]) === 0) {
+                // ローテーションセットが存在しない
+                unset($this->modelLodMap[$modelId]);
+                continue;
+            }
+            $this->testAvailableModelIds[] = $modelId;
         }
     }
 }
