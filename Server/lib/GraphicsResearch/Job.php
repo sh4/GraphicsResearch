@@ -221,7 +221,9 @@ EOM;
         ]);
         $now = date("Y-m-d H:i:s");
         $rows = [];
-        for ($i = 0, $n = $this->getQuestions(); $i < $n; $i++) {
+        // 最大回答データ受付数分の JobUnit を生成
+        // 回答データは合計で questions (1 assignment あたりの必要回答データ数. お給料をもらうのに必要な回答数) * max_assigments 件集まる
+        for ($i = 0, $n = $this->getMaxAssignments(); $i < $n; $i++) {
             $rows[] = [
                 "unit_id" => Crypto::CreateUniqueId(12),
                 "job_id" => $this->getJobId(),
