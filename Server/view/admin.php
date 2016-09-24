@@ -3,6 +3,9 @@
 use GraphicsResearch\Job;
 use GraphicsResearch\Form;
 
+$question = new GraphicsResearch\Question(JUDGEMENT_IMAGES);
+$invalidModelInfos = $question->invalidModelInfos();
+
 ?><!DOCTYPE html>
 <html>
 <head>
@@ -131,6 +134,44 @@ $jobForm = array_merge($jobForm, [
         <input id="submit-create-new-job" type="submit">
     </div>
 </form>
+
+<h2>Model Information</h2>
+
+<h3>Summary</h3>
+
+<table class="table table-hover">
+<tbody>
+    <tr>
+        <th>Test available model count</th>
+        <td><?php echo $question->availableModelCount() ?></td>
+    </tr>
+</tbody>
+</table>
+
+<?php if (count($invalidModelInfos) > 0): ?>
+
+<h3>Invalid DataSet (Not appear in judge page)</h3>
+
+<table class="table table-hover">
+<thead class="thead-inverse">
+    <tr>
+        <th>No.</th>
+        <th>File</th>
+        <th>Reason</th>
+    </tr>
+</thead>
+<tbody>
+<?php foreach ($invalidModelInfos as $i => $reason): ?>
+    <tr>
+        <td><?php echo ($i + 1) ?></td>
+        <td><strong><?php echo $reason["file"] ?></strong></td>
+        <td><?php echo $reason["message"] ?></td>
+    </tr>
+<?php endforeach ?>
+</tbody>
+</table>
+
+<?php endif ?>
 
 </div>
 
