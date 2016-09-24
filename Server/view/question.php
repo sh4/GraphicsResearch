@@ -15,7 +15,9 @@ function question(Page\Index $page, $model) {
     $root = Router::Path();
 ?>
     <div style="margin-bottom:3em">
-    <div class="question">Could you see ANY visible differences between left and right image.</div>
+    <div class="question">
+    Could you see ANY visible differences from central located character between left and right image?
+    </div>
     <table style="width:100%">
         <tr class="test-item">
             <td><img src="<?php echo $root, "/", $page->getModelPath($modelId, $rotation, 0); ?>"></td>
