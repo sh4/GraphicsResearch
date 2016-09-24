@@ -62,6 +62,8 @@ $judgementFilter = Form::get("filter", "");
 <?php
 foreach ($unit->getJudgementData() as $data):
     $modelId = $data["id"];
+    $modelLod = $data["lod"];
+    $modelRotation = $data["rotation"];
     $modelIsDifferent = $data["judge"] === "Yes";
     if ($judgementFilter === "same" && $modelIsDifferent):
         continue;
@@ -72,8 +74,8 @@ foreach ($unit->getJudgementData() as $data):
 <table class="judgement-table">
 <tbody>
     <tr>
-    <td><img src="<?php echo $root, "/", $question->modelPath($modelId, 0); ?>"></td>
-    <td<?php if ($modelIsDifferent): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/", $question->modelPath($modelId, $data["lod"]); ?>"></td>
+    <td><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
+    <td<?php if ($modelIsDifferent): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
     </tr>
 </tbody>
 </table>
