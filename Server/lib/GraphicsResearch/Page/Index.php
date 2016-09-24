@@ -35,8 +35,8 @@ class Index {
         return $this->number;
     }
 
-    public function getRandomizeOrderQuestions() {
-        $questions = $this->question->createRandomizeOrderQuestions($this->unit);
+    public function getQuestionOrders() {
+        $questions = $this->question->createQuestionOrder($this->unit);
         foreach ($questions as $i => $model) {
             yield $i => $model;
         }

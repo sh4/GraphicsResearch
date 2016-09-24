@@ -3,11 +3,12 @@
 namespace GraphicsResearch;
 
 class Question {
-    // ModelId => [lod1, lod2, ...]
+    // [ ModelId => [lod1, lod2, ...] ]
     private $modelLodMap;
-    // "<ModelID>-<Lod>-<Rotation>" => path1, ...
+    // [ "<ModelID>-<Lod>-<Rotation>" => path1, ... ]
     private $modelFileMap;
-    private $testAvailableModelIds;
+    // [ ModelId1 => true, ... ]
+    private $testAvailableModelIdMap;
     private $invalidModelSet;
 
     public function __construct($relativeModelDirectory) {
@@ -15,16 +16,71 @@ class Question {
         $this->removeInvalidModelSet();
     }
 
-    public function createRandomizeOrderQuestions(Unit $session) {
+    public function createQuestionOrder(Unit $session) {
+        $answeredIds = $this->getAnsweredIds($session);
+        if ($job = Job::loadFromId($session->getJobId())) {
+            $questionOrder = $job->getUserDefinedQuestionOrder();
+            if (count($questionOrder) > 0) {
+                // ユーザー定義の並び順
+                $userDefinedOrder = $this->createUserDefinedOrderQuestions($answeredIds, $questionOrder);
+                foreach ($userDefinedOrder as $i => $model) {
+                    yield $i => $model;
+                }
+                return;
+            }
+        }
+        // ランダムな並び順
+        $randomizedQuestionOrder = $this->createRandomizeOrderQuestions($answeredIds);
+        foreach ($randomizedQuestionOrder as $i => $model) {
+            yield $i => $model;
+        }
+    }
+
+    public static function ParseQuestionOrderFromCSV($questionOrderCsv) {
+        $questionOrders = array_map("str_getcsv", 
+            array_map(function ($x) { return trim($x); }, explode("\n", $questionOrderCsv)));
+        $result = [];
+        foreach ($questionOrders as $orderRow) {
+            if (count($orderRow) < 3) {
+                continue;
+            }
+            list($id, $rotation, $lod) = $orderRow;
+            if (!is_numeric($id)) {
+                continue;
+            }
+            $result[] = [
+                "id" => (int)$id,
+                "rotation" => (int)$rotation,
+                "lod" => (int)$lod,
+            ];
+        }
+        return $result;
+    }
+
+    private function createUserDefinedOrderQuestions($answeredIds, $questionOrder) {
+        $answeredIdMap = [];
+        foreach ($answeredIds as $id) {
+            $answeredIdMap[$id] = true;
+        }
+        $remainQuestions = array_filter($questionOrder, function ($model) use ($answeredIdMap) {
+            $id = (int)$model["id"];
+            // 未回答の回答データ && テストが可能なモデルID
+            return !isset($answeredIdMap[$id]) 
+                && isset($this->testAvailableModelIdMap[$id]);
+        });
+
+        $no = count($answeredIds);
+        foreach ($remainQuestions as $i => $model) {
+            yield ($no+$i) => $model;
+        }
+    }
+
+    private function createRandomizeOrderQuestions($answeredIds) {
         // マスターデータのキーリスト(ModelID のリスト) だけに含まれる ModelID を得る
         // (残りテストが必要な　ModelID のリストを返す) 
-        $answeredIds = [];
-        foreach ($session->getJudgementData() as $data) {
-            $answeredIds[] = (int)$data["id"];
-        }
-        // テスト対象のデータは、LOD0 + それ以外のLOD のモデルの最低 2 つ以上が存在していることが必須
         $remainTestModelIds = array_diff(
-            $this->testAvailableModelIds,
+            // テスト対象のデータは、LOD0 + それ以外のLOD のモデルの最低 2 つ以上が存在していることが必須
+            array_keys($this->testAvailableModelIdMap),
             $answeredIds);
         shuffle($remainTestModelIds); // ModelID のリストをシャッフル
         $no = count($answeredIds);
@@ -63,7 +119,7 @@ class Question {
     }
 
     public function availableModelCount() {
-        return count($this->testAvailableModelIds);
+        return count($this->testAvailableModelIdMap);
     }
 
     private function buildModelSet($relativeModelDirectory) {
@@ -96,7 +152,7 @@ class Question {
     }
 
     private function removeInvalidModelSet() {
-        $this->testAvailableModelIds = [];
+        $this->testAvailableModelIdMap = [];
         $this->invalidModelSet = [];
 
         foreach ($this->modelLodMap as $modelId => $rotationSet) {
@@ -130,7 +186,17 @@ class Question {
                 unset($this->modelLodMap[$modelId]);
                 continue;
             }
-            $this->testAvailableModelIds[] = $modelId;
+            $this->testAvailableModelIdMap[$modelId] = true;
         }
+    }
+
+    private function getAnsweredIds(Unit $session) {
+        // マスターデータのキーリスト(ModelID のリスト) だけに含まれる ModelID を得る
+        // (残りテストが必要な　ModelID のリストを返す) 
+        $answeredIds = [];
+        foreach ($session->getJudgementData() as $data) {
+            $answeredIds[] = (int)$data["id"];
+        }
+        return $answeredIds;
     }
 }

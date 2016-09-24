@@ -6,6 +6,7 @@ use GraphicsResearch\Form;
 use GraphicsResearch\Unit;
 use GraphicsResearch\Job;
 use GraphicsResearch\DB;
+use GraphicsResearch\Question;
 use GraphicsResearch\Page\Upload;
 
 class Router {
@@ -217,6 +218,10 @@ class Router {
         if (Form::isPOST()) {
             $rawJob = Form::post("job", []);
             try {
+                $rawJob["question_order_json"] = null;
+                if ($customQuestionOrder = Form::getFile("job_question_order")) {
+                    $rawJob["question_order_json"] = Question::ParseQuestionOrderFromCSV($customQuestionOrder);
+                }
                 $job = Job::createNewJob($rawJob);
                 unset($_SESSION["job"]);
                 Router::Flash("success", "You have successfully created the job: ".htmlspecialchars($job->getTitle()));

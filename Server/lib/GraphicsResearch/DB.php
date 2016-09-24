@@ -8,7 +8,7 @@ class DB {
     private $dbh;
     private static $defaultConnection;
 
-    const SchemaVersion = 1;
+    const SchemaVersion = 2;
     
     private function __construct($dsn, $username, $password) {
         $options = [
@@ -136,7 +136,14 @@ EOM;
         $this->dbh->exec($initialTableSql);
         $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
 
-        // ここにマイグレーション処理を記述する
+        // メモ: JSON フォーマットを内部に持つ job テーブルの　question_order_json は、
+        //      回答データファイルのメタ情報が増えた時には内部データの変換が必要になるはずなので注意
+
+        //// ここにマイグレーション処理を記述する ////
+        if ($version == 1) {
+            $this->migrateSchemaVersion_1();
+        }
+        ////////
 
         if ($version < self::SchemaVersion) {
             $this->insert("schema_version", ["version" => self::SchemaVersion]);
@@ -164,5 +171,13 @@ EOM;
                 MYSQL_PASSWORD);
         }
         return self::$defaultConnection;
+    }
+
+    private function migrateSchemaVersion_1() {
+        // データの表示順序を保持するカラムを追加 (データ量 > 64KB になりそうなので MEDIUMBLOB)
+        $migrateSql = <<<EOM
+        ALTER TABLE job ADD COLUMN question_order_json MEDIUMBLOB;
+EOM;
+        $this->dbh->exec($migrateSql);
     }
 }

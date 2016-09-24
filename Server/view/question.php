@@ -62,7 +62,7 @@ function question(Page\Index $page, $model) {
 
 <?php
 $num = $page->getNumber();
-foreach ($page->getRandomizeOrderQuestions() as $i => $model) {
+foreach ($page->getQuestionOrders() as $i => $model) {
     if ($num !== null && --$num < 0) {
         break;
     }

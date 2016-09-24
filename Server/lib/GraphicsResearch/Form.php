@@ -31,6 +31,18 @@ class Form {
         }
     }
 
+    // アップロードされたファイルを文字列として返す。
+    // オンメモリの処理なので巨大なファイルを読み込まないようにすること。
+    public static function getFile($name) {
+        if (isset($_FILES[$name], $_FILES[$name]["tmp_name"])
+            && is_uploaded_file($_FILES[$name]["tmp_name"]))
+        {
+            return file_get_contents($_FILES[$name]["tmp_name"]);
+        } else {
+            return null;
+        }
+    }
+
     public static function session($name, $default = null) {
         return isset($_SESSION[$name]) ? $_SESSION[$name] : $default;
     }

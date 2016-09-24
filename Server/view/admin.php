@@ -96,7 +96,7 @@ $jobForm = array_merge($jobForm, [
 ]);
 ?>
 
-<form method="post" id="form-create-new-job" action="<?php echo Router::Path("admin/jobs") ?>">
+<form method="post" enctype="multipart/form-data" id="form-create-new-job" action="<?php echo Router::Path("admin/jobs") ?>">
     <?php Form::enableCSRF() ?>
 
     <div class="form-group">
@@ -128,6 +128,17 @@ $jobForm = array_merge($jobForm, [
         <input type="text" class="form-control numeric" id="new-job-reward-amount" name="job[reward_amount_usd]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["reward_amount_usd"]) ?>">
         &nbsp; USD each assignment
         <label for="new-job-reward-amount" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-custom-question-order">(Optional) Custom Question Order</label>
+        <input type="file" id="new-job-custom-question-order" name="job_question_order">
+        <div style="margin:0.5em 1em">
+        Acceptable CSV file examples (Right-side image list):<br>
+        <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">id,rotaiton,lod
+0,1,1
+700,0,1</pre>
+        </div>
     </div>
 
     <div class="form-group">

@@ -10,6 +10,9 @@ class Job {
     private $maxAssignments;
     private $rewardAmountUSD;
     private $createdOn;
+    // 回答データの表示順を保持する
+    // [ [ id => X, rotation => Y, lod => Z ], ... ]
+    private $questionOrder;
 
     private $crowdFlowerJobId;
     private $crowdFlower;
@@ -42,6 +45,18 @@ class Job {
             $this->jobId = (int)$job["job_id"];
         }
 
+        // ユーザー定義の質問データ順序が与えられているか
+        if (isset($job["question_order_json"])) {
+            $questionOrder = $job["question_order_json"];
+            if (is_string($questionOrder)) {
+                $this->questionOrder = json_decode($questionOrder, true);
+            } else {
+                $this->questionOrder = $questionOrder;
+            }
+        } else {
+            $this->questionOrder = [];
+        }
+
         $this->crowdFlower = new CrowdFlowerClient();
         $this->crowdFlower->setAPIKey(CROWDFLOWER_API_KEY);
     }
@@ -63,7 +78,17 @@ class Job {
     }
 
     public function getQuestions() {
-        return (int)$this->questions;
+        // 回答データの順序が与えられているときは、そちらが必要回答数になる
+        $orderCount = count($this->questionOrder);
+        if ($orderCount > 0) {
+            return $orderCount;
+        } else {
+            return (int)$this->questions;
+        }
+    }
+
+    public function getUserDefinedQuestionOrder() {
+        return $this->questionOrder;
     }
 
     public function getMaxAssignments() {
@@ -218,6 +243,7 @@ EOM;
             "reward_amount_usd" => $this->getRewardAmountUSD(),
             "created_on" => $this->createdOn()->format("Y-m-d H:i:s"),
             "crowdflower_job_id" => $this->crowdFlowerJobId,
+            "question_order_json" => json_encode($this->questionOrder),
         ]);
         $now = date("Y-m-d H:i:s");
         $rows = [];
