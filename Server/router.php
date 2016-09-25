@@ -7,6 +7,7 @@ use GraphicsResearch\Unit;
 use GraphicsResearch\Job;
 use GraphicsResearch\DB;
 use GraphicsResearch\Question;
+use GraphicsResearch\QuestionPage;
 use GraphicsResearch\Page\Upload;
 
 class Router {
@@ -205,6 +206,20 @@ class Router {
         if (Form::session("admin_login")) {
             Router::Flash("success", "You have successfully logged out.");
             session_destroy();
+        }
+        Router::redirect("admin");
+    },
+
+    "/admin/question" => function () {
+        // 質問ページ編集
+        session_start();
+        if (!Form::session("admin_login", false)) {
+            Router::redirect("admin");
+        }
+        if (Form::isPOST()) {
+            $rawQuestionPage = Form::post("question", []);
+            QuestionPage::Update("default", $rawQuestionPage);
+            Router::Flash("success", "Question page successfully updated.");
         }
         Router::redirect("admin");
     },

@@ -6,6 +6,8 @@ use GraphicsResearch\Form;
 $question = new GraphicsResearch\Question(JUDGEMENT_IMAGES);
 $invalidModelInfos = $question->invalidModelInfos();
 
+$questionPage = GraphicsResearch\QuestionPage::DefaultPage();
+
 ?><!DOCTYPE html>
 <html>
 <head>
@@ -40,6 +42,22 @@ $invalidModelInfos = $question->invalidModelInfos();
 <h1>Admin</h1>
 
 <?php include "_flash_alert.php" ?>
+
+<h2>Question Page</h2>
+
+<form method="post" id="form-update-question-page" action="<?php echo Router::Path("admin/question") ?>">
+    <?php Form::enableCSRF() ?>
+
+    <div class="form-group">
+        <label for="question-instructions">Instructions</label>
+        <textarea class="form-control longfield" id="question-instructions" name="question[instructions]"><?php Form::e($questionPage["instructions"]) ?></textarea>
+    </div>
+
+    <div class="form-group">
+        <input id="submit-update-question-page" type="submit">
+    </div>
+</form>
+
 
 <h2>Job List</h2>
 

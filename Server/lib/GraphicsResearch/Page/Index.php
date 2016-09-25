@@ -4,12 +4,14 @@ namespace GraphicsResearch\Page;
 
 use GraphicsResearch\Form;
 use GraphicsResearch\Question;
+use GraphicsResearch\QuestionPage;
 use GraphicsResearch\Job;
 use GraphicsResearch\Unit;
 use GraphicsResearch\Constants;
 
 class Index {
     private $question;
+    private $questionPage;
     private $unit;
     private $number;
     private $formAction;
@@ -25,6 +27,7 @@ class Index {
         }
         $this->question = new Question(JUDGEMENT_IMAGES);
         $this->unit = self::createOrUpdateUnit();
+        $this->questionPage = QuestionPage::DefaultPage();
     }
 
     public function getFormAction() {
@@ -33,6 +36,10 @@ class Index {
 
     public function getNumber() {
         return $this->number;
+    }
+
+    public function getQuestionPage() {
+        return $this->questionPage;
     }
 
     public function getQuestionOrders() {

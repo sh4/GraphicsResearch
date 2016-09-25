@@ -13,10 +13,11 @@ function question(Page\Index $page, $model) {
     $lod = $model["lod"];
     $rotation = $model["rotation"];
     $root = Router::Path();
+    $questionPage = $page->getQuestionPage();
 ?>
     <div style="margin-bottom:3em">
     <div class="question">
-    Could you see ANY visible differences from central located character between left and right image?
+    <?php echo $questionPage["instructions"] ?>
     </div>
     <table style="width:100%">
         <tr class="test-item">

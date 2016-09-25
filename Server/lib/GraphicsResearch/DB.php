@@ -8,8 +8,6 @@ class DB {
     private $dbh;
     private static $defaultConnection;
 
-    const SchemaVersion = 2;
-    
     private function __construct($dsn, $username, $password) {
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -87,7 +85,7 @@ class DB {
         return $this->metaExecute("REPLACE INTO", $table, $params);
     }
 
-    public function update($table, $where, $params = []) {
+    public function update($table, $where, $params) {
         $columns = [];
         $row = [];
         foreach ($params as $key => $value) {
@@ -98,7 +96,9 @@ class DB {
         $stmt->execute($row);
         return $stmt;
     }
-
+    
+    const SchemaVersion = 3;
+    
     public function migrateSchema() {
         $initialTableSql = <<<EOM
         CREATE TABLE IF NOT EXISTS schema_version (
@@ -143,6 +143,9 @@ EOM;
         if ($version == 1) {
             $this->migrateSchemaVersion_1();
         }
+        if ($version == 2) {
+            $this->migrateSchemaVersion_2();
+        }
         ////////
 
         if ($version < self::SchemaVersion) {
@@ -179,5 +182,19 @@ EOM;
         ALTER TABLE job ADD COLUMN question_order_json MEDIUMBLOB;
 EOM;
         $this->dbh->exec($migrateSql);
+    }
+
+    private function migrateSchemaVersion_2() {
+        $migrateSql = <<<EOM
+        CREATE TABLE IF NOT EXISTS question_page (
+            page_key VARCHAR(32) PRIMARY KEY NOT NULL,
+            instructions TEXT NOT NULL
+        );
+EOM;
+        $this->dbh->exec($migrateSql);
+        $this->insert("question_page", [
+            "page_key" => "default",
+            "instructions" => "Could you see ANY visible differences between the left and right images for the centrally located character?",
+        ]);
     }
 }
