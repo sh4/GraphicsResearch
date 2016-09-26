@@ -3,7 +3,7 @@ use GraphicsResearch\Question;
 use GraphicsResearch\Unit;
 use GraphicsResearch\Form;
 
-$question = new Question(JUDGEMENT_IMAGES);
+$question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
 $unit = Unit::loadFromId(Form::get("unitId", ""));
 $root = \Router::Path();
 $judgementFilter = Form::get("filter", "");

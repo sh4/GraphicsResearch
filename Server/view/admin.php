@@ -58,6 +58,18 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
     </div>
 </form>
 
+<form method="post" id="form-remove-question-images" action="<?php echo Router::Path("admin/question/remove") ?>">
+    <?php Form::enableCSRF() ?>
+
+    <div class="form-group">
+        <label for="remove-file-pattern">Remove File Pattern (Available wildcards: '*' or '?')</label>
+        <input class="form-control longfield" id="remove-file-pattern" name="remove_file_pattern" value="">
+    </div>
+
+    <div class="form-group">
+        <input id="submit-update-question-page" type="submit" value="Delete images">
+    </div>
+</form>
 
 <h2>Job List</h2>
 
@@ -308,6 +320,13 @@ $(".job-list-table").on("click", ".launch-job", function () {
         scope = matches[0];
     }
     return confirm("Are you want to launch the job? " + scope);
+});
+
+$("#form-remove-question-images").submit(function (e) {
+    if (confirm("Do you really want to delete images?")) {
+        return;
+    }
+    return false;
 });
 
 })(jQuery);

@@ -11,9 +11,8 @@ class Question {
     private $testAvailableModelIdMap;
     private $invalidModelSet;
 
-    public function __construct($relativeModelDirectory) {
-        $this->buildModelSet($relativeModelDirectory);
-        $this->removeInvalidModelSet();
+    private function __constructor() {
+
     }
 
     public function createQuestionOrder(Unit $session) {
@@ -36,7 +35,32 @@ class Question {
         }
     }
 
-    public static function ParseQuestionOrderFromCSV($questionOrderCsv) {
+    public static function buildFromModelDirectory($relativeModelDirectory) {
+        $question = new Question();
+        $question->buildModelSet($relativeModelDirectory);
+        $question->removeInvalidModelSet();
+        return $question;
+    }
+
+    public static function removeModelFiles($relativeModelDirectory, $rawRemoveFilePattern) {
+        $removeFilePattern = basename($rawRemoveFilePattern);
+        if (empty($removeFilePattern)) {
+            return 0;
+        }
+        $removedFiles = 0;
+        foreach (glob($relativeModelDirectory."/".$removeFilePattern) as $file) {
+            if (!preg_match('#\.(?:gif|png|jpe?g)$#iu', $file)) {
+                continue;
+            }
+            if (is_writable($file) && is_file($file)) {
+                unlink($file);
+            }
+        }
+        $removedFiles++;
+        return $removedFiles;
+    }
+
+    public static function parseQuestionOrderFromCSV($questionOrderCsv) {
         $questionOrders = array_map("str_getcsv", 
             array_map(function ($x) { return trim($x); }, explode("\n", $questionOrderCsv)));
         $result = [];

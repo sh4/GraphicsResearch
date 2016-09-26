@@ -225,6 +225,24 @@ class Router {
         Router::redirect("admin");
     },
 
+    "/admin/question/remove" => function () {
+        // 質問ページの画像削除
+        session_start();
+        if (!Form::session("admin_login", false)) {
+            Router::redirect("admin");
+        }
+        if (Form::isPOST()) {
+            Form::ensureCSRFToken();
+            $removedFiles = Question::removeModelFiles(JUDGEMENT_IMAGES, Form::post("remove_file_pattern", ""));
+            if ($removedFiles > 0) {
+                Router::Flash("success", "Image file deleted: $removedFiles files.");
+            } else {
+                Router::Flash("warning", "Not found images that match file pattern.");
+            }
+        }
+        Router::redirect("admin");
+    },
+
     "/admin/jobs" => function () {
         // ジョブ詳細ページ
         session_start();
@@ -237,7 +255,7 @@ class Router {
             try {
                 $rawJob["question_order_json"] = null;
                 if ($customQuestionOrder = Form::getFile("job_question_order")) {
-                    $rawJob["question_order_json"] = Question::ParseQuestionOrderFromCSV($customQuestionOrder);
+                    $rawJob["question_order_json"] = Question::parseQuestionOrderFromCSV($customQuestionOrder);
                 }
                 $job = Job::createNewJob($rawJob);
                 unset($_SESSION["job"]);
