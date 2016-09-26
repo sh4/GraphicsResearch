@@ -217,6 +217,7 @@ class Router {
             Router::redirect("admin");
         }
         if (Form::isPOST()) {
+            Form::ensureCSRFToken();
             $rawQuestionPage = Form::post("question", []);
             QuestionPage::Update("default", $rawQuestionPage);
             Router::Flash("success", "Question page successfully updated.");
@@ -231,6 +232,7 @@ class Router {
             Router::redirect("admin");
         }
         if (Form::isPOST()) {
+            Form::ensureCSRFToken();
             $rawJob = Form::post("job", []);
             try {
                 $rawJob["question_order_json"] = null;

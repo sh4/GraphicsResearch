@@ -4,6 +4,9 @@ namespace GraphicsResearch;
 
 class Form {
     const CSRFTokenName = "FORM_CSRF_TOKEN";
+    const CSRFTokenIndexName = "FORM_CSRF_TOKEN_IDX";
+
+    private static $CSRFTokenIndex = 0;
 
     public static function e($str) {
         echo htmlspecialchars($str, ENT_QUOTES);
@@ -56,23 +59,32 @@ class Form {
     }
 
     public static function enableCSRF() {
-        $token = self::publishCSRFToken();
+        list($token, $index) = self::publishCSRFToken();
         echo '<input type="hidden" name="', self::CSRFTokenName, '" value="', $token, '" />', "\r\n";
+        echo '<input type="hidden" name="', self::CSRFTokenIndexName, '" value="', $index, '" />', "\r\n";
     }
 
     public static function publishCSRFToken() {
-        $token = uniqid(uniqid("", true), true);
-        $_SESSION[self::CSRFTokenName] = $token;
-        return $token;
+        $index = ++self::$CSRFTokenIndex;
+        $token = Crypto::CreateUniqueId(32);
+        if (!isset($_SESSION[self::CSRFTokenName]) || !is_array($_SESSION[self::CSRFTokenName])) {
+            $_SESSION[self::CSRFTokenName] = [];
+        }
+        $_SESSION[self::CSRFTokenName][$index] = $token;
+        return [$token, $index];
     }
 
     public static function ensureCSRFToken() {
         $token = self::post(self::CSRFTokenName, "");
-        $sessionToken = self::session(self::CSRFTokenName, "");
-        if (empty($sessionToken)) {
-            throw new \Exception("Security token check failed: sessionToken is empty");
+        $index = (int)self::post(self::CSRFTokenIndexName, 0);
+        $sessionTokens = self::session(self::CSRFTokenName, []);
+        if (empty($sessionTokens) || !is_array($sessionTokens)) {
+            throw new \Exception("Security token check failed: sessionTokens is empty");
         }
-        if ($token !== $sessionToken) {
+        if (!isset($sessionTokens[$index])) {
+            throw new \Exception("Security token check failed: sessionsTokens[$index] is not set");
+        }
+        if ($token !== $sessionTokens[$index]) {
             throw new \Exception("Security token check failed: session/post token mismatched");
         }
     }
