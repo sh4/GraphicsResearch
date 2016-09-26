@@ -37,7 +37,7 @@ class Upload {
     public function removeModelFile($targetFiles) {
         $removedFiles = [];
         foreach ($targetFiles as $removeFile) {
-            if (!preg_match('#^[a-z0-9_\-\.]+$#iu', $removeFile)) {
+            if (!preg_match('#^[a-z0-9_\-]+\.(?:gif|png|jpe?g)$#iu', $removeFile)) {
                 continue;
             }
             $targetFilePath = JUDGEMENT_IMAGES."/$removeFile";

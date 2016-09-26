@@ -128,8 +128,8 @@ class Question {
         $this->modelLodMap = [];
         $this->modelFileMap = [];
         foreach ($modelFiles as $modelFile) {
-            // [SceneID_]<ModelID>_<RotationID>_<LOD>.gif|png|jpe?g
-            if (!preg_match('#^(?:[^_]+_)?(\d+)_(\d+)_(\d+)\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
+            // <ModelID>_<RotationID>_<LOD>(...).gif|png|jpe?g
+            if (!preg_match('#^(\d+)_(\d+)_(\d+).*\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
                 continue;
             }
 
