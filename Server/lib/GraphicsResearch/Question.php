@@ -42,22 +42,36 @@ class Question {
         return $question;
     }
 
-    public static function removeModelFiles($relativeModelDirectory, $rawRemoveFilePattern) {
+    public static function removeModelFiles($relativeModelDirectory, $removeFiles) {
+        $removedFiles = 0;
+        foreach ($removeFiles as $rawFile) {
+            $file = basename($rawFile);
+            if (!preg_match('#\.(?:gif|png|jpe?g)$#iu', $file)) {
+                continue;
+            }
+            $file = $relativeModelDirectory."/".$file;
+            if (is_writable($file) && is_file($file)) {
+                if (unlink($file)) {
+                    $removedFiles++;
+                }
+            }
+        }
+        return $removedFiles;
+    }
+
+    public static function getModelFileWithPattern($relativeModelDirectory, $rawRemoveFilePattern) {
         $removeFilePattern = basename($rawRemoveFilePattern);
         if (empty($removeFilePattern)) {
-            return 0;
+            return [];
         }
-        $removedFiles = 0;
+        $removeFiles = [];
         foreach (glob($relativeModelDirectory."/".$removeFilePattern) as $file) {
             if (!preg_match('#\.(?:gif|png|jpe?g)$#iu', $file)) {
                 continue;
             }
-            if (is_writable($file) && is_file($file)) {
-                unlink($file);
-            }
+            $removeFiles[] = basename($file);
         }
-        $removedFiles++;
-        return $removedFiles;
+        return $removeFiles;
     }
 
     public static function parseQuestionOrderFromCSV($questionOrderCsv) {
@@ -148,6 +162,16 @@ class Question {
         return $this->invalidModelSet;
     }
 
+    public function invalidModelFiles() {
+        $modelFiles = [];
+        foreach ($this->invalidModelSet as $infos) {
+            foreach ($infos["files"] as $file) {
+                $modelFiles[] = $file;
+            }
+        }
+        return $modelFiles;
+    }
+
     public function availableModelCount() {
         return count($this->testAvailableModelIdMap);
     }
@@ -159,6 +183,9 @@ class Question {
         $this->modelFileMap = [];
         foreach ($modelFiles as $modelFile) {
             $model = self::parseModelFilename($modelFile);
+            if (!$model) {
+                continue;
+            }
 
             $modelId = $model->modelId;
             $rotationId = $model->rotationId;
@@ -184,18 +211,25 @@ class Question {
         foreach ($this->modelLodMap as $modelId => $rotationSet) {
             foreach ($rotationSet as $rotationId => $lodMap) {
                 $invalidRotationSet = false;
+                $modelFiles = [];
+                foreach ($lodMap as $lod => $_ignore) {
+                    $modelFile = $this->modelPath($modelId, $rotationId, $lod);
+                    if ($modelFile) {
+                        $modelFiles[] = basename($modelFile);
+                    }
+                }
                 if (!isset($lodMap[0])) {
                     // LOD0 が存在しない
                     $invalidRotationSet = true;
                     $this->invalidModelSet[] = [
-                        "file" => sprintf("%07d", $modelId)."_{$rotationId}_0.jpg",
+                        "files" => $modelFiles,
                         "message" => "LOD Level 0 model not found.",
                     ];
                 } else if (count($lodMap) < 2) {
                     // モデルが 2つ以上存在しない (LOD0 しかない)
                     $invalidRotationSet = true;
                     $this->invalidModelSet[] = [
-                        "file" => sprintf("%07d", $modelId)."_{$rotationId}_X.jpg",
+                        "files" => $modelFiles,
                         "message" => "Only LOD Level 0 model exists.",
                     ];
                 }

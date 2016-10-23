@@ -203,6 +203,14 @@ $jobForm = array_merge($jobForm, [
 
 <h3>Invalid DataSet (Not appear in judge page)</h3>
 
+<p>
+<form method="post" action="<?php echo Router::Path("admin/question/remove") ?>">
+    <?php Form::enableCSRF() ?>
+    <input type="hidden" name="cleanup_invalid_dataset" value="1">
+    <button>Delete invalid DataSet</button>
+</form>
+</p>
+
 <table class="table table-hover">
 <thead class="thead-inverse">
     <tr>
@@ -215,7 +223,13 @@ $jobForm = array_merge($jobForm, [
 <?php foreach ($invalidModelInfos as $i => $reason): ?>
     <tr>
         <td><?php echo ($i + 1) ?></td>
-        <td><strong><?php echo $reason["file"] ?></strong></td>
+        <td>
+            <ul>
+            <?php foreach($reason["files"] as $file): ?>
+            <li><strong><?php echo $file ?></strong></li>
+            <?php endforeach ?>
+            </ul>
+        </td>
         <td><?php echo $reason["message"] ?></td>
     </tr>
 <?php endforeach ?>
