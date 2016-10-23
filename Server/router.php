@@ -103,7 +103,7 @@ class Router {
                     // ユーザー向けのエラーメッセージ出す
                     echo "Internal Server Error: Please refresh this page.";
                 }
-                error_log($error, 3);
+                error_log($error, 3, __DIR__."/logs/error.log");
             } finally {
                 $this->Cleanup();
             }
@@ -233,7 +233,15 @@ class Router {
         }
         if (Form::isPOST()) {
             Form::ensureCSRFToken();
-            $removedFiles = Question::removeModelFiles(JUDGEMENT_IMAGES, Form::post("remove_file_pattern", ""));
+            $targetFiles = [];
+            if ($removeFilePattern = Form::post("remove_file_pattern", "")) {
+                $targetFiles = Question::getModelFileWithPattern(JUDGEMENT_IMAGES, $removeFilePattern);
+            }
+            else if (Form::post("cleanup_invalid_dataset")) {
+                $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+                $targetFiles = $question->invalidModelFiles();
+            }
+            $removedFiles = Question::removeModelFiles(JUDGEMENT_IMAGES, $targetFiles);
             if ($removedFiles > 0) {
                 Router::Flash("success", "Image file deleted: $removedFiles files.");
             } else {
