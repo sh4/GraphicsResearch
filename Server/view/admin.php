@@ -2,8 +2,9 @@
 
 use GraphicsResearch\Job;
 use GraphicsResearch\Form;
+use GraphicsResearch\Question;
 
-$question = new GraphicsResearch\Question(JUDGEMENT_IMAGES);
+$question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
 $invalidModelInfos = $question->invalidModelInfos();
 
 $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
