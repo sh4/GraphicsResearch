@@ -65,17 +65,18 @@ class Question {
             array_map(function ($x) { return trim($x); }, explode("\n", $questionOrderCsv)));
         $result = [];
         foreach ($questionOrders as $orderRow) {
-            if (count($orderRow) < 3) {
+            if (empty($orderRow)) {
                 continue;
             }
-            list($id, $rotation, $lod) = $orderRow;
-            if (!is_numeric($id)) {
+            list($modelFile) = $orderRow;
+            $model = self::parseModelFilename($modelFile);
+            if (!is_numeric($model->modelId)) {
                 continue;
             }
             $result[] = [
-                "id" => (int)$id,
-                "rotation" => (int)$rotation,
-                "lod" => (int)$lod,
+                "id" => $model->modelId,
+                "rotation" => $model->rotationId,
+                "lod" => $model->lod,
             ];
         }
         return $result;
@@ -157,15 +158,11 @@ class Question {
         $this->modelLodMap = [];
         $this->modelFileMap = [];
         foreach ($modelFiles as $modelFile) {
-            // <ModelID>_<RotationID>_<LOD>(...).gif|png|jpe?g
-            if (!preg_match('#^(\d+)_(\d+)_(\d+).*\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
-                continue;
-            }
+            $model = self::parseModelFilename($modelFile);
 
-            list (, $modelId, $rotationId, $lod) = $matches;
-            $modelId = (int)$modelId;
-            $rotationId = (int)$rotationId;
-            $lod = (int)$lod;
+            $modelId = $model->modelId;
+            $rotationId = $model->rotationId;
+            $lod = $model->lod;
 
             if (!isset($this->modelLodMap[$modelId])) {
                 $this->modelLodMap[$modelId] = [];
@@ -227,5 +224,18 @@ class Question {
             $answeredIds[] = (int)$data["id"];
         }
         return $answeredIds;
+    }
+
+    private static function parseModelFilename($modelFile) {
+        // <ModelID>_<RotationID>_<LOD>(...).gif|png|jpe?g
+        if (!preg_match('#^(\d+)_(\d+)_(\d+).*\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
+            return null;
+        }
+        list (, $modelId, $rotationId, $lod) = $matches;
+        $model = new \StdClass();
+        $model->modelId = (int)$modelId;
+        $model->rotationId = (int)$rotationId;
+        $model->lod = (int)$lod;
+        return $model;
     }
 }
