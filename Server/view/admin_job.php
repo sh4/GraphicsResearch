@@ -38,8 +38,8 @@ use GraphicsResearch\Form;
     </tr>
     </thead>
     <tbody>
-    <?php $progressPercent = round($job->getAnswerProgress() * 100, 2) ?>
-    <tr class="<?php if ((int)$progressPercent === 100): ?>table-success<?php endif ?>">
+    <?php $progressPercent = min([100.0, round($job->getAnswerProgress() * 100, 2)]); ?>
+    <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td>
             <?php echo sprintf("%.2f", $job->estimateTotalAmountUSD()) ?> USD
             (<?php echo $job->getMaxAssignments() ?> * <?php echo $job->getRewardAmountUSD() ?> USD)
@@ -65,6 +65,7 @@ use GraphicsResearch\Form;
 <table class="table table-hover">
 <thead class="thead-inverse">
     <tr>
+        <th>No.</th>
         <th>Status</th>
         <th># of Judged</th>
         <th>Last Judged</th>
@@ -73,10 +74,13 @@ use GraphicsResearch\Form;
 </thead>
 <tbody>
 <?php
+$no = 0;
 foreach ($job->getUnits() as $unit):
+    $no++;
     $judgedCount = count($unit->getJudgementData());
 ?>
     <tr>
+        <td><?php echo $no ?></td>
         <td>
             <?php if ($judgedCount >= $job->getQuestions()): ?>
                 <span class="label label-pill label-success">COMPLETED</span>

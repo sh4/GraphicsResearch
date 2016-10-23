@@ -88,9 +88,9 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 <tbody>
 <?php
 foreach (Job::getJobs() as $job):
-    $progressPercent = round($job->getAnswerProgress() * 100, 2);
+    $progressPercent = min([100.0, round($job->getAnswerProgress() * 100, 2)]);
     ?>
-    <tr class="<?php if ((int)$progressPercent === 100): ?>table-success<?php endif ?>">
+    <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td><a href="<?php echo Router::Path("admin/jobs") ?>/?jobId=<?php echo $job->getJobId() ?>"><?php Form::e($job->getTitle()) ?></a></td>
         <td><?php echo $job->getQuestions() ?></td>
         <td><?php echo $job->getMaxAssignments() ?></td>
