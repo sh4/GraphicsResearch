@@ -103,7 +103,7 @@ foreach (Job::getJobs() as $job):
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
                 <li class="nav-item">
-                    <form method="post" id="form-delete-job-page" action="<?php echo Router::Path("admin/jobs/delete") ?>">
+                    <form method="post" class="form-delete-job-page" action="<?php echo Router::Path("admin/jobs/delete") ?>">
                         <input type="hidden" name="jobTitle" value="<?php echo $job->getTitle() ?>"> 
                         <input type="hidden" name="jobId" value="<?php echo $job->getJobId() ?>">
                         <button style="color:red; font-weight: bold">Delete Job</button>
@@ -336,7 +336,7 @@ $("#form-remove-question-images").submit(function (e) {
     }
 });
 
-$("#form-delete-job-page").submit(function (e) {
+$(".form-delete-job-page").submit(function (e) {
     var jobTitle = $(e.target).find('[name="jobTitle"]').val();
     if (!confirm("Do you really want to delete job '" + jobTitle + "' ?")) {
         return false;
