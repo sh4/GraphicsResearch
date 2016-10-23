@@ -301,6 +301,11 @@ class Router {
     },
 
     "/download" => function () {
+        session_start();
+        if (!Form::session("admin_login", false)) {
+            Router::redirect("admin");
+        }
+        
         // 回答済みデータダウンロード
         header("Content-Type: application/octet-stream");
         header("Content-Disposition: attachment; filename=judgement.csv");
