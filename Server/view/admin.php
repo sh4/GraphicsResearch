@@ -16,6 +16,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
     <title>Admin</title>
     <link rel="stylesheet" type="text/css" href="<?php echo Router::Path() ?>/css/bootstrap.css">
     <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-3.0.0.js"></script>
+    <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-sortable-table.js"></script>
     <style type="text/css">
     label {
         display: block;
@@ -74,7 +75,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 
 <h2>Job List</h2>
 
-<table class="table table-hover job-list-table">
+<table class="table table-hover table-sorter job-list-table">
 <thead class="thead-inverse">
     <tr>
         <th>Title</th>
@@ -374,6 +375,8 @@ function updateTotalCost() {
 
 setInterval(updateTotalCost, 1000);
 updateTotalCost();
+
+$(".table-sorter").sortableTable();
 
 })(jQuery);
 </script>

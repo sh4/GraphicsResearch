@@ -11,6 +11,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     <title>Job: <?php Form::e($job->getTitle()) ?> - Admin</title>
     <link rel="stylesheet" type="text/css" href="<?php echo Router::Path() ?>/css/bootstrap.css">
     <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-3.0.0.js"></script>
+    <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-sortable-table.js"></script>
     <style type="text/css">
         td {
             vertical-align:  middle;
@@ -91,7 +92,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     <?php endif ?>
 </div>
 
-<table class="table table-hover">
+<table class="table table-hover table-sorter">
 <thead class="thead-inverse">
     <tr>
         <th>No.</th>
@@ -152,6 +153,14 @@ foreach ($job->getUnits() as $unit):
 </table>
 
 </div>
+
+<script type="text/javascript">
+!function () {
+
+$(".table-sorter").sortableTable();
+
+}(jQuery);
+</script>
 
 </body>
 </html>
