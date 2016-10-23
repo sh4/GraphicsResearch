@@ -78,7 +78,7 @@ foreach ($job->getUnits() as $unit):
 ?>
     <tr>
         <td>
-            <?php if ($judgedCount === $job->getQuestions()): ?>
+            <?php if ($judgedCount >= $job->getQuestions()): ?>
                 <span class="label label-pill label-success">COMPLETED</span>
             <?php elseif ($judgedCount > 0): ?>
                 <span class="label label-pill label-primary">JUDGING</span>
