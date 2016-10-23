@@ -267,8 +267,8 @@ var validateRules = {
         if (num <= 0) {
             onError($el, "One or more the number of questions.");
             return false;
-        } else if (num > 9999) {
-            onError($el, "Less than 10,000 is the number of questions.");
+        } else if (num > 1000) {
+            onError($el, "Less than 1,000 is the number of questions.");
             return false;
         } else {
             clearError($el);
