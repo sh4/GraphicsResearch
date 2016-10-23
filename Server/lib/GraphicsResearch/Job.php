@@ -161,7 +161,7 @@ class Job {
 <cml:text 
     label="Survey Code"
     data-unit-id="{{unit_id}}"
-    validates="required ss-required yext_no_international_url"
+    validates="required ss-required"
     default="Paste survey code here..."
     instructions="Please copy and paste the code here that can be found at the end of the Survey" />
 EOM;
@@ -173,7 +173,7 @@ var message = "Checking survey code, Please wait a moment..";
 var isSurveyCodeConfirmed = false;
 
 CMLFormValidator.addAllThese([
-   ['yext_no_international_url', {
+   ['ss-required', {
       errorMessage: function (elem) {
         return message;
       },
@@ -196,7 +196,9 @@ CMLFormValidator.addAllThese([
           return true;
         }
         var unitId = $("#external-survey-site-link").data("unit-id");
-        $.getJSON("$url/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
+        var isSecure = /https/i.test(location.href);
+        var verifyUrl = "$url".replace(/^https?/i, isSecure ? "https" : "http");
+        $.getJSON(verifyUrl + "/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
           if (r.ok) {
             isSurveyCodeConfirmed = true;
             pass();
