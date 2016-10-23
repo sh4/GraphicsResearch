@@ -79,7 +79,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
     <tr>
         <th>Title</th>
         <th># of Questions</th>
-        <th># of Max Assignments</th>
+        <th># of Assignments</th>
         <th>Progress (%)</th>
         <th>Created Date</th>
         <th>Menu</th>
@@ -157,16 +157,21 @@ $jobForm = array_merge($jobForm, [
     </div>
 
     <div class="form-group">
-        <label for="new-job-num-assignments"># of Max assignments (Contributors)</label>
+        <label for="new-job-num-assignments"># of Assignments (Worker)</label>
         <input type="text" class="form-control numeric" id="new-job-num-assignments" name="job[max_assignments]" value="<?php Form::e($jobForm["max_assignments"]) ?>">
         <label for="new-job-num-assignments" class="form-control-label validate"></label>
     </div>
 
     <div class="form-group">
-        <label for="new-job-reward-amount">Reward Amount (USD)</label>
+        <label for="new-job-reward-amount">Reward Cost</label>
         <input type="text" class="form-control numeric" id="new-job-reward-amount" name="job[reward_amount_usd]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["reward_amount_usd"]) ?>">
-        &nbsp; USD each assignment
+        &nbsp; USD/Worker
         <label for="new-job-reward-amount" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label>Total Reward Cost</label>
+        <div><b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD</div>
     </div>
 
     <div class="form-group">
@@ -295,10 +300,10 @@ var validateRules = {
         var $el = $("#max_assignments");
         var num = parseInt($el.val(), 10);
         if (num <= 0) {
-            onError($el, "One or more the max assignments.");
+            onError($el, "One or more the assignments.");
             return false;
         } else if (num > 1000) {
-            onError($el, "Less than 1,000 is the max assignments.");
+            onError($el, "Less than 1,000 is the assignments.");
             return false;
         } else {
             clearError($el);
@@ -361,6 +366,14 @@ $(".form-delete-job-page").submit(function (e) {
         return false;
     }
 });
+
+function updateTotalCost() {
+    var totalCostUSD = parseFloat($("#new-job-reward-amount").val(), 10) *  parseFloat($("#new-job-num-assignments").val(), 10);
+    $("#total-job-cost").text(totalCostUSD.toFixed(2));
+}
+
+setInterval(updateTotalCost, 1000);
+updateTotalCost();
 
 })(jQuery);
 </script>
