@@ -159,87 +159,16 @@ class Job {
     }
 
     private function createNewJobOnCrowdFlower(DB $db) {
-        $url = \Router::Url();
-        $cml = <<<EOM
-<p>
-    <a id="external-survey-site-link" data-unit-id="{{unit_id}}" class="clicked" href="$url?unitId={{unit_id}}" target="_blank">Click Here to visit the survey</a>
-</p>
-<cml:text 
-    label="Survey Code"
-    data-unit-id="{{unit_id}}"
-    validates="required ss-required"
-    default="Paste survey code here..."
-    instructions="Please copy and paste the code here that can be found at the end of the Survey" />
-EOM;
-        $js = <<<EOM
-require(['jquery-noconflict'], function() {
-
-var jQuery = window.jQuery;
-
-var isSecure = /https/i.test(location.href);
-var verifyUrl = "$url".replace(/^https?/i, isSecure ? "https" : "http");
-
-var message = "Checking survey code, Please wait a moment..";
-var isSurveyCodeConfirmed = false;
-
-jQuery(function () {
-    var linkEl = jQuery("#external-survey-site-link");
-    var workerId = Math.random().toString(16).substr(2) + (+new Date()).toString(36);
-    linkEl.attr("href", linkEl.attr("href") + "&workerId=" + workerId);
-});
-
-CMLFormValidator.addAllThese([
-   ['ss-required', {
-      errorMessage: function (elem) {
-        return message;
-      },
-      validate: function(elem, props) {
-        function pass() {
-          var validator = elem.getParentForm().retrieve("validator");
-          if (validator) {
-            validator.validateField.pass([{type:"blur"}, elem], validator)();
-          }
-        }
-        if (elem.retrieve("verifyFlash") == 1) {
-          elem.store("verifyFlash", 0);
-          return false;
-        }
-        if (!/^[0-9]+\$/.test(elem.value)) {
-          message = "Survey code is number sequence.";
-          return false;
-        }
-        if (isSurveyCodeConfirmed) {
-          return true;
-        }
-        var unitId = jQuery("#external-survey-site-link").data("unit-id");
-        jQuery.getJSON(verifyUrl + "/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
-          if (r.ok) {
-            isSurveyCodeConfirmed = true;
-            pass();
-          } else {
-            elem.store("verifyFlash", 1);
-            message = "Survey code is mismatch, Please check your input.";
-            pass();
-          }
-        }, function () {
-          elem.store("verifyFlash", 1);
-          message = "Survey code check failed, Please retry later.";
-          pass();
-        });
-        return false;
-      }
-   }]
-]);
-
-});
-EOM;
+        $params = [
+            "url" => \Router::Url(),
+        ];
         // 回答用データをアップロード
         $rows = $db->each("SELECT unit_id FROM job_unit WHERE job_id = ?", $this->getJobId());
         $job = json_decode($this->crowdFlower->createJob([
             "title" => $this->getTitle(),
             "instructions" => $this->getInstructions(),
-            "cml" => $cml,
-            "js" => $js,
+            "cml" => $this->getCrowdFlowerCML($params),
+            "js" => $this->getCrowdFlowerJavaScript($params),
         ]));
         $this->crowdFlower->uploadRows($job->id, $rows);
         // 1データあたりの回答数は1回のみに制限
@@ -250,6 +179,23 @@ EOM;
         $db->update("job", "job_id=".$this->getJobId(), [ 
             "crowdflower_job_id" => $this->crowdFlowerJobId,
         ]);
+    }
+
+    private function getCrowdFlowerCML($params) {
+        return $this->renderPage("view/_crowdflower_cml.php", $params);
+    }
+
+    private function getCrowdFlowerJavaScript($params) {
+        return $this->renderPage("view/_crowdflower_js.php", $params);
+    }
+
+    private function renderPage($file, $params = []) {
+        extract($params);
+        ob_start();
+        include(__DIR__."/../../$file");
+        $html = ob_get_contents();
+        ob_end_clean();
+        return $html;
     }
 
     private function createNewJobOnDB(DB $db) {
