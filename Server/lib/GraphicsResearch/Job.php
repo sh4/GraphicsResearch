@@ -156,7 +156,7 @@ class Job {
         $url = \Router::Url();
         $cml = <<<EOM
 <p>
-    <a id="external-survey-site-link" data-unit-id="{{unit_id}}" class="clicked validates-clicked" href="$url?unitId={{unit_id}}" target="_blank">Click Here to visit the survey</a>
+    <a id="external-survey-site-link" data-unit-id="{{unit_id}}" class="clicked" href="$url?unitId={{unit_id}}" target="_blank">Click Here to visit the survey</a>
 </p>
 <cml:text 
     label="Survey Code"
@@ -171,6 +171,12 @@ require(['jquery-noconflict'], function() {
 var $ = window.jQuery;
 var message = "Checking survey code, Please wait a moment..";
 var isSurveyCodeConfirmed = false;
+
+$(function () {
+    var $linkEl = $("#external-survey-site-link");
+    var workerId = Math.random().toString(16).substr(2) + (+new Date()).toString(36);
+    $linkEl.attr("href", $linkEl.attr("href") + "&workerId=" + workerId);
+});
 
 CMLFormValidator.addAllThese([
    ['ss-required', {

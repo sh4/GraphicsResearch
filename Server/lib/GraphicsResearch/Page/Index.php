@@ -18,6 +18,7 @@ class Index {
     private $job;
 
     const QuestionUnitId = "questionUnitId";
+    const WorkerId = "questionWorkerId";
 
     public function __construct() {
         $this->number = (int)Form::get("num", 1);
@@ -82,10 +83,18 @@ class Index {
 
     public static function loadUnit() {
         $unitId = Form::get("unitId", "");
+        $workerId = Form::get("workerId", "");
         if (empty($unitId) && isset($_SESSION[self::QuestionUnitId])) {
             $unitId = $_SESSION[self::QuestionUnitId];
         }
-        return Unit::loadFromId($unitId);
+        $unit = Unit::loadFromId($unitId);
+        if (empty($workerId) && isset($_SESSION[self::WorkerId])) {
+            $workerId = $_SESSION[self::WorkerId];
+        }
+        if (!empty($workerId)) {
+            $unit->setWorkerId($workerId);
+        }
+        return $unit;
     }
 
     public static function createOrUpdateUnit() {
@@ -98,16 +107,17 @@ class Index {
         }
         // 回答データがポストされていればそれを保存
         if ($answerRawData = Form::post("answer", [])) { // ["ModelID,Rotation,LOD,Judge", ...]
-            $answerData = self::ensureAnswerDataFormat($answerRawData);
+            $answerData = self::ensureAnswerDataFormat($unit, $answerRawData);
             if (!empty($answerData)) {
                 $unit->writeJudgeData($answerData);
             }
         }
         $_SESSION[self::QuestionUnitId] = $unit->getUnitId();
+        $_SESSION[self::WorkerId] = $unit->getWorkerId();
         return $unit;
     }
 
-    private static function ensureAnswerDataFormat($answerRawData) {
+    private static function ensureAnswerDataFormat($unit, $answerRawData) {
         $answerData = [];
         foreach ($answerRawData as $answer) {
             list($modelId, $rotation, $lod, $judge) = explode(",", $answer);
@@ -121,6 +131,7 @@ class Index {
                     "rotation" => $rotation,
                     "lod" => $lod,
                     "judge" => $judge,
+                    "worker_id" => $unit->getWorkerId(),
                 ];
             }
         }

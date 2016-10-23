@@ -321,6 +321,7 @@ class Router {
             $rows = DB::instance()->each("SELECT judgement_data_json FROM job_unit");
         }
         echo implode(",", [
+            "WorkerID",
             "ModelID",
             "RotationID",
             "LOD",
@@ -332,6 +333,7 @@ class Router {
             $judgementData = json_decode($row["judgement_data_json"]);
             foreach ($judgementData as $data) {
                 echo implode(",", [
+                    $data->worker_id,
                     $data->id,
                     $data->rotation,
                     $data->lod,

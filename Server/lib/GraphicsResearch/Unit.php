@@ -9,6 +9,7 @@ class Unit {
     private $updatedOn;
     private $createdOn;
     private $judgementData;
+    private $workerId;
 
     public function __construct($hash) {
         $unitId = $hash["unit_id"];
@@ -19,6 +20,7 @@ class Unit {
         $this->updatedOn = $hash["updated_on"] ? new \DateTime($hash["updated_on"]) : null;
         $this->createdOn = $hash["created_on"] ? new \DateTime($hash["created_on"]) : null;
         $this->judgementData = [];
+        $this->workerId = "";
         if (isset($hash["judgement_data_json"])) {
             $this->judgementData = json_decode($hash["judgement_data_json"], true);
         }
@@ -28,6 +30,10 @@ class Unit {
         if (isset($hash["verification_code"])) {
             $this->verificationCode = $hash["verification_code"];
         }
+    }
+
+    public function getWorkerId() {
+        return $this->workerId;
     }
 
     public function getJobId() {
@@ -50,11 +56,16 @@ class Unit {
         return $this->judgementData;
     }
 
+    public function setWorkerId($workerId) {
+        $this->workerId = $workerId;
+    }
+
     // $answers = [ ModelID => [
     //   "id" => ModelID,
     //   "lod" => judgeLOD,
     //   "rotation" => RotationID,
     //   "judge" => judge(yes/no),
+    //   "worker_id" => Contributor ID (Woker ID),
     // ], ...]
     public function writeJudgeData($answers) {
         foreach ($this->judgementData as $answer) {
