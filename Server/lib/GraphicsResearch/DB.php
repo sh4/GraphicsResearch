@@ -21,9 +21,10 @@ class DB {
             throw new \Exception("Transaction handler is not callable");
         }
         $ok = false;
+        $result = null;
         try {
             $this->dbh->beginTransaction();
-            $handler($this);
+            $result = $handler($this);
             $ok = true;
         } catch (\Exception $e) {
             $this->dbh->rollBack();
@@ -33,6 +34,7 @@ class DB {
                 $this->dbh->commit();
             }
         }
+        return $result;
     }
 
     public function execute($sql, $params = []) {
@@ -94,6 +96,13 @@ class DB {
         }
         $stmt = $this->dbh->prepare("UPDATE $table SET ".implode(", ", $columns)." WHERE $where");
         $stmt->execute($row);
+        return $stmt;
+    }
+
+    public function delete($table, $where, $params = []) {
+        $sql = "DELETE FROM $table WHERE $where";
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute($params);
         return $stmt;
     }
     

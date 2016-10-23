@@ -102,6 +102,13 @@ foreach (Job::getJobs() as $job):
                 <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("download") ?>?jobId=<?php echo $job->getJobId() ?>">Download CSV</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
+                <li class="nav-item">
+                    <form method="post" id="form-delete-job-page" action="<?php echo Router::Path("admin/jobs/delete") ?>">
+                        <input type="hidden" name="jobTitle" value="<?php echo $job->getTitle() ?>"> 
+                        <input type="hidden" name="jobId" value="<?php echo $job->getJobId() ?>">
+                        <button style="color:red; font-weight: bold">Delete Job</button>
+                    </form>
+                </li>
             </ul>
         </td>
     </tr>
@@ -311,7 +318,7 @@ $("#form-create-new-job").submit(function () {
         }
     }
     // 二重 submit 防止
-    $("#submit-create-new-job").prop("disabled", tru);
+    $("#submit-create-new-job").prop("disabled", "disabled");
 });
 
 $(".job-list-table").on("click", ".launch-job", function () {
@@ -324,10 +331,19 @@ $(".job-list-table").on("click", ".launch-job", function () {
 });
 
 $("#form-remove-question-images").submit(function (e) {
-    if (confirm("Do you really want to delete images?")) {
-        return;
+    if (!confirm("Do you really want to delete images?")) {
+        return false;
     }
-    return false;
+});
+
+$("#form-delete-job-page").submit(function (e) {
+    var jobTitle = $(e.target).find('[name="jobTitle"]').val();
+    if (!confirm("Do you really want to delete job '" + jobTitle + "' ?")) {
+        return false;
+    }
+    if (!confirm("Deleted job data cannot be UNDO. Do you reaally want to delete job?")) {
+        return false;
+    }
 });
 
 })(jQuery);

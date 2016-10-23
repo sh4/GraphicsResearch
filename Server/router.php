@@ -285,7 +285,31 @@ class Router {
             if ($job->launchJob($channel)) {
                 Router::Flash("success", "Successfully launched the job: ".htmlspecialchars($job->getTitle()));
             } else {
-                Router::Flash("warning", "Launch job failed, Please retry launch the job.");
+                $jobId = $job->getJobId();
+                Router::Flash("warning", 
+                    "Launch job failed, ".
+                    '<a href="https://make.crowdflower.com/jobs/'.$jobId.'" target="_blank">Please retry launch the job from the CrowdFlower job page.</a>');
+            }
+        }
+        Router::redirect("admin");
+    },
+
+    "/admin/jobs/delete" => function () {
+        // ジョブの削除
+        session_start();
+        if (!Form::session("admin_login", false)) {
+            Router::redirect("admin");
+        }
+        $job = Job::loadFromId(Form::post("jobId", ""));
+        if ($job) {
+            if (Job::deleteFromId($job->getJobId())) {
+                // ジョブの削除を行っても、外部サイトの情報は消えない点に注意
+                Router::Flash("success", 
+                    "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
+                    ', <a href="https://make.crowdflower.com/jobs/">Please delete manually of the CrowdFlower job.</a>'
+                );
+            } else {
+                Router::Flash("warning", "Delete job failed.");
             }
         }
         Router::redirect("admin");

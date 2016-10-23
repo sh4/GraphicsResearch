@@ -145,6 +145,12 @@ class Job {
         }
     }
 
+    public static function deleteFromId($jobId) {
+        return DB::instance()->transaction(function (DB $db) use ($jobId) {
+            return self::deleteJobOnDB($jobId, $db);
+        });
+    }
+
     public static function getJobs() {
         $jobRows = DB::instance()->each("SELECT * FROM job");
         foreach ($jobRows as $jobRow) {
@@ -272,5 +278,11 @@ EOM;
             ];
         }
         $db->insertMulti("job_unit", $rows);
+    }
+
+    private static function deleteJobOnDB($jobId, DB $db) {
+        $db->delete("job_unit", "job_id = :job_id", [ "job_id" => $jobId ]);
+        $db->delete("job", "job_id = :job_id", [ "job_id" => $jobId ]);
+        return true;
     }
 }
