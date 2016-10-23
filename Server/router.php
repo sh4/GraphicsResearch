@@ -310,6 +310,8 @@ class Router {
         header("Content-Type: application/octet-stream");
         header("Content-Disposition: attachment; filename=judgement.csv");
 
+        $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+
         $jobId = Form::get("jobId", "");
         if ($jobId) {
             // ジョブIDごと
@@ -323,6 +325,7 @@ class Router {
             "RotationID",
             "LOD",
             "ContainDifferences",
+            "Filename",
         ]);
         echo "\r\n";
         foreach ($rows as $row) {
@@ -333,6 +336,7 @@ class Router {
                     $data->rotation,
                     $data->lod,
                     $data->judge,
+                    basename($question->modelPath($data->id, $data->rotation, $data->lod)),
                 ]);
                 echo "\r\n";
             }
