@@ -11,6 +11,8 @@ class Unit {
     private $judgementData;
     private $workerId;
 
+    const MaxWorkerIdLength = 50;
+
     public function __construct($hash) {
         $unitId = $hash["unit_id"];
         if (!Crypto::isValidUniqueId($unitId)) {
@@ -57,6 +59,12 @@ class Unit {
     }
 
     public function setWorkerId($workerId) {
+        if (!preg_match("#^[0-9a-z]+$#ui", $workerId)) {
+            return;
+        }
+        if (strlen($workerId) > self::MaxWorkerIdLength) {
+            return;
+        }
         $this->workerId = $workerId;
     }
 
