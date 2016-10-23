@@ -134,7 +134,12 @@ class Question {
     }
 
     public function modelPath($modelId, $rotation, $lod) {
-        return $this->modelFileMap["$modelId-$lod-$rotation"];
+        $key = "$modelId-$lod-$rotation";
+        if (isset($this->modelFileMap[$key])) {
+            return $this->modelFileMap[$key];
+        } else {
+            return null;
+        }
     }
 
     // テストに利用できない無効なデータセットを返す

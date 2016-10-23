@@ -315,10 +315,10 @@ class Router {
         $jobId = Form::get("jobId", "");
         if ($jobId) {
             // ジョブIDごと
-            $rows = DB::instance()->each("SELECT judgement_data_json FROM job_unit WHERE job_id = ?", $jobId);
+            $rows = DB::instance()->each("SELECT unit_id, judgement_data_json FROM job_unit WHERE job_id = ?", $jobId);
         } else {
             // すべての判定データ
-            $rows = DB::instance()->each("SELECT judgement_data_json FROM job_unit");
+            $rows = DB::instance()->each("SELECT unit_id, judgement_data_json FROM job_unit");
         }
         echo implode(",", [
             "WorkerID",
@@ -330,15 +330,42 @@ class Router {
         ]);
         echo "\r\n";
         foreach ($rows as $row) {
-            $judgementData = json_decode($row["judgement_data_json"]);
+            $judgementData = json_decode($row["judgement_data_json"], true);
+            $unitId = $row["unit_id"];
             foreach ($judgementData as $data) {
+                $workerId = "";
+                $modelId = "";
+                $rotation = "";
+                $lod = "";
+                $judge = "";
+                if (isset($data["rotation"])) {
+                    $rotation = $data["rotation"];
+                }
+                if (isset($data["id"])) {
+                    $modelId = $data["id"];
+                }
+                if (isset($data["lod"])) {
+                    $lod = $data["lod"];
+                }
+                if (isset($data["judge"])) {
+                    $judge = $data["judge"];
+                }
+                if (isset($data["worker_id"])) {
+                    $workerId = $data["worker_id"];
+                }
+                if (empty($workerId)) {
+                    // ワーカーIDが未設定なら、正確ではないが UnitId を設定
+                    // （必ずしも単一の人物が回答したとは限らないため）
+                    $workerId = $unitId;
+                }
+                $modelPath = $question->modelPath($modelId, $rotation, $lod);
                 echo implode(",", [
-                    $data->worker_id,
-                    $data->id,
-                    $data->rotation,
-                    $data->lod,
-                    $data->judge,
-                    basename($question->modelPath($data->id, $data->rotation, $data->lod)),
+                    $workerId,
+                    $modelId,
+                    $rotation,
+                    $lod,
+                    $judge,
+                    basename($modelPath),
                 ]);
                 echo "\r\n";
             }
