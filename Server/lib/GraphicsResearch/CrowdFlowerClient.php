@@ -10,6 +10,7 @@ class CrowdFlowerClient {
     private $apiKey;
 
     const Url = "https://api.crowdflower.com/v1";
+    const JobsUrl = "https://make.crowdflower.com/jobs";
 
     public function __construct() {
         $this->restClient = new Rest\Client();
@@ -135,20 +136,22 @@ class CrowdFlowerClient {
         ]));
     }
 
+    public function maxJudgmentsPerWorker($jobId, $maxJudgment) {
+        $url = self::JobsUrl."/$jobId/settings/quality_control?key=$this->apiKey";
+        list($form, $cookie) = $this->getHTMLPageForm($url);
+
+        $form["builder_job[max_judgments_per_worker]"] = $maxJudgment;
+
+        $request = Rest\Request::form($form);
+        $request->setHeader("Cookie", implode("; ", $cookie));
+        $this->restClient->post($url, $request);
+
+        return $form;
+    }
+
     public function judgementsPerUnit($jobId, $numJudgment) {
-        $url = "https://make.crowdflower.com/jobs/$jobId/settings?key=$this->apiKey";
-
-        $cookie = [];
-        $request = Rest\Request::createEmpty();
-        $request->getEvent()->onResponse(function (Rest\Response $response) use (&$cookie) {
-            $cookie = self::ParseSetCookie($response->getHeader());
-        });
-
-        $settingsHTML = $this->restClient->invoke("GET", $url, $request);
-        $form = self::getFormInputTags($settingsHTML);
-        if (empty($form)) {
-            return null;
-        }
+        $url = self::JobsUrl."/$jobId/settings?key=$this->apiKey";
+        list($form, $cookie) = $this->getHTMLPageForm($url);
 
         $form["job[judgments_per_unit]"] = $numJudgment;
         $form["job[units_per_assignment]"] = $numJudgment;
@@ -164,8 +167,24 @@ class CrowdFlowerClient {
         return self::Url."/jobs/$jobId/units/$unitId.json?key=$this->apiKey";
     }
 
-    private static function getFormInputTags($settingsHTML) {
-        if (!preg_match_all('#<input[^>]*?>#iu', $settingsHTML, $matches, PREG_SET_ORDER)) {
+    private function getHTMLPageForm($url) {
+        $cookie = [];
+        $request = Rest\Request::createEmpty();
+        $request->getEvent()->onResponse(function (Rest\Response $response) use (&$cookie) {
+            $cookie = self::ParseSetCookie($response->getHeader());
+        });
+
+        $html = $this->restClient->invoke("GET", $url, $request);
+        $form = self::getFormInputTags($html);
+        if (empty($form)) {
+            return null;
+        }
+
+        return [$form, $cookie];
+    }
+
+    private static function getFormInputTags($html) {
+        if (!preg_match_all('#<input[^>]*?>#iu', $html, $matches, PREG_SET_ORDER)) {
             return [];
         }
 
