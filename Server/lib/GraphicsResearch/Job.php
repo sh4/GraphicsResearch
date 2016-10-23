@@ -168,14 +168,18 @@ EOM;
         $js = <<<EOM
 require(['jquery-noconflict'], function() {
 
-var $ = window.jQuery;
+var jQuery = window.jQuery;
+
+var isSecure = /https/i.test(location.href);
+var verifyUrl = "$url".replace(/^https?/i, isSecure ? "https" : "http");
+
 var message = "Checking survey code, Please wait a moment..";
 var isSurveyCodeConfirmed = false;
 
-$(function () {
-    var $linkEl = $("#external-survey-site-link");
+jQuery(function () {
+    var linkEl = jQuery("#external-survey-site-link");
     var workerId = Math.random().toString(16).substr(2) + (+new Date()).toString(36);
-    $linkEl.attr("href", $linkEl.attr("href") + "&workerId=" + workerId);
+    linkEl.attr("href", linkEl.attr("href") + "&workerId=" + workerId);
 });
 
 CMLFormValidator.addAllThese([
@@ -201,10 +205,8 @@ CMLFormValidator.addAllThese([
         if (isSurveyCodeConfirmed) {
           return true;
         }
-        var unitId = $("#external-survey-site-link").data("unit-id");
-        var isSecure = /https/i.test(location.href);
-        var verifyUrl = "$url".replace(/^https?/i, isSecure ? "https" : "http");
-        $.getJSON(verifyUrl + "/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
+        var unitId = jQuery("#external-survey-site-link").data("unit-id");
+        jQuery.getJSON(verifyUrl + "/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
           if (r.ok) {
             isSurveyCodeConfirmed = true;
             pass();
