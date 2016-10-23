@@ -226,7 +226,7 @@ CMLFormValidator.addAllThese([
 });
 EOM;
         // 回答用データをアップロード
-        $rows = $db->each("SELECT unit_id, verification_code FROM job_unit WHERE job_id = ?", $this->getJobId());
+        $rows = $db->each("SELECT unit_id FROM job_unit WHERE job_id = ?", $this->getJobId());
         $job = json_decode($this->crowdFlower->createJob([
             "title" => $this->getTitle(),
             "instructions" => $this->getInstructions(),
@@ -239,7 +239,9 @@ EOM;
         $this->crowdFlower->judgementsPerUnit($job->id, 1);
         // DB に CrowdFlower のジョブ情報を設定
         $this->crowdFlowerJobId = $job->id;
-        $db->update("job", "job_id=".$this->getJobId(), [ "crowdflower_job_id" => $this->crowdFlowerJobId ]);
+        $db->update("job", "job_id=".$this->getJobId(), [ 
+            "crowdflower_job_id" => $this->crowdFlowerJobId,
+        ]);
     }
 
     private function createNewJobOnDB(DB $db) {
