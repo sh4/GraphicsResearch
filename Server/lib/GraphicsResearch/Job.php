@@ -170,6 +170,7 @@ require(['jquery-noconflict'], function() {
 
 var $ = window.jQuery;
 var message = "Checking survey code, Please wait a moment..";
+var isSurveyCodeConfirmed = false;
 
 CMLFormValidator.addAllThese([
    ['yext_no_international_url', {
@@ -187,18 +188,17 @@ CMLFormValidator.addAllThese([
           elem.store("verifyFlash", 0);
           return false;
         }
-        if (elem.retrieve("verifyCodeOk") == 1) {
-          elem.store("verifyCodeOk", 0);
-          return true;
-        }
         if (!/^[0-9]+\$/.test(elem.value)) {
           message = "Survey code is number sequence.";
           return false;
         }
+        if (isSurveyCodeConfirmed) {
+          return true;
+        }
         var unitId = $("#external-survey-site-link").data("unit-id");
         $.getJSON("$url/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
           if (r.ok) {
-            elem.store("verifyCodeOk", 1);
+            isSurveyCodeConfirmed = true;
             pass();
           } else {
             elem.store("verifyFlash", 1);
