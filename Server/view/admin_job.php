@@ -2,6 +2,8 @@
 
 use GraphicsResearch\Form;
 
+$unitStatusFilter = strtolower(Form::get("status", ""));
+
 ?><!DOCTYPE html>
 <html>
 <head>
@@ -62,6 +64,33 @@ use GraphicsResearch\Form;
 
 <h2>Job Unit List</h2>
 
+<div style="margin:1em">
+    <?php $baseUrl = Router::Path("admin/jobs")."?jobId=".$job->getJobId() ?>
+    <?php if ($unitStatusFilter === ""): ?>
+        All
+    <?php else: ?>
+        <a href="<?php echo $baseUrl ?>">All</a>
+    <?php endif ?>
+    |
+    <?php if ($unitStatusFilter === "open"): ?>
+        Open
+    <?php else: ?>
+        <a href="<?php echo $baseUrl ?>&amp;status=open">Open</a>
+    <?php endif ?>
+    |
+    <?php if ($unitStatusFilter === "judging"): ?>
+        Judging
+    <?php else: ?>
+        <a href="<?php echo $baseUrl ?>&amp;status=judging">Judging</a>
+    <?php endif ?>
+    |
+    <?php if ($unitStatusFilter === "completed"): ?>
+        Completed
+    <?php else: ?>
+        <a href="<?php echo $baseUrl ?>&amp;status=completed">Completed</a>
+    <?php endif ?>
+</div>
+
 <table class="table table-hover">
 <thead class="thead-inverse">
     <tr>
@@ -76,18 +105,33 @@ use GraphicsResearch\Form;
 <?php
 $no = 0;
 foreach ($job->getUnits() as $unit):
-    $no++;
+    $status = "";
     $judgedCount = count($unit->getJudgementData());
+
+    if ($judgedCount >= $job->getQuestions()) {
+        $status = "completed";
+    } else if ($judgedCount > 0) {
+        $status = "judging";
+    } else {
+        $status = "open";
+    }
+    if (!empty($unitStatusFilter) && $status !== $unitStatusFilter) {
+        continue;
+    }
+
+    $no++;
 ?>
     <tr>
         <td><?php echo $no ?></td>
         <td>
-            <?php if ($judgedCount >= $job->getQuestions()): ?>
+            <?php if ($status === "completed"): ?>
                 <span class="label label-pill label-success">COMPLETED</span>
-            <?php elseif ($judgedCount > 0): ?>
+            <?php elseif ($status === "judging"): ?>
                 <span class="label label-pill label-primary">JUDGING</span>
-            <?php else: ?>
+            <?php elseif ($status === "open"): ?>
                 <span class="label label-pill label-default">OPEN</span>
+            <?php else: ?>
+                <span class="label label-pill label-warning">INVALID</span>
             <?php endif ?>
         </td>
         <td><?php echo $judgedCount ?></td>
