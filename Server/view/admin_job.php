@@ -34,7 +34,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
         <th>Total Reward Amount</th>
         <th># of Questions</th>
         <th># of Max Assignments</th>
-        <th>Progress (%)</th>
+        <th>Progress</th>
         <th>Created Date</th>
         <th>Menu</th>
     </tr>
@@ -48,7 +48,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
         </td>
         <td><?php echo $job->getQuestions() ?></td>
         <td><?php echo $job->getMaxAssignments() ?></td>
-        <td><?php echo $progressPercent ?></td>
+        <td><?php echo $progressPercent ?>%</td>
         <td><?php echo $job->createdOn()->format("Y/m/d H:i:s") ?></td>
         <td>
             <ul class="nav">
