@@ -100,12 +100,16 @@ class CrowdFlowerClient {
     // https://success.crowdflower.com/hc/en-us/articles/202703305-Glossary-of-Terms
     //
     // Each data row has a state that describes its status. The states available to a row are:
-    // * New        – A row that has not yet been ordered and will not collect judgments.
-    // * Judgeable  – A row that has been ordered and can collect judgments.
-    // * Judging    - 
-    // * Finalized  – A row that has received enough trusted judgments to be considered complete and will no longer collect judgments.
-    // * Golden     – A Test Question.
-    // * Hidden     – A disabled Test Question.
+    // * new         – A row that has not yet been ordered and will not collect judgments.
+    // * judgeable   – A row that has been ordered and can collect judgments.
+    // * judging     -  
+    // * judged      - 
+    // * ordering    - 
+    // * finalized   – A row that has received enough trusted judgments to be considered complete and will no longer collect judgments.
+    // * canceled    - 
+    // * golden      – A Test Question.
+    // * hidden      – A disabled Test Question.
+    // * hidden_gold - 
     public function changeRowState($jobId, $unitId, $state) {
         $url = $this->unitUrl($jobId, $unitId);
         $form = Rest\Request::form([ "unit[state]" => $state ]);
