@@ -104,6 +104,7 @@ foreach (Job::getJobs() as $job):
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
                 <li class="nav-item">
                     <form method="post" class="form-delete-job-page" action="<?php echo Router::Path("admin/jobs/delete") ?>">
+                        <?php Form::enableCSRF() ?>
                         <input type="hidden" name="jobTitle" value="<?php echo $job->getTitle() ?>"> 
                         <input type="hidden" name="jobId" value="<?php echo $job->getJobId() ?>">
                         <button style="color:red; font-weight: bold">Delete Job</button>
@@ -173,9 +174,10 @@ $jobForm = array_merge($jobForm, [
         <input type="file" id="new-job-custom-question-order" name="job_question_order">
         <div style="margin:0.5em 1em">
         Acceptable CSV file examples (Right-side image list):<br>
-        <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">id,rotaiton,lod
-0,1,1
-700,0,1</pre>
+        <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">filename
+00776_1_4_05028_09_0_104_099.jpg
+00763_3_1_05022_01_1_351_011.jpg
+</pre>
         </div>
     </div>
 

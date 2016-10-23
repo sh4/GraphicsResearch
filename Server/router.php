@@ -300,16 +300,19 @@ class Router {
         if (!Form::session("admin_login", false)) {
             Router::redirect("admin");
         }
-        $job = Job::loadFromId(Form::post("jobId", ""));
-        if ($job) {
-            if (Job::deleteFromId($job->getJobId())) {
-                // ジョブの削除を行っても、外部サイトの情報は消えない点に注意
-                Router::Flash("success", 
-                    "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
-                    ', <a href="https://make.crowdflower.com/jobs/">Please delete manually of the CrowdFlower job.</a>'
-                );
-            } else {
-                Router::Flash("warning", "Delete job failed.");
+        if (Form::isPOST()) {
+            Form::ensureCSRFToken();
+            $job = Job::loadFromId(Form::post("jobId", ""));
+            if ($job) {
+                if (Job::deleteFromId($job->getJobId())) {
+                    // ジョブの削除を行っても、外部サイトの情報は消えない点に注意
+                    Router::Flash("success", 
+                        "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
+                        ', <a href="https://make.crowdflower.com/jobs/">Please delete manually of the CrowdFlower job.</a>'
+                    );
+                } else {
+                    Router::Flash("warning", "Delete job failed.");
+                }
             }
         }
         Router::redirect("admin");
