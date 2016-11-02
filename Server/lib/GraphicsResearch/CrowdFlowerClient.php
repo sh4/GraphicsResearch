@@ -88,10 +88,13 @@ class CrowdFlowerClient {
         return $this->restClient->post($url, $json);
     }
 
-    public function createNewRow($jobId, $params) {
+    public function createNewRow($jobId, $params, $unitParams = []) {
         $encodedParams = [];
         foreach ($params as $column => $value) {
             $encodedParams["unit[data][$column]"] = $value;
+        }
+        foreach ($unitParams as $key => $value) {
+            $encodedParams["unit[$key]"] = $value;
         }
         $url = self::Url."/jobs/$jobId/units.json?key=$this->apiKey";
         $response = $this->restClient->post($url, Rest\Request::form($encodedParams));
