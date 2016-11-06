@@ -231,7 +231,6 @@ class Job {
                     "verification_code" => Crypto::CreateUniqueNumber(10),
                     "created_on" => $now,
                     "answered_questions" => 0,
-                    "judgement_data_json" => "[]",
                 ];
             }
         }

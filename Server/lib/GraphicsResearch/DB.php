@@ -157,6 +157,7 @@ class DB {
             [1, function () { $this->migrateSchemaVersion_1(); }],
             [2, function () { $this->migrateSchemaVersion_2(); }],
             [3, function () { $this->migrateSchemaVersion_3(); }],
+            [4, function () { $this->migrateSchemaVersion_4(); }],
         ] as $migrateInfo) {
             list ($migrateVersion, $migrater) = $migrateInfo;
             if ($version < $migrateVersion) {
@@ -257,5 +258,12 @@ class DB {
             }
             $this->insertMulti("job_unit_judgement", $rows);
         }
+    }
+
+    private function migrateSchemaVersion_4() {
+        $deleteJudgmentDataJsonColumn = "
+        ALTER TABLE job_unit DROP judgement_data_json;
+        ";
+        $this->dbh->exec($deleteJudgmentDataJsonColumn);
     }
 }

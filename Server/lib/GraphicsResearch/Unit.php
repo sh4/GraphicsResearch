@@ -91,8 +91,8 @@ class Unit {
             $now = date('Y-m-d H;i:s');
             $db->insertMulti("job_unit_judgement", $answers);
             $db->execute("INSERT INTO job_unit
-                (unit_id, job_id, created_on, answered_questions, judgement_data_json) 
-                VALUES (:unit_id, :job_id, :created_on, :answered_questions, :judgement_data_json) 
+                (unit_id, job_id, created_on, answered_questions)
+                VALUES (:unit_id, :job_id, :created_on, :answered_questions)
                 ON DUPLICATE KEY UPDATE
                      answered_questions = answered_questions + :answered_questions
                     ,updated_on = :updated_on
@@ -102,7 +102,6 @@ class Unit {
                 "created_on" => $now,
                 "updated_on" => $now,
                 "answered_questions" => count($answers),
-                "judgement_data_json" => "[]",
             ]);
             $this->answeredQuestions = $db->fetchOne("SELECT answered_questions FROM job_unit WHERE unit_id = ?", $this->getUnitId());
         });
