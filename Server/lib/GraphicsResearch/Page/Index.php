@@ -126,11 +126,12 @@ class Index {
                 && is_numeric($rotation)
                 && in_array($judge, Constants::JudgeList))
             {
-                $answerData[(int)$modelId] = [
-                    "id" => $modelId,
-                    "rotation" => $rotation,
+                $answerData[] = [
+                    "unit_id" => $unit->getUnitId(),
+                    "model_id" => $modelId,
+                    "rotation_id" => $rotation,
                     "lod" => $lod,
-                    "judge" => $judge,
+                    "is_same" => $judge == "Yes" ? 0 : 1,
                     "worker_id" => $unit->getWorkerId(),
                 ];
             }

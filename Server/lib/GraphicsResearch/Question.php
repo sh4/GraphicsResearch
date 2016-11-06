@@ -139,11 +139,11 @@ class Question {
     }
 
     public function answerProgress(Unit $unit) {
-        $answeredIdCount = count($unit->getJudgementData());
-        $remainTestModelIds = count($this->modelLodMap) - $answeredIdCount;
+        $answeredCount = $unit->getAnsweredQuestionCount();
+        $remainTestModelIds = count($this->modelLodMap) - $answeredCount;
         $progress = new \stdClass();
         $progress->remain = $remainTestModelIds;
-        $progress->answered = $answeredIdCount;
+        $progress->answered = $answeredCount;
         $progress->total = $progress->remain + $progress->answered;
         return $progress;
     }
@@ -255,7 +255,7 @@ class Question {
         // (残りテストが必要な　ModelID のリストを返す) 
         $answeredIds = [];
         foreach ($session->getJudgementData() as $data) {
-            $answeredIds[] = (int)$data["id"];
+            $answeredIds[] = $data["model_id"];
         }
         return $answeredIds;
     }

@@ -21,10 +21,11 @@ class Unit {
         $this->unitId = $unitId;
         $this->updatedOn = $hash["updated_on"] ? new \DateTime($hash["updated_on"]) : null;
         $this->createdOn = $hash["created_on"] ? new \DateTime($hash["created_on"]) : null;
-        $this->judgementData = [];
+        $this->judgementData = null;
         $this->workerId = "";
-        if (isset($hash["judgement_data_json"])) {
-            $this->judgementData = json_decode($hash["judgement_data_json"], true);
+        $this->answeredQuestions = 0;
+        if (isset($hash["answered_questions"])) {
+            $this->answeredQuestions = (int)$hash["answered_questions"];
         }
         if (isset($hash["job_id"])) {
             $this->jobId = $hash["job_id"];
@@ -50,11 +51,19 @@ class Unit {
         return $this->unitId;
     }
 
+    public function getAnsweredQuestionCount() {
+        return $this->answeredQuestions;
+    }
+
     public function getlastJudged() {
         return $this->updatedOn;
     }
 
     public function getJudgementData() {
+        if ($this->judgementData === null) {
+            $this->judgementData = DB::instance()->each(
+                "SELECT * FROM job_unit_judgement WHERE unit_id = ?", $this->getUnitId());
+        }
         return $this->judgementData;
     }
 
@@ -68,40 +77,49 @@ class Unit {
         $this->workerId = $workerId;
     }
 
-    // $answers = [ ModelID => [
-    //   "id" => ModelID,
-    //   "lod" => judgeLOD,
-    //   "rotation" => RotationID,
-    //   "judge" => judge(yes/no),
-    //   "worker_id" => Contributor ID (Woker ID),
-    // ], ...]
+    // $answers = [
+    //   [
+    //     "model_id" => ModelID,
+    //     "lod" => judgeLOD,
+    //     "rotation_id" => RotationID,
+    //     "is_same" => true, // left/right on same image
+    //     "worker_id" => Contributor ID (Woker ID),
+    //   ], ...
+    // ]
     public function writeJudgeData($answers) {
-        foreach ($this->judgementData as $answer) {
-            $modelId = $answer["id"];
-            if (isset($answers[$modelId])) {
-                unset($answers[$modelId]);
-            }
-        }
-        foreach ($answers as $modelId => $answerData) {
-            $this->judgementData[] = $answerData;
-        }
+        DB::instance()->transaction(function (DB $db) use ($answers) {
+            $now = date('Y-m-d H;i:s');
+            $db->insertMulti("job_unit_judgement", $answers);
+            $db->execute("INSERT INTO job_unit
+                (unit_id, job_id, created_on, answered_questions, judgement_data_json) 
+                VALUES (:unit_id, :job_id, :created_on, :answered_questions, :judgement_data_json) 
+                ON DUPLICATE KEY UPDATE
+                     answered_questions = answered_questions + :answered_questions
+                    ,updated_on = :updated_on
+            ", [
+                "unit_id" => $this->getUnitId(),
+                "job_id" => $this->getJobId(),
+                "created_on" => $now,
+                "updated_on" => $now,
+                "answered_questions" => count($answers),
+                "judgement_data_json" => "[]",
+            ]);
+            $this->answeredQuestions = $db->fetchOne("SELECT answered_questions FROM job_unit WHERE unit_id = ?", $this->getUnitId());
+        });
+    }
 
-        $now = date('Y-m-d H;i:s');
-        DB::instance()->execute("INSERT INTO job_unit
-            (unit_id, job_id, created_on, answered_questions, judgement_data_json) 
-            VALUES (:unit_id, :job_id, :created_on, :answered_questions, :judgement_data_json) 
-            ON DUPLICATE KEY UPDATE
-                answered_questions = :answered_questions
-                ,judgement_data_json = :judgement_data_json
-                ,updated_on = :updated_on
-         ", [
-            "unit_id" => $this->getUnitId(),
-            "job_id" => $this->getJobId(),
-            "created_on" => $now,
-            "updated_on" => date("Y-m-d H:i:s"),
-            "answered_questions" => count($this->judgementData),
-            "judgement_data_json" => json_encode($this->judgementData),
-        ]);
+    public static function eachJudgementData($jobId = null) {
+        if (is_numeric($jobId)) {
+            $judgements = DB::instance()->each("SELECT * FROM job_unit_judgement  WHERE job_id = ?", $jobId);
+        } else {
+            $judgements = DB::instance()->each("SELECT * FROM job_unit_judgement");
+        }
+        foreach ($judgements as $judgement) {
+            if (empty($judgement["worker_id"])) {
+                $judgement["worker_id"] = $judgement["unit_id"];
+            }
+            yield $judgement;
+        }
     }
 
     public static function loadFromId($unitId) {

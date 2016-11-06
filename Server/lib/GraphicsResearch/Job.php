@@ -17,6 +17,10 @@ class Job {
     private $crowdFlowerJobId;
     private $crowdFlower;
 
+    // 本当は 1 ページ == 1 問にしてすべてこのシステムで回答をハンドリングしたいが、
+    // 足切りのための Quiz Mode を有効化するために RowPerPage >= 2 の前提を満たす必要がある
+    const crowdFlowerRowPerPage = 1;
+
     private function __construct($job) {
         if (!isset($job["title"],
             $job["instructions"],
@@ -117,8 +121,8 @@ class Job {
     public function getAnswerProgress() {
         $progress = 0.0;
         $numQuestions = $this->getQuestions();
-        foreach ($this->getUnits() as $session) {
-            $progress += count($session->getJudgementData()) / $numQuestions;
+        foreach ($this->getUnits() as $unit) {
+            $progress += $unit->getAnsweredQuestionCount() / $numQuestions;
         }
         return $progress / $this->getMaxAssignments();
     }
@@ -162,7 +166,7 @@ class Job {
         $params = [
             "url" => \Router::Url(),
         ];
-        // 回答用データをアップロード
+        // 回答用データを CrowdFlower にアップロード
         $rows = $db->each("SELECT unit_id FROM job_unit WHERE job_id = ?", $this->getJobId());
         $job = json_decode($this->crowdFlower->createJob([
             "title" => $this->getTitle(),
@@ -177,6 +181,7 @@ class Job {
         // 1クラウドワーカーあたりの最大回答数を 1 回に制限する
         // TODO: この制限が必要になった段階でコメントを外す
         //$this->crowdFlower->maxJudgmentsPerWorker($job->id, 1);
+
         // DB に CrowdFlower のジョブ情報を設定
         $this->crowdFlowerJobId = $job->id;
         $db->update("job", "job_id=".$this->getJobId(), [ 
@@ -214,17 +219,20 @@ class Job {
         ]);
         $now = date("Y-m-d H:i:s");
         $rows = [];
-        // 最大回答データ受付数分の JobUnit を生成
-        // 回答データは合計で questions (1 assignment あたりの必要回答データ数. お給料をもらうのに必要な回答数) * max_assigments 件集まる
-        for ($i = 0, $n = $this->getMaxAssignments(); $i < $n; $i++) {
-            $rows[] = [
-                "unit_id" => Crypto::CreateUniqueId(12),
-                "job_id" => $this->getJobId(),
-                "verification_code" => Crypto::CreateUniqueNumber(16),
-                "created_on" => $now,
-                "answered_questions" => 0,
-                "judgement_data_json" => "[]",
-            ];
+
+        // 必要回答数の job_unit を保存
+        // 1ページあたりの必要設問数 * 1人当たりの回答数 * 回答必要人数 分の行を生成
+        for ($page = 0; $page < self::crowdFlowerRowPerPage; $page++) {
+            for ($i = 0, $n = $this->getMaxAssignments(); $i < $n; $i++) {
+                $rows[] = [
+                    "unit_id" => Crypto::CreateUniqueId(16),
+                    "job_id" => $this->getJobId(),
+                    "verification_code" => Crypto::CreateUniqueNumber(10),
+                    "created_on" => $now,
+                    "answered_questions" => 0,
+                    "judgement_data_json" => "[]",
+                ];
+            }
         }
         $db->insertMulti("job_unit", $rows);
     }

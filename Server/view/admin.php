@@ -80,7 +80,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
     <tr>
         <th>Title</th>
         <th># of Questions</th>
-        <th># of Assignments</th>
+        <th># of Workers</th>
         <th>Progress</th>
         <th>Created Date</th>
         <th>Menu</th>
@@ -130,9 +130,9 @@ if (!is_array($jobForm)) {
 $jobForm = array_merge($jobForm, [
     "title" => "",
     "instructions" => "",
-    "questions" => "10",
-    "max_assignments" => "10",
-    "reward_amount_usd" => "0.50",
+    "questions" => "100",
+    "max_assignments" => "100",
+    "reward_amount_usd" => "0.10",
 ]);
 ?>
 
@@ -152,13 +152,13 @@ $jobForm = array_merge($jobForm, [
     </div>
 
     <div class="form-group">
-        <label for="new-job-num-question"># of Questions (Judgements)</label>
+        <label for="new-job-num-question"># of Questions per page</label>
         <input type="text" class="form-control numeric" id="new-job-num-question" name="job[questions]" value="<?php Form::e($jobForm["questions"]) ?>">
         <label for="new-job-num-question" class="form-control-label validate"></label>
     </div>
 
     <div class="form-group">
-        <label for="new-job-num-assignments"># of Assignments (Worker)</label>
+        <label for="new-job-num-assignments"># of Workers</label>
         <input type="text" class="form-control numeric" id="new-job-num-assignments" name="job[max_assignments]" value="<?php Form::e($jobForm["max_assignments"]) ?>">
         <label for="new-job-num-assignments" class="form-control-label validate"></label>
     </div>

@@ -34,7 +34,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     <tr>
         <th>Total Reward Amount</th>
         <th># of Questions</th>
-        <th># of Max Assignments</th>
+        <th># of Workers</th>
         <th>Progress</th>
         <th>Created Date</th>
         <th>Menu</th>
@@ -107,7 +107,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
 $no = 0;
 foreach ($job->getUnits() as $unit):
     $status = "";
-    $judgedCount = count($unit->getJudgementData());
+    $judgedCount = $unit->getAnsweredQuestionCount();
 
     if ($judgedCount >= $job->getQuestions()) {
         $status = "completed";

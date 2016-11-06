@@ -164,7 +164,7 @@ class Router {
         $verificationCode = Form::get("verificationCode", "");
         if ($unit = Unit::loadFromId($unitId)) {
             if ($job = Job::loadFromId($unit->getJobId())) {
-                $remainQuestions = $job->getQuestions() - count($unit->getJudgementData());
+                $remainQuestions = $job->getQuestions() - $unit->getAnsweredQuestionCount();
                 if ($remainQuestions <= 0) {
                     $ok = $unit->getVerificationCode() == $verificationCode;
                 }
@@ -346,64 +346,36 @@ class Router {
         header("Content-Disposition: attachment; filename=judgement.csv");
 
         $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
-
         $jobId = Form::get("jobId", "");
-        if ($jobId) {
-            // ジョブIDごと
-            $rows = DB::instance()->each("SELECT unit_id, judgement_data_json FROM job_unit WHERE job_id = ?", $jobId);
-        } else {
-            // すべての判定データ
-            $rows = DB::instance()->each("SELECT unit_id, judgement_data_json FROM job_unit");
-        }
+        // ヘッダ行を書き出し
         echo implode(",", [
             "WorkerID",
             "ModelID",
             "RotationID",
             "LOD",
-            "ContainDifferences",
+            "Same",
             "Filename",
         ]);
         echo "\r\n";
-        foreach ($rows as $row) {
-            $judgementData = json_decode($row["judgement_data_json"], true);
-            $unitId = $row["unit_id"];
-            foreach ($judgementData as $data) {
-                $workerId = "";
-                $modelId = "";
-                $rotation = "";
-                $lod = "";
-                $judge = "";
-                if (isset($data["rotation"])) {
-                    $rotation = $data["rotation"];
-                }
-                if (isset($data["id"])) {
-                    $modelId = $data["id"];
-                }
-                if (isset($data["lod"])) {
-                    $lod = $data["lod"];
-                }
-                if (isset($data["judge"])) {
-                    $judge = $data["judge"];
-                }
-                if (isset($data["worker_id"])) {
-                    $workerId = $data["worker_id"];
-                }
-                if (empty($workerId)) {
-                    // ワーカーIDが未設定なら、正確ではないが UnitId を設定
-                    // （必ずしも単一の人物が回答したとは限らないため）
-                    $workerId = $unitId;
-                }
-                $modelPath = $question->modelPath($modelId, $rotation, $lod);
-                echo implode(",", [
-                    $workerId,
-                    $modelId,
-                    $rotation,
-                    $lod,
-                    $judge,
-                    basename($modelPath),
-                ]);
-                echo "\r\n";
+        // 回答データを書き出し
+        foreach (Unit::eachJudgementData($jobId) as $judgement) {
+            // 連想配列をローカル変数に展開
+            extract($judgement);
+            // ワーカーIDが未設定なら、正確ではないが UnitId を設定
+            // （必ずしも単一の人物が回答したとは限らないため）
+            if (empty($worker_id)) {
+                $worker_id = $unit_id;
             }
+            $modelPath = $question->modelPath($model_id, $rotation_id, $lod);
+            echo implode(",", [
+                $worker_id,
+                $model_id,
+                $rotation_id,
+                $lod,
+                $is_same,
+                basename($modelPath),
+            ]);
+            echo "\r\n";
         }
     },
 

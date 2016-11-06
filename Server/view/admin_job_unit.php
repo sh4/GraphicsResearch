@@ -61,10 +61,10 @@ $judgementFilter = Form::get("filter", "");
 
 <?php
 foreach ($unit->getJudgementData() as $data):
-    $modelId = $data["id"];
+    $modelId = $data["model_id"];
     $modelLod = $data["lod"];
-    $modelRotation = $data["rotation"];
-    $modelIsDifferent = $data["judge"] === "Yes";
+    $modelRotation = $data["rotation_id"];
+    $modelIsDifferent = $data["is_same"] == 0;
     if ($judgementFilter === "same" && $modelIsDifferent):
         continue;
     elseif ($judgementFilter === "diff" && !$modelIsDifferent):
