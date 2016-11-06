@@ -55,6 +55,11 @@ class CrowdFlowerClient {
         return $this->restClient->post($url, $form);
     }
 
+    public function getJob($jobId) {
+        $url = self::Url."/jobs/$jobId.json";
+        return $this->restClient->get($url);
+    }
+
     public function pauseJob($jobId) {
         $url = self::Url."/jobs/$jobId/pause.json?key=$this->apiKey";
         return $this->restClient->get($url);
@@ -152,37 +157,34 @@ class CrowdFlowerClient {
         return $form;
     }
 
-    public function judgementsPerUnit($jobId, $numJudgment) {
-        $url = self::JobsUrl."/$jobId/settings?key=$this->apiKey";
-        list($form, $cookie) = $this->getHTMLPageForm($url);
-
-        $form["job[judgments_per_unit]"] = $numJudgment;
-        $form["job[units_per_assignment]"] = $numJudgment;
-
-        $request = Rest\Request::form($form);
-        $request->setHeader("Cookie", implode("; ", $cookie));
-        $this->restClient->post($url, $request);
-
-        return $form;
+    public function rowsPerPage($jobId, $numJudgment) {
+        $url = self::Url."/jobs/$jobId.json?key=$this->apiKey";
+        $form = Rest\Request::form([
+            "job[units_per_assignment]" => $numJudgment,
+        ]);
+        return $this->restClient->put($url, $form);
     }
 
     private function unitUrl($jobId, $unitId) {
         return self::Url."/jobs/$jobId/units/$unitId.json?key=$this->apiKey";
     }
 
-    private function getHTMLPageForm($url) {
+    private function getHTML($url) {
         $cookie = [];
         $request = Rest\Request::createEmpty();
         $request->getEvent()->onResponse(function (Rest\Response $response) use (&$cookie) {
-            $cookie = self::ParseSetCookie($response->getHeader());
+            $cookie = self::parseSetCookie($response->getHeader());
         });
-
         $html = $this->restClient->invoke("GET", $url, $request);
+        return [$html, $cookie];
+    }
+
+    private function getHTMLPageForm($url) {
+        list($html, $cookie) = $this->getHTML($url); 
         $form = self::getFormInputTags($html);
         if (empty($form)) {
             return null;
         }
-
         return [$form, $cookie];
     }
 
@@ -207,7 +209,7 @@ class CrowdFlowerClient {
         return $form;
     }
 
-	private static function ParseSetCookie($headers) {
+	private static function parseSetCookie($headers) {
         $cookie = [];
         foreach ($headers as $header) {
             list ($name, $setCookie) = $header;

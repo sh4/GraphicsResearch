@@ -175,9 +175,10 @@ class Job {
             "js" => $this->getCrowdFlowerJavaScript($params),
         ]));
         $this->crowdFlower->uploadRows($job->id, $rows);
-        // 報酬に必要な回答数は1回
-        $this->crowdFlower->jobTaskPayment($job->id, $this->getRewardAmountUSD() * 100); // dollar to cents
-        $this->crowdFlower->judgementsPerUnit($job->id, 1);
+        // 成功報酬の設定 (ドル => セント単位に変換)
+        $this->crowdFlower->jobTaskPayment($job->id, $this->getRewardAmountUSD() * 100);
+        // 1 ページあたりのテスト数
+        $this->crowdFlower->rowsPerPage($job->id, self::crowdFlowerRowPerPage);
         // 1クラウドワーカーあたりの最大回答数を 1 回に制限する
         // TODO: この制限が必要になった段階でコメントを外す
         //$this->crowdFlower->maxJudgmentsPerWorker($job->id, 1);
