@@ -4,6 +4,7 @@
 <cml:text 
     label="Survey Code"
     data-unit-id="{{unit_id}}"
+    data-is-golden="{{_golden}}"
     validates="required ss-required"
     default="Paste survey code here..."
     instructions="Please copy and paste the code here that can be found at the end of the Survey" />
