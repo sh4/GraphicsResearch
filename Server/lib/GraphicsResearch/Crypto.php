@@ -5,7 +5,7 @@ namespace GraphicsResearch;
 class Crypto {
     public static function CreateUniqueId($byteLength) {
         $str = base64_encode(openssl_random_pseudo_bytes($byteLength));
-        return rtrim(str_replace(['/', '+'], ['x', 'X'], $str), '=');
+        return substr(rtrim(str_replace(['/', '+'], ['x', 'X'], $str), '='), 0, $byteLength);
     }
 
     public static function CreateUniqueNumber($length) {
