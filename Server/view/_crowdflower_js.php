@@ -6,7 +6,12 @@ var isSecure = /https/i.test(location.href);
 var verifyUrl = "<?php echo $url ?>".replace(/^https?/i, isSecure ? "https" : "http");
 
 var message = "Checking survey code, Please wait a moment..";
-var workerId = Math.random().toString(16).substr(2) + (+new Date()).toString(36);
+var workerIdKey = "GraphicsResearch.Survery.workerId";
+var workerId = window.sessionStorage.getItem(workerIdKey);
+if (workerId === null) {
+  workerId = Math.random().toString(16).substr(2) + (+new Date()).toString(36);
+  window.sessionStorage.setItem(workerIdKey, workerId);
+}
 
 var surveyCodeConfirmed = {};
 var surveyUnits = [];
@@ -22,13 +27,9 @@ var surveyUnits = [];
 }();
 
 !function () {
-  var unitIdParams = surveyUnits.map(function (unit) {
-    return "oUnitIds[]=" + unit.field.data("unit-id");
-  }).join("&");
   surveyUnits.forEach(function (unit) {
     var href = unit.link.attr("href");
     href += "&workerId=" + workerId;
-    href += "&" + unitIdParams;
     unit.link.attr("href", href);
   });
 }();
