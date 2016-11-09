@@ -21,9 +21,14 @@ class Router {
         return self::$defaultRouter;
     }
 
-    public static function redirect($location) {
+    public static function redirect($location, $params = []) {
+        $url = self::Path($location);
+        if (!empty($params)) {
+            $url .= "?";
+            $url .= http_build_query($params);
+        }
         header("HTTP/1.1 302 Found");
-        header("Location: ".self::Path($location));
+        header("Location: $url");
         self::instance()->Cleanup();
         exit(0);
     }
