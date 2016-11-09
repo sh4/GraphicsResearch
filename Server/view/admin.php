@@ -60,19 +60,6 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
     </div>
 </form>
 
-<form method="post" id="form-remove-question-images" action="<?php echo Router::Path("admin/question/remove") ?>">
-    <?php Form::enableCSRF() ?>
-
-    <div class="form-group">
-        <label for="remove-file-pattern">Remove File Pattern (Available wildcards: '*' or '?')</label>
-        <input class="form-control longfield" id="remove-file-pattern" name="remove_file_pattern" value="">
-    </div>
-
-    <div class="form-group">
-        <input id="submit-update-question-page" type="submit" value="Delete images">
-    </div>
-</form>
-
 <h2>Job List</h2>
 
 <table class="table table-hover table-sorter job-list-table">
@@ -205,6 +192,20 @@ $jobForm = array_merge($jobForm, [
 </tbody>
 </table>
 
+<h3>File Operations</h3>
+
+<form method="post" id="form-remove-question-images" action="<?php echo Router::Path("admin/question/remove") ?>">
+    <?php Form::enableCSRF() ?>
+
+    <div class="form-group">
+        <label for="remove-file-pattern">Remove File Pattern (Available wildcards: '*' or '?')</label>
+        <input class="form-control longfield" id="remove-file-pattern" name="remove_file_pattern" value="">
+    </div>
+
+    <div class="form-group">
+        <input id="submit-update-question-page" type="submit" value="Delete images">
+    </div>
+</form>
 <?php if (count($invalidModelInfos) > 0): ?>
 
 <h3>Invalid DataSet (Not appear in judge page)</h3>
