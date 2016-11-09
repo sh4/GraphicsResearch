@@ -3,7 +3,7 @@
 require_once "config.php";
 
 use GraphicsResearch\Form;
-use GraphicsResearch\Unit;
+use GraphicsResearch\AbstractUnit;
 use GraphicsResearch\Job;
 use GraphicsResearch\DB;
 use GraphicsResearch\Question;
@@ -167,12 +167,10 @@ class Router {
         $ok = false;
         $unitId = Form::get("unitId", "");
         $verificationCode = Form::get("verificationCode", "");
-        if ($unit = Unit::loadFromId($unitId)) {
-            if ($job = Job::loadFromId($unit->getJobId())) {
-                $remainQuestions = $job->getQuestions() - $unit->getAnsweredQuestionCount();
-                if ($remainQuestions <= 0) {
-                    $ok = $unit->getVerificationCode() == $verificationCode;
-                }
+        if ($unit = JobUnit::loadFromId($unitId)) {
+            $remainQuestions = $unit->getTotalQuestionCount() - $unit->getAnsweredQuestionCount();
+            if ($remainQuestions <= 0) {
+                $ok = $unit->getVerificationCode() == $verificationCode;
             }
         }
         echo json_encode([ "ok" => $ok ]);
@@ -266,9 +264,8 @@ class Router {
             Form::ensureCSRFToken();
             $rawJob = Form::post("job", []);
             try {
-                $rawJob["question_order_json"] = null;
-                if ($customQuestionOrder = Form::getFile("job_question_order")) {
-                    $rawJob["question_order_json"] = Question::parseQuestionOrderFromCSV($customQuestionOrder);
+                if ($quizQuestions = Form::getFile("quiz_questions")) {
+                    $rawJob["quiz_questions"] = Question::parseQuizGoldenDataFromCSV($quizQuestions);
                 }
                 $job = Job::createNewJob($rawJob);
                 unset($_SESSION["job"]);
@@ -363,7 +360,7 @@ class Router {
         ]);
         echo "\r\n";
         // 回答データを書き出し
-        foreach (Unit::eachJudgementData($jobId) as $judgement) {
+        foreach (JobUnit::eachJudgementData($jobId) as $judgement) {
             // 連想配列をローカル変数に展開
             extract($judgement);
             // ワーカーIDが未設定なら、正確ではないが UnitId を設定

@@ -12,24 +12,22 @@ class Question {
     private $invalidModelSet;
 
     private function __constructor() {
-
     }
 
-    public function createQuestionOrder(Unit $session) {
-        $answeredIds = $this->getAnsweredIds($session);
-        if ($job = Job::loadFromId($session->getJobId())) {
-            $questionOrder = $job->getUserDefinedQuestionOrder();
-            if (count($questionOrder) > 0) {
-                // ユーザー定義の並び順
-                $userDefinedOrder = $this->createUserDefinedOrderQuestions($answeredIds, $questionOrder);
-                foreach ($userDefinedOrder as $i => $model) {
-                    yield $i => $model;
-                }
-                return;
-            }
+    // yield no => [
+    //   "id" => ModelID,
+    //   "rotation" => RotationId,
+    //   "lod" => LOD,
+    // ]
+    public function createQuestionOrder(AbstractUnit $unit) {
+        if ($questionOrder = $unit->getRandomizeQuestionOrder()) {
+            $randomizedQuestionOrder = $questionOrder;
+        } else {
+            // 回答済み ModelID のリスト (テスト対象から除外するため)
+            $answeredIds = $unit->getAnsweredIds();
+            // ランダムな並び順
+            $randomizedQuestionOrder = $this->createRandomizeOrderQuestions($answeredIds);
         }
-        // ランダムな並び順
-        $randomizedQuestionOrder = $this->createRandomizeOrderQuestions($answeredIds);
         foreach ($randomizedQuestionOrder as $i => $model) {
             yield $i => $model;
         }
@@ -74,23 +72,24 @@ class Question {
         return $removeFiles;
     }
 
-    public static function parseQuestionOrderFromCSV($questionOrderCsv) {
-        $questionOrders = array_map("str_getcsv", 
-            array_map(function ($x) { return trim($x); }, explode("\n", $questionOrderCsv)));
+    public static function parseQuizGoldenDataFromCSV($quizQuestions) {
+        $trimmedLines = array_map("trim", explode("\n", trim($quizQuestions)));
+        $questions = array_map("str_getcsv", $trimmedLines);
         $result = [];
-        foreach ($questionOrders as $orderRow) {
-            if (empty($orderRow)) {
+        foreach ($questions as $row) {
+            if (empty($row)) {
                 continue;
             }
-            list($modelFile) = $orderRow;
+            list($modelFile, $isSame) = $row;
             $model = self::parseModelFilename($modelFile);
             if (!is_numeric($model->modelId)) {
                 continue;
             }
             $result[] = [
-                "id" => $model->modelId,
-                "rotation" => $model->rotationId,
+                "model_id" => $model->modelId,
+                "rotation_id" => $model->rotationId,
                 "lod" => $model->lod,
+                "is_same" => $isSame,
             ];
         }
         return $result;
@@ -138,7 +137,7 @@ class Question {
         }
     }
 
-    public function answerProgress(Unit $unit) {
+    public function answerProgress(AbstractUnit $unit) {
         $answeredCount = $unit->getAnsweredQuestionCount();
         $remainTestModelIds = count($this->modelLodMap) - $answeredCount;
         $progress = new \stdClass();
@@ -248,16 +247,6 @@ class Question {
             }
             $this->testAvailableModelIdMap[$modelId] = true;
         }
-    }
-
-    private function getAnsweredIds(Unit $session) {
-        // マスターデータのキーリスト(ModelID のリスト) だけに含まれる ModelID を得る
-        // (残りテストが必要な　ModelID のリストを返す) 
-        $answeredIds = [];
-        foreach ($session->getJudgementData() as $data) {
-            $answeredIds[] = $data["model_id"];
-        }
-        return $answeredIds;
     }
 
     private static function parseModelFilename($modelFile) {

@@ -10,16 +10,15 @@ class Job {
     private $maxAssignments;
     private $rewardAmountUSD;
     private $createdOn;
-    // 回答データの表示順を保持する
-    // [ [ id => X, rotation => Y, lod => Z ], ... ]
-    private $questionOrder;
 
     private $crowdFlowerJobId;
     private $crowdFlower;
 
     // 本当は 1 ページ == 1 問にしてすべてこのシステムで回答をハンドリングしたいが、
     // 足切りのための Quiz Mode を有効化するために RowPerPage >= 2 の前提を満たす必要がある
-    const crowdFlowerRowPerPage = 1;
+    const crowdFlowerRowPerPage = 2;
+    // CrowdFlower の Quiz Mode を有効化するために必要な問題数 
+    const crowdFlowerMinimumQuizQuestions = 5;
 
     private function __construct($job) {
         if (!isset($job["title"],
@@ -35,6 +34,7 @@ class Job {
         $this->questions = (int)$job["questions"];
         $this->maxAssignments = (int)$job["max_assignments"];
         $this->rewardAmountUSD = (float)$job["reward_amount_usd"];
+        $this->quizAccuracyRate = (float)$job["quiz_accuracy_rate"];
         if (isset($job["created_on"])) {
             $this->createdOn = new \DateTime($job["created_on"]);
         } else {
@@ -49,16 +49,14 @@ class Job {
             $this->jobId = (int)$job["job_id"];
         }
 
-        // ユーザー定義の質問データ順序が与えられているか
-        if (isset($job["question_order_json"])) {
-            $questionOrder = $job["question_order_json"];
-            if (is_string($questionOrder)) {
-                $this->questionOrder = json_decode($questionOrder, true);
-            } else {
-                $this->questionOrder = $questionOrder;
-            }
-        } else {
-            $this->questionOrder = [];
+        // CreateNewJob 呼び出し時に使用する一時的な変数
+        $this->quizQuestions = [];
+        if (isset($job["quiz_questions"])) {
+            $this->quizQuestions = $job["quiz_questions"];
+        }
+        $this->quizQuestionCount = 0;
+        if (isset($job["quiz_question_count"])) {
+            $this->quizQuestionCount = (int)$job["quiz_question_count"];
         }
 
         $this->crowdFlower = new CrowdFlowerClient();
@@ -82,17 +80,7 @@ class Job {
     }
 
     public function getQuestions() {
-        // 回答データの順序が与えられているときは、そちらが必要回答数になる
-        $orderCount = count($this->questionOrder);
-        if ($orderCount > 0) {
-            return $orderCount;
-        } else {
-            return (int)$this->questions;
-        }
-    }
-
-    public function getUserDefinedQuestionOrder() {
-        return $this->questionOrder;
+        return $this->questions;
     }
 
     public function getMaxAssignments() {
@@ -107,6 +95,11 @@ class Job {
         return $this->crowdFlowerJobId;
     }
 
+    // パーセンテージの数字を返す (0-100)
+    public function getQuizAccuracyRate() {
+        return $this->quizAccuracyRate;   
+    }
+
     public function estimateTotalAmountUSD() {
         return $this->getMaxAssignments() * $this->getRewardAmountUSD();
     }
@@ -114,15 +107,14 @@ class Job {
     public function getUnits() {
         $units = DB::instance()->each("SELECT * FROM job_unit WHERE job_id = ?", $this->getJobId());
         foreach ($units as $unit) {
-            yield new Unit($unit);
+            yield new JobUnit($unit);
         }
     }
 
     public function getAnswerProgress() {
         $progress = 0.0;
-        $numQuestions = $this->getQuestions();
         foreach ($this->getUnits() as $unit) {
-            $progress += $unit->getAnsweredQuestionCount() / $numQuestions;
+            $progress += $unit->getProgress();
         }
         return $progress / $this->getMaxAssignments();
     }
@@ -155,6 +147,11 @@ class Job {
         });
     }
 
+    public static function getQuestionsPerUnitFromId($jobId) {
+        $questions = (int)DB::instance()->fetchOne("SELECT questions FROM job WHERE job_id = ?", $jobId);
+        return (int)($questions / self::crowdFlowerRowPerPage);
+    }
+
     public static function getJobs() {
         $jobRows = DB::instance()->each("SELECT * FROM job");
         foreach ($jobRows as $jobRow) {
@@ -166,15 +163,17 @@ class Job {
         $params = [
             "url" => \Router::Url(),
         ];
-        // 回答用データを CrowdFlower にアップロード
-        $rows = $db->each("SELECT unit_id FROM job_unit WHERE job_id = ?", $this->getJobId());
+        // CrowdFlower 上で新規にジョブを作成
         $job = json_decode($this->crowdFlower->createJob([
             "title" => $this->getTitle(),
             "instructions" => $this->getInstructions(),
             "cml" => $this->getCrowdFlowerCML($params),
             "js" => $this->getCrowdFlowerJavaScript($params),
         ]));
-        $this->crowdFlower->uploadRows($job->id, $rows);
+        // 回答用データを CrowdFlower にアップロード
+        $this->uploadJobUnitsToCrowdFlower($job->id, $db);
+        // クイズ用データをアップロード
+        $this->uploadQuizUnitsToCrowdFlower($job->id, $db);
         // 成功報酬の設定 (ドル => セント単位に変換)
         $this->crowdFlower->jobTaskPayment($job->id, $this->getRewardAmountUSD() * 100);
         // 1 ページあたりのテスト数
@@ -188,6 +187,24 @@ class Job {
         $db->update("job", "job_id=".$this->getJobId(), [ 
             "crowdflower_job_id" => $this->crowdFlowerJobId,
         ]);
+    }
+    
+    private function uploadJobUnitsToCrowdFlower($jobId, DB $db) {
+        $jobUnitIds = $db->each("SELECT unit_id FROM job_unit WHERE job_id = ?", $this->getJobId());
+        $this->crowdFlower->uploadRows($jobId, $jobUnitIds);
+    }
+
+    private function uploadQuizUnitsToCrowdFlower($jobId, DB $db) {
+        $jobQuizUnits = $db->each("SELECT unit_id, verification_code FROM job_quiz_unit WHERE job_id = ?", $this->getJobId());
+        foreach ($jobQuizUnits as $unit) {
+            $this->crowdFlower->createNewRow($jobId, [
+                "unit_id" => $unit["unit_id"],
+                "survey_code_gold" => $unit["verification_code"],
+                "survey_code_gold_reason" => "The number of correct answers is missing.",
+            ], [
+                "state" => "golden",
+            ]);
+        }
     }
 
     private function getCrowdFlowerCML($params) {
@@ -216,11 +233,24 @@ class Job {
             "reward_amount_usd" => $this->getRewardAmountUSD(),
             "created_on" => $this->createdOn()->format("Y-m-d H:i:s"),
             "crowdflower_job_id" => $this->crowdFlowerJobId,
-            "question_order_json" => json_encode($this->questionOrder),
+            "question_order_json" => "[]",
+            "quiz_accuracy_rate" => $this->getQuizAccuracyRate(),
         ]);
+
+        $this->insertJobUnits($db);
+    
+        // クイズ必要回答数も質問数も 1 以上ならクイズ用データを挿入
+        if ($this->quizQuestionCount > 0
+            && count($this->quizQuestions) > $this->quizQuestionCount)
+        {
+            $this->insertQuizJobUnits($db);
+            $this->insertQuizGoldenData($db);
+        }
+    }
+
+    private function insertJobUnits(DB $db) {
         $now = date("Y-m-d H:i:s");
         $rows = [];
-
         // 必要回答数の job_unit を保存
         // 1ページあたりの必要設問数 * 1人当たりの回答数 * 回答必要人数 分の行を生成
         for ($page = 0; $page < self::crowdFlowerRowPerPage; $page++) {
@@ -237,9 +267,56 @@ class Job {
         $db->insertMulti("job_unit", $rows);
     }
 
+    private function insertQuizJobUnits(DB $db) {
+        $quizUnits = [];
+        // クイズ用の行を挿入
+        for ($i = 0; $i < self::crowdFlowerMinimumQuizQuestions; $i++) {
+            $quizUnits[] = [
+                "unit_id" => Crypto::CreateUniqueId(16),
+                "job_id" => $this->getJobId(),
+                "verification_code" => Crypto::CreateUniqueNumber(10),
+                "question_count" => $this->quizQuestionCount,
+            ];
+        }
+        $db->insertMulti("job_quiz_unit", $quizUnits);
+    }
+
+    // $this->quizQuestions = [
+    //   [
+    //     model_id => 0,
+    //     rotation_id => 1,
+    //     lod => 2,
+    //     is_same => 0, // 0 or 1
+    //   ],
+    //   ...
+    // ]
+    private function insertQuizGoldenData(DB $db) {
+        $rows = [];
+        foreach ($this->quizQuestions as $row) {
+            $row["job_id"] = $this->getJobId();
+            $rows[] = $row;
+        }
+        $db->insertMulti("job_quiz_unit_golden", $rows);
+    }
+
     private static function deleteJobOnDB($jobId, DB $db) {
-        $db->delete("job_unit", "job_id = :job_id", [ "job_id" => $jobId ]);
-        $db->delete("job", "job_id = :job_id", [ "job_id" => $jobId ]);
+        $params = [ "job_id" => $jobId ];
+
+        $db->delete("job_quiz_unit_judgement",
+            "unit_id IN (SELECT unit_id FROM job_quiz_unit WHERE job_id = :job_id)", $params);
+        $db->delete("job_quiz_unit", 
+            "job_id = :job_id", $params);
+        $db->delete("job_quiz_unit_golden",
+            "job_id = :job_id", $params);
+
+        $db->delete("job_unit_judgement", 
+            "unit_id IN (SELECT unit_id FROM job_unit WHERE job_id = :job_id)", $params);
+        $db->delete("job_unit",
+            "job_id = :job_id", $params);
+
+        $db->delete("job",
+            "job_id = :job_id", $params);
+
         return true;
     }
 }

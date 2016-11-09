@@ -1,7 +1,21 @@
 <?php
-use GraphicsResearch\Page;
+use GraphicsResearch\Page\Index;
+use GraphicsResearch\Job;
+use GraphicsResearch\Crypto;
 
-$unit = Page\Index::loadUnit();
+$unit = Index::loadUnit();
+$verificationCode = $unit->getVerificationCode();
+
+// クイズモードならジョブの正答率に基づいて正しい答えを返すべきか判定
+if (is_a($unit, "GraphicsResearch\\QuizUnit") 
+    && ($jobId = $unit->getJobId())
+    && ($job = Job::loadFromId($jobId)))
+{
+    // 正答率がジョブの要求水準に満たなければ偽の SurveryCode を返す
+    if (!$unit->isTestPassed($job)) {
+        $verificationCode = Crypto::createUniqueNumber(10);
+    }
+}
 
 ?><!DOCTYPE html>
 <html>
@@ -35,7 +49,7 @@ $unit = Page\Index::loadUnit();
 
 <div style="text-align: center; margin: 0em auto; padding-bottom: 2em; border: 4px solid #606060; background: #eee">
     <h2>Survey Code</h2>
-    <input type="text" id="survey-code" value="<?php echo $unit->getVerificationCode() ?>" onfocus="this.select()">
+    <input type="text" id="survey-code" value="<?php echo $verificationCode ?>" onfocus="this.select()">
 </div>
 <?php else: ?>
 <p>Invalid test state, Please contact website administrator.</p>

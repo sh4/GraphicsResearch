@@ -1,11 +1,12 @@
 <?php
 use GraphicsResearch\Page;
+use GraphicsResearch\Form;
 
 $page = new Page\Index();
 $progress = $page->getAnswerProgress();
-
+// すでに作業が完了していれば、完了ページに遷移
 if ($progress->remain === 0) {
-    Router::redirect("done");
+    Router::redirect("done", ["quizMode" => Form::request("quizMode", 0)]);
 }
 
 function question(Page\Index $page, $model) {
@@ -49,6 +50,7 @@ function question(Page\Index $page, $model) {
 <body>
 
 <form id="answer-form" method="post" action="<?php echo $page->getFormAction() ?>">
+<input type="hidden" name="quizMode" value="<?php echo Form::request("quizMode", 0) == 1 ? 1 : 0 ?>">
 
 <div class="answer-region">
 

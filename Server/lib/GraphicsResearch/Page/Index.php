@@ -6,7 +6,8 @@ use GraphicsResearch\Form;
 use GraphicsResearch\Question;
 use GraphicsResearch\QuestionPage;
 use GraphicsResearch\Job;
-use GraphicsResearch\Unit;
+use GraphicsResearch\JobUnit;
+use GraphicsResearch\QuizUnit;
 use GraphicsResearch\Constants;
 
 class Index {
@@ -15,10 +16,10 @@ class Index {
     private $unit;
     private $number;
     private $formAction;
-    private $job;
 
     const QuestionUnitId = "questionUnitId";
     const WorkerId = "questionWorkerId";
+    const QuizSessionId = "quizSessionId";
 
     public function __construct() {
         $this->number = (int)Form::get("num", 1);
@@ -52,11 +53,8 @@ class Index {
 
     public function getAnswerProgress() {
         $progress = $this->question->answerProgress($this->unit);
-        if (!$this->job && $this->unit->getJobId()) {
-            $this->job = Job::loadFromId($this->unit->getJobId());
-        }
-        if ($this->job) {
-            $progress->total = $this->job->getQuestions();
+        if ($this->unit->getJobId()) {
+            $progress->total = $this->unit->getTotalQuestionCount();
         }
         $progress->remain = max(0, min($progress->remain, $progress->total - $progress->answered));
         return $progress;
@@ -83,17 +81,26 @@ class Index {
 
     public static function loadUnit() {
         $unitId = Form::get("unitId", "");
-        $workerId = Form::get("workerId", "");
         if (empty($unitId) && isset($_SESSION[self::QuestionUnitId])) {
             $unitId = $_SESSION[self::QuestionUnitId];
         }
-        $unit = Unit::loadFromId($unitId);
-        if (empty($workerId) && isset($_SESSION[self::WorkerId])) {
-            $workerId = $_SESSION[self::WorkerId];
+
+        $quizModeEnabled = Form::request("quizMode", 0) == 1;
+        if ($quizModeEnabled) {
+            $unit = QuizUnit::loadFromId($unitId);
+            $quizSessionId = self::getUniqueIdFromSession(self::QuizSessionId);
+            $unit->setQuizSessionId($quizSessionId);
+        } else {
+            // 本番の質問時にクイズ回答履歴があれば、それをクリア
+            if (isset($_SESSION[self::QuizSessionId])) {
+                unset($_SESSION[self::QuizSessionId]);
+            }
+            $unit = JobUnit::loadFromId($unitId);
         }
-        if (!empty($workerId)) {
-            $unit->setWorkerId($workerId);
-        }
+
+        $workerId = self::getUniqueIdFromSession(self::WorkerId);
+        $unit->setWorkerId($workerId);
+
         return $unit;
     }
 
@@ -103,7 +110,7 @@ class Index {
             $unit = self::loadUnit();
         }
         if (!$unit) {
-            $unit = Unit::createNewSession();
+            $unit = JobUnit::createNewSession();
         }
         // 回答データがポストされていればそれを保存
         if ($answerRawData = Form::post("answer", [])) { // ["ModelID,Rotation,LOD,Judge", ...]
@@ -115,6 +122,14 @@ class Index {
         $_SESSION[self::QuestionUnitId] = $unit->getUnitId();
         $_SESSION[self::WorkerId] = $unit->getWorkerId();
         return $unit;
+    }
+
+    private static function getUniqueIdFromSession($key) {
+        if (isset($_SESSION[$key])) {
+            return $_SESSION[$key];
+        } else {
+            return Crypto::CreateUniqueId(16);
+        }
     }
 
     private static function ensureAnswerDataFormat($unit, $answerRawData) {

@@ -120,11 +120,15 @@ $jobForm = array_merge($jobForm, [
     "questions" => "100",
     "max_assignments" => "100",
     "reward_amount_usd" => "0.10",
+    "quiz_accuracy_rate" => "70",
+    "quiz_question_count" => "10",
 ]);
 ?>
 
 <form method="post" enctype="multipart/form-data" id="form-create-new-job" action="<?php echo Router::Path("admin/jobs") ?>">
     <?php Form::enableCSRF() ?>
+
+    <h3>Summary</h3>
 
     <div class="form-group">
         <label for="new-job-title">Title</label>
@@ -138,8 +142,10 @@ $jobForm = array_merge($jobForm, [
         <label for="new-job-instructions" class="form-control-label validate"></label>
     </div>
 
+    <h3>Order</h3>
+
     <div class="form-group">
-        <label for="new-job-num-question"># of Questions per page</label>
+        <label for="new-job-num-question"># of Questions</label>
         <input type="text" class="form-control numeric" id="new-job-num-question" name="job[questions]" value="<?php Form::e($jobForm["questions"]) ?>">
         <label for="new-job-num-question" class="form-control-label validate"></label>
     </div>
@@ -162,16 +168,31 @@ $jobForm = array_merge($jobForm, [
         <div><b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD</div>
     </div>
 
+    <h3>Quiz</h3>
+
     <div class="form-group">
-        <label for="new-job-custom-question-order">(Optional) Custom Question Order</label>
-        <input type="file" id="new-job-custom-question-order" name="job_question_order">
+        <label for="new-job-quiz-questions">Quiz Questions Dataset</label>
+        <input type="file" id="new-job-quiz-questions" name="quiz_questions">
         <div style="margin:0.5em 1em">
-        Acceptable CSV file examples (Right-side image list):<br>
-        <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">filename
-00776_1_4_05028_09_0_104_099.jpg
-00763_3_1_05022_01_1_351_011.jpg
+        CSV File Examples (filename and answer[diff=0, same=1] list):<br>
+        <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">
+00776_1_4_05028_09_0_104_099.jpg,0
+00763_3_1_05022_01_1_351_011.jpg,1
 </pre>
         </div>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-quiz-question-count"># of Quiz Questions</label>
+        <input type="text" class="form-control numeric" id="new-job-quiz-question-count" name="job[quiz_question_count]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["quiz_question_count"]) ?>">
+        <label for="new-job-quiz-question-count" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-quiz-accuracy-rate">Minimum Quiz Accuracy Rate</label>
+        <input type="text" class="form-control numeric" id="new-job-quiz-accuracy-rate" name="job[quiz_accuracy_rate]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["quiz_accuracy_rate"]) ?>">
+        %
+        <label for="new-job-quiz-accuracy-rate" class="form-control-label validate"></label>
     </div>
 
     <div class="form-group">
@@ -206,6 +227,7 @@ $jobForm = array_merge($jobForm, [
         <input id="submit-update-question-page" type="submit" value="Delete images">
     </div>
 </form>
+
 <?php if (count($invalidModelInfos) > 0): ?>
 
 <h3>Invalid DataSet (Not appear in judge page)</h3>
@@ -287,6 +309,11 @@ var validateRules = {
     "#new-job-num-question": function () {
         var $el = $("#new-job-num-question");
         var num = parseInt($el.val(), 10);
+        var rowPerPage = <?php echo Job::crowdFlowerRowPerPage ?>;
+        if (num % rowPerPage !== 0) {
+            onError($el, "Number of questions must be a multiple of " + rowPerPage + ".");
+            return false;
+        }
         if (num <= 0) {
             onError($el, "One or more the number of questions.");
             return false;
@@ -326,6 +353,31 @@ var validateRules = {
             clearError($el);
             return true;
         }
+    },
+    "#new-job-quiz-accuracy-rate": function () {
+        var $el = $("#new-job-quiz-accuracy-rate");
+        var accuracyRate = parseFloat($el.val());
+        if (accuracyRate <= 0) {
+            onError($el, "Quiz accuracy rate must be above 1%");
+            return false;
+        } else if (accuracyRate > 100) {
+            onError($el, "Quiz accuracy rate less than or equal to 100%");
+            return false;
+        } else {
+            clearError($el);
+            return true;
+        }
+    },
+    "#new-job-quiz-question-count": function () {
+        var $el = $("#new-job-quiz-question-count");
+        var num = parseInt($el.val(), 10);
+        var rowPerPage = <?php echo Job::crowdFlowerRowPerPage ?>;
+        if (num % rowPerPage !== 0) {
+            onError($el, "Number of questions must be a multiple of " + rowPerPage + ".");
+            return false;
+        }
+        clearError($el);
+        return true;
     },
 };
 

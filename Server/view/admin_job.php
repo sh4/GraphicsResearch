@@ -109,7 +109,7 @@ foreach ($job->getUnits() as $unit):
     $status = "";
     $judgedCount = $unit->getAnsweredQuestionCount();
 
-    if ($judgedCount >= $job->getQuestions()) {
+    if ($judgedCount >= $unit->getTotalQuestionCount()) {
         $status = "completed";
     } else if ($judgedCount > 0) {
         $status = "judging";

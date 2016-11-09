@@ -1,10 +1,10 @@
 <?php
 use GraphicsResearch\Question;
-use GraphicsResearch\Unit;
+use GraphicsResearch\JobUnit;
 use GraphicsResearch\Form;
 
 $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
-$unit = Unit::loadFromId(Form::get("unitId", ""));
+$unit = JobUnit::loadFromId(Form::get("unitId", ""));
 $root = \Router::Path();
 $judgementFilter = Form::get("filter", "");
 ?><!DOCTYPE html>

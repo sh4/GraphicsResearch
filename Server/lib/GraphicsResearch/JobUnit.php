@@ -2,16 +2,12 @@
 
 namespace GraphicsResearch;
 
-class Unit {
-    private $unitId;
-    private $jobId;
-    private $verificationCode;
+class JobUnit extends AbstractUnit {
     private $updatedOn;
     private $createdOn;
     private $judgementData;
-    private $workerId;
-
-    const MaxWorkerIdLength = 50;
+    private $answeredQuestions;
+    private $questions;
 
     public function __construct($hash) {
         $unitId = $hash["unit_id"];
@@ -23,6 +19,7 @@ class Unit {
         $this->createdOn = $hash["created_on"] ? new \DateTime($hash["created_on"]) : null;
         $this->judgementData = null;
         $this->workerId = "";
+        $this->questions = null;
         $this->answeredQuestions = 0;
         if (isset($hash["answered_questions"])) {
             $this->answeredQuestions = (int)$hash["answered_questions"];
@@ -35,28 +32,30 @@ class Unit {
         }
     }
 
-    public function getWorkerId() {
-        return $this->workerId;
+    public function getLastJudged() {
+        return $this->updatedOn;
     }
 
-    public function getJobId() {
-        return $this->jobId;
+    public function getRandomizeQuestionOrder() {
+        // TODO: Quiz に指定された質問を job_quiz_unit の question_count 件数分差し込む (ランダム)
+        return null;
     }
 
-    public function getVerificationCode() {
-        return $this->verificationCode;
+    public function getProgress() {
+        return $this->getAnsweredQuestionCount() / $this->getTotalQuestionCount();
     }
 
-    public function getUnitId() {
-        return $this->unitId;
+    public function getTotalQuestionCount() {
+        if ($this->questions === null) {
+            if ($jobId = $this->getJobId()) {
+                $this->questions = Job::getQuestionsPerUnitFromId($jobId);
+            }
+        }
+        return $this->questions;
     }
 
     public function getAnsweredQuestionCount() {
         return $this->answeredQuestions;
-    }
-
-    public function getlastJudged() {
-        return $this->updatedOn;
     }
 
     public function getJudgementData() {
@@ -67,25 +66,6 @@ class Unit {
         return $this->judgementData;
     }
 
-    public function setWorkerId($workerId) {
-        if (!preg_match("#^[0-9a-z]+$#ui", $workerId)) {
-            return;
-        }
-        if (strlen($workerId) > self::MaxWorkerIdLength) {
-            return;
-        }
-        $this->workerId = $workerId;
-    }
-
-    // $answers = [
-    //   [
-    //     "model_id" => ModelID,
-    //     "lod" => judgeLOD,
-    //     "rotation_id" => RotationID,
-    //     "is_same" => true, // left/right on same image
-    //     "worker_id" => Contributor ID (Woker ID),
-    //   ], ...
-    // ]
     public function writeJudgeData($answers) {
         DB::instance()->transaction(function (DB $db) use ($answers) {
             $now = date('Y-m-d H;i:s');
@@ -109,7 +89,7 @@ class Unit {
 
     public static function eachJudgementData($jobId = null) {
         if (is_numeric($jobId)) {
-            $judgements = DB::instance()->each("SELECT * FROM job_unit_judgement  WHERE job_id = ?", $jobId);
+            $judgements = DB::instance()->each("SELECT * FROM job_unit_judgement WHERE job_id = ?", $jobId);
         } else {
             $judgements = DB::instance()->each("SELECT * FROM job_unit_judgement");
         }
@@ -140,4 +120,3 @@ class Unit {
         ]);
     }
 }
-
