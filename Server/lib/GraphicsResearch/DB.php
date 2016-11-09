@@ -63,6 +63,15 @@ class DB {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function fetchAll($sql, $params = []) {
+        $stmt = $this->execute($sql, $params);
+        $rows = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
     public function insert($table, $params = []) {
         $this->metaExecute("INSERT INTO", $table, $params);
         return $this->dbh->lastInsertId();
@@ -124,9 +133,9 @@ class DB {
             crowdflower_job_id INTEGER NOT NULL
         );
         CREATE TABLE IF NOT EXISTS job_unit (
-            unit_id CHAR(32) PRIMARY KEY,
+            unit_id VARCHAR(32) PRIMARY KEY,
             job_id INTEGER,
-            verification_code CHAR(32),
+            verification_code VARCHAR(32),
             created_on DATETIME NOT NULL,
             updated_on DATETIME,
             answered_questions INTEGER NOT NULL,
@@ -158,6 +167,7 @@ class DB {
             [2, function () { $this->migrateSchemaVersion_2(); }],
             [3, function () { $this->migrateSchemaVersion_3(); }],
             [4, function () { $this->migrateSchemaVersion_4(); }],
+            [5, function () { $this->migrateSchemaVersion_5(); }],
         ] as $migrateInfo) {
             list ($migrateVersion, $migrater) = $migrateInfo;
             if ($version < $migrateVersion) {
@@ -194,12 +204,13 @@ class DB {
         return self::$defaultConnection;
     }
 
+    // データの表示順序を保持するカラムを追加 (データ量 > 64KB になりそうなので MEDIUMBLOB)
     private function migrateSchemaVersion_1() {
-        // データの表示順序を保持するカラムを追加 (データ量 > 64KB になりそうなので MEDIUMBLOB)
         $migrateSql = "ALTER TABLE job ADD COLUMN question_order_json MEDIUMBLOB";
         $this->dbh->exec($migrateSql);
     }
 
+    // 質問ページのメッセージを管理画面で編集できるようにカラムを追加
     private function migrateSchemaVersion_2() {
         $migrateSql = "
         CREATE TABLE IF NOT EXISTS question_page (
@@ -214,6 +225,7 @@ class DB {
         ]);
     }
 
+    // 判定データを JSON からテーブルの行に移行
     private function migrateSchemaVersion_3() {
         $migrateSql = "
         CREATE TABLE IF NOT EXISTS job_unit_judgement (
@@ -260,10 +272,44 @@ class DB {
         }
     }
 
+    // 判定データ格納用 JSON カラムを削除
     private function migrateSchemaVersion_4() {
         $deleteJudgmentDataJsonColumn = "
         ALTER TABLE job_unit DROP judgement_data_json;
         ";
         $this->dbh->exec($deleteJudgmentDataJsonColumn);
+    }
+
+    // 足切り用データ格納用テーブル
+    private function migrateSchemaVersion_5() {
+        $createQuizTables = "
+        CREATE TABLE IF NOT EXISTS job_quiz_unit (
+            unit_id VARCHAR(16) PRIMARY KEY NOT NULL,
+            job_id INTEGER NOT NULL,
+            verification_code VARCHAR(32) NOT NULL,
+            question_count INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS job_quiz_unit_golden (
+            id INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
+            job_id INTEGER NOT NULL,
+            model_id MEDIUMINT UNSIGNED NOT NULL,
+            rotation_id TINYINT UNSIGNED NOT NULL,
+            lod TINYINT UNSIGNED NOT NULL,
+            is_same TINYINT NOT NULL, 
+            INDEX (job_id)
+        );
+        CREATE TABLE IF NOT EXISTS job_quiz_unit_judgement (
+            id INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
+            golden_id INTEGER NOT NULL,
+            unit_id VARCHAR(16) NOT NULL,
+            is_correct TINYINT NOT NULL,
+            worker_id VARCHAR(16) NOT NULL,
+            quiz_sid VARCHAR(16) NOT NULL,
+            INDEX (golden_id),
+            INDEX (quiz_sid)
+        );
+        ALTER TABLE job ADD COLUMN quiz_accuracy_rate FLOAT;
+        ";
+        $this->dbh->exec($createQuizTables);
     }
 }
