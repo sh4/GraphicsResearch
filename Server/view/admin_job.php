@@ -63,7 +63,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     </tbody>
 </table>
 
-<h2>Job Unit List</h2>
+<h2>Job Units</h2>
 
 <div style="margin:1em">
     <?php $baseUrl = Router::Path("admin/jobs")."?jobId=".$job->getJobId() ?>
