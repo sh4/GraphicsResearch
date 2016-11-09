@@ -20,6 +20,10 @@ class Form {
         return isset($_POST[$name]) ? $_POST[$name] : $default;
     }
 
+    public static function request($name, $default = null) {
+        return isset($_REQUEST[$name]) ? $_REQUEST[$name] : $default;
+    }
+
     public static function file($name) {
         return isset($_FILES[$name]) ? $_FILES[$name] : null;
     }
