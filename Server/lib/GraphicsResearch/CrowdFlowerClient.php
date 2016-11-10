@@ -4,7 +4,12 @@ namespace GraphicsResearch;
 
 use GraphicsResearch\Rest;
 
+// CrowdFlower リリースノート:
+// https://make.crowdflower.com/product-release-notes
+//
+// API リファレンス:
 // https://success.crowdflower.com/hc/en-us/articles/202703425-CrowdFlower-API-Requests-Guide
+// * Undocumented だが、job オブジェクトの要素は大体 PUT リクエストで書き換えが可能
 class CrowdFlowerClient {
     private $restClient;
     private $apiKey;
@@ -141,6 +146,14 @@ class CrowdFlowerClient {
         $url = self::Url."/jobs/$jobId.json?key=$this->apiKey";
         return $this->restClient->put($url, Rest\Request::form([
             "job[options][req_ttl_in_seconds]" => $timeToLiveToSeconds,
+        ]));
+    }
+
+    // 1 Unit (Row) あたりに割り当て可能な  Contributor 数 (判定数)
+    public function judgementsPerUnit($jobId, $judgements) {
+        $url = self::Url."/jobs/$jobId.json?key=$this->apiKey";
+        return $this->restClient->put($url, Rest\Request::form([
+            "job[judgments_per_unit]" => $judgements,
         ]));
     }
 
