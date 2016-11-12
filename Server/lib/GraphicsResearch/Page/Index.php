@@ -9,6 +9,7 @@ use GraphicsResearch\Job;
 use GraphicsResearch\JobUnit;
 use GraphicsResearch\QuizUnit;
 use GraphicsResearch\Constants;
+use GraphicsResearch\Crypto;
 
 class Index {
     private $question;
@@ -17,9 +18,7 @@ class Index {
     private $number;
     private $formAction;
 
-    const QuestionUnitId = "questionUnitId";
     const WorkerId = "questionWorkerId";
-    const QuizSessionId = "quizSessionId";
 
     public function __construct() {
         $this->number = (int)Form::get("num", 1);
@@ -28,7 +27,7 @@ class Index {
             $this->formAction .= "?num=$this->number";
         }
         $this->question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
-        $this->unit = self::createOrUpdateUnit();
+        $this->unit = $this->createOrUpdateUnit();
         $this->questionPage = QuestionPage::DefaultPage();
     }
 
@@ -60,7 +59,7 @@ class Index {
         return $progress;
     }
 
-    public function getSessionId() {
+    public function getUnitId() {
         return $this->unit->getUnitId();
     }
 
@@ -80,31 +79,21 @@ class Index {
     }
 
     public static function loadUnit() {
-        $unitId = Form::get("unitId", "");
-        if (empty($unitId) && isset($_SESSION[self::QuestionUnitId])) {
-            $unitId = $_SESSION[self::QuestionUnitId];
-        }
+        $unitId = Form::request("unitId", "");
 
         $quizModeEnabled = Form::request("quizMode", 0) == 1;
         if ($quizModeEnabled) {
+            $quizSessionId = Form::request("quizSid", "");
             $unit = QuizUnit::loadFromId($unitId);
-            $quizSessionId = self::getUniqueIdFromSession(self::QuizSessionId);
             $unit->setQuizSessionId($quizSessionId);
         } else {
-            // 本番の質問時にクイズ回答履歴があれば、それをクリア
-            if (isset($_SESSION[self::QuizSessionId])) {
-                unset($_SESSION[self::QuizSessionId]);
-            }
             $unit = JobUnit::loadFromId($unitId);
         }
-
-        $workerId = self::getUniqueIdFromSession(self::WorkerId);
-        $unit->setWorkerId($workerId);
 
         return $unit;
     }
 
-    public static function createOrUpdateUnit() {
+    private function createOrUpdateUnit() {
         $unit = null;
         if (!Form::get("reset")) {
             $unit = self::loadUnit();
@@ -112,6 +101,11 @@ class Index {
         if (!$unit) {
             $unit = JobUnit::createNewSession();
         }
+
+        // WorkerId を取得し、設定
+        $workerId = self::getUniqueIdFromSession(self::WorkerId);
+        $unit->setWorkerId($workerId);
+
         // 回答データがポストされていればそれを保存
         if ($answerRawData = Form::post("answer", [])) { // ["ModelID,Rotation,LOD,Judge", ...]
             $answerData = self::ensureAnswerDataFormat($unit, $answerRawData);
@@ -119,13 +113,14 @@ class Index {
                 $unit->writeJudgeData($answerData);
             }
         }
-        $_SESSION[self::QuestionUnitId] = $unit->getUnitId();
+        // Unit に設定されているワーカー ID をセッションに格納
+        // (同一ユーザーかどうかを判定するためのもの。クライアント側でセッションが破棄された場合は不正確)
         $_SESSION[self::WorkerId] = $unit->getWorkerId();
         return $unit;
     }
 
     private static function getUniqueIdFromSession($key) {
-        if (isset($_SESSION[$key])) {
+        if (isset($_SESSION[$key]) && !empty($_SESSION[$key])) {
             return $_SESSION[$key];
         } else {
             return Crypto::CreateUniqueId(16);

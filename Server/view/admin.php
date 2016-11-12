@@ -168,6 +168,8 @@ $jobForm = array_merge($jobForm, [
         <div><b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD</div>
     </div>
 
+<?php /*
+
     <h3>Quiz</h3>
 
     <div class="form-group">
@@ -194,6 +196,8 @@ $jobForm = array_merge($jobForm, [
         %
         <label for="new-job-quiz-accuracy-rate" class="form-control-label validate"></label>
     </div>
+
+*/ ?>
 
     <div class="form-group">
         <input id="submit-create-new-job" type="submit">

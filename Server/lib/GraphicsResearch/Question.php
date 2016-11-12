@@ -21,6 +21,7 @@ class Question {
     // ]
     public function createQuestionOrder(AbstractUnit $unit) {
         if ($questionOrder = $unit->getRandomizeQuestionOrder()) {
+            // 質問データが与えられている場合はそちらを使用する
             $randomizedQuestionOrder = $questionOrder;
         } else {
             // 回答済み ModelID のリスト (テスト対象から除外するため)

@@ -3,10 +3,10 @@
 namespace GraphicsResearch;
 
 abstract class AbstractUnit {
-    protected $jobId;
-    protected $unitId;
-    protected $verificationCode;
-    protected $workerId;
+    private $workerId;
+    private $jobId;
+    private $unitId;
+    private $verificationCode;
 
     const MaxWorkerIdLength = 32;
 
@@ -75,5 +75,17 @@ abstract class AbstractUnit {
     //   ], ...
     // ]
     abstract public function writeJudgeData($answers);
+
+    protected function setJobId($jobId) {
+        $this->jobId = $jobId;
+    }
+
+    protected function setVerificationCode($code) {
+        $this->verificationCode = $code;
+    }
+
+    protected function setUnitId($unitId) {
+        $this->unitId = $unitId;
+    }
 }
 

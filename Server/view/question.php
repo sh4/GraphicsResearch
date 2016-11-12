@@ -61,7 +61,10 @@ function question(Page\Index $page, $model) {
 <body>
 
 <form id="answer-form" method="post" action="<?php echo $page->getFormAction() ?>">
+
 <input type="hidden" name="quizMode" value="<?php echo Form::request("quizMode", 0) == 1 ? 1 : 0 ?>">
+<input type="hidden" name="quizSid" valuie="<?php Form::e(Form::request("quizSid")) ?>">
+<input type="hidden" name="unitId" value="<?php Form::e($page->getUnitId()) ?>">
 
 <div class="answer-region">
 

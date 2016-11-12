@@ -14,9 +14,9 @@ class Job {
     private $crowdFlowerJobId;
     private $crowdFlower;
 
-    // 本当は 1 ページ == 1 問にしてすべてこのシステムで回答をハンドリングしたいが、
-    // 足切りのための Quiz Mode を有効化するために RowPerPage >= 2 の前提を満たす必要がある
-    const crowdFlowerRowPerPage = 2;
+    // Quiz Mode を有効化する場合は 2 にする
+    // 2 にすると RowPerPage == 2 になり、ジョブ実行前にクイズが挟まれるのと、1 問 Quiz 行が入る
+    const crowdFlowerRowPerPage = 1;
     // CrowdFlower の Quiz Mode を有効化するために必要な問題数 
     const crowdFlowerMinimumQuizQuestions = 5;
 

@@ -1,5 +1,9 @@
 require(['jquery-noconflict'], function() {
 
+function getRandomId() {
+  return Math.random().toString(16).substr(2) + (+new Date()).toString(36);
+}
+
 var jQuery = window.jQuery;
 
 var isSecure = /https/i.test(location.href);
@@ -25,6 +29,7 @@ var surveyUnits = [];
     var href = unit.link.attr("href");
     if (unit.field.data("is-golden")) {
       href += "&quizMode=1";
+      rhef += "&quizSid=" + getRandomId();
     }
     unit.link.attr("href", href);
   });
@@ -59,7 +64,7 @@ CMLFormValidator.addAllThese([
       if (isGolden) {
         return true;
       }
-      jQuery.getJSON(verifyUrl + "/verify?unitId=" + unitId + "&verificationCode=" + elem.value + "&workerId=" + workerId).then(function (r) {
+      jQuery.getJSON(verifyUrl + "/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
         if (r.ok) {
           surveyCodeConfirmed[unitId] = true;
           pass();

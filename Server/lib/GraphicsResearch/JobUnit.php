@@ -14,21 +14,20 @@ class JobUnit extends AbstractUnit {
         if (!Crypto::isValidUniqueId($unitId)) {
             throw new \Exception("Invalid SessionID: $unitId");
         }
-        $this->unitId = $unitId;
+        $this->setUnitId($unitId);
         $this->updatedOn = $hash["updated_on"] ? new \DateTime($hash["updated_on"]) : null;
         $this->createdOn = $hash["created_on"] ? new \DateTime($hash["created_on"]) : null;
         $this->judgementData = null;
-        $this->workerId = "";
         $this->questions = null;
         $this->answeredQuestions = 0;
         if (isset($hash["answered_questions"])) {
             $this->answeredQuestions = (int)$hash["answered_questions"];
         }
         if (isset($hash["job_id"])) {
-            $this->jobId = $hash["job_id"];
+            $this->setJobId($hash["job_id"]);
         }
         if (isset($hash["verification_code"])) {
-            $this->verificationCode = $hash["verification_code"];
+            $this->setVerificationCode($hash["verification_code"]);
         }
     }
 
@@ -37,7 +36,6 @@ class JobUnit extends AbstractUnit {
     }
 
     public function getRandomizeQuestionOrder() {
-        // TODO: Quiz に指定された質問を job_quiz_unit の question_count 件数分差し込む (ランダム)
         return null;
     }
 

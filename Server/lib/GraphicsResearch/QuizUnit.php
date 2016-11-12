@@ -12,20 +12,19 @@ class QuizUnit extends AbstractUnit {
         if (!Crypto::isValidUniqueId($unitId)) {
             throw new \Exception("Invalid SessionID: $unitId");
         }
-        $this->unitId = $unitId;
+        $this->setUnitId($unitId);
         $this->judgementData = null;
-        $this->workerId = "";
-        $this->quizSesssionId = "";
+        $this->quizSessionId = "";
         $this->questionCount = 0;
         $this->answeredQuestions = null;
         if (isset($hash["question_count"])) {
             $this->questionCount = $hash["question_count"];
         }
         if (isset($hash["job_id"])) {
-            $this->jobId = $hash["job_id"];
+            $this->setJobId($hash["job_id"]);
         }
         if (isset($hash["verification_code"])) {
-            $this->verificationCode = $hash["verification_code"];
+            $this->setVerificationCode($hash["verification_code"]);
         }
         if (isset($hash["quiz_sid"])) {
             $this->quizSessionId = $hash["quiz_sid"];
@@ -33,7 +32,7 @@ class QuizUnit extends AbstractUnit {
     }
 
     public function setQuizSessionId($quizSessionId) {
-        $this->quizSesssionId = $quizSessionId;        
+        $this->quizSessionId = $quizSessionId;
     }
 
     public function isTestPassed(Job $job) {
@@ -69,7 +68,7 @@ class QuizUnit extends AbstractUnit {
                 AND judgement.golden_id IS NULL
         ", [
             "job_id" => $this->getJobId(),
-            "quiz_sid" => $this->getWorkerId(),
+            "quiz_sid" => $this->quizSessionId,
         ]);
         $remainQuestionKeys = array_keys($remainQuestions);
         shuffle($remainQuestionKeys);
