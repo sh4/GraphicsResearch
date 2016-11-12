@@ -316,9 +316,10 @@ class Router {
             if ($job) {
                 if (Job::deleteFromId($job->getJobId())) {
                     // ジョブの削除を行っても、外部サイトの情報は消えない点に注意
+                    $jobId = $job->getJobId();
                     Router::Flash("success", 
                         "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
-                        ', <a href="https://make.crowdflower.com/jobs/">Please delete manually of the CrowdFlower job.</a>'
+                        ', <a href="https://make.crowdflower.com/jobs/$jobId/">Please delete manually of the CrowdFlower job.</a>'
                     );
                 } else {
                     Router::Flash("warning", "Delete job failed.");
