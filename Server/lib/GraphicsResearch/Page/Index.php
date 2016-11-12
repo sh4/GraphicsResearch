@@ -68,7 +68,7 @@ class Index {
     }
     
     public function getAnswers($modelId, $rotation, $lod) {
-        $choices = Constants::JudgeList;
+        $choices = ["Yes", "No"];
         foreach ($choices as $i => $ans) {
             $input = new \stdClass();
             $input->value = implode(",", [$modelId, $rotation, $lod, $ans]);
@@ -133,8 +133,7 @@ class Index {
             list($modelId, $rotation, $lod, $judge) = explode(",", $answer);
             if (is_numeric($modelId) 
                 && is_numeric($lod)
-                && is_numeric($rotation)
-                && in_array($judge, Constants::JudgeList))
+                && is_numeric($rotation))
             {
                 $answerData[] = [
                     "unit_id" => $unit->getUnitId(),
