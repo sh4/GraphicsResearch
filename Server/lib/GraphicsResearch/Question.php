@@ -14,26 +14,6 @@ class Question {
     private function __constructor() {
     }
 
-    // yield no => [
-    //   "id" => ModelID,
-    //   "rotation" => RotationId,
-    //   "lod" => LOD,
-    // ]
-    public function createQuestionOrder(AbstractUnit $unit) {
-        if ($questionOrder = $unit->getRandomizeQuestionOrder()) {
-            // 質問データが与えられている場合はそちらを使用する
-            $randomizedQuestionOrder = $questionOrder;
-        } else {
-            // 回答済み ModelID のリスト (テスト対象から除外するため)
-            $answeredIds = $unit->getAnsweredIds();
-            // ランダムな並び順
-            $randomizedQuestionOrder = $this->createRandomizeOrderQuestions($answeredIds);
-        }
-        foreach ($randomizedQuestionOrder as $i => $model) {
-            yield $i => $model;
-        }
-    }
-
     public static function buildFromModelDirectory($relativeModelDirectory) {
         $question = new Question();
         $question->buildModelSet($relativeModelDirectory);
@@ -114,11 +94,11 @@ class Question {
         }
     }
 
-    private function createRandomizeOrderQuestions($answeredIds) {
+    public function createRandomOrderQuestions($answeredIds) {
         // マスターデータのキーリスト(ModelID のリスト) だけに含まれる ModelID を得る
         // (残りテストが必要な　ModelID のリストを返す) 
         $remainTestModelIds = array_diff(
-            // テスト対象のデータは、LOD0 + それ以外のLOD のモデルの最低 2 つ以上が存在していることが必須
+            // テスト対象のデータは、LOD0 + それ以外の LOD モデルの最低 2 つ以上が存在していることが必須
             array_keys($this->testAvailableModelIdMap),
             $answeredIds);
         shuffle($remainTestModelIds); // ModelID のリストをシャッフル
@@ -128,12 +108,11 @@ class Question {
             $rotationId = array_rand($rotationSet);
 
             $lodMapWithoutLodZero = $rotationSet[$rotationId];
-            $lod = array_rand($lodMapWithoutLodZero);
 
             yield ($no+$i) => [
                 "id" => $modelId,
                 "rotation" => $rotationId,
-                "lod" => $lod,
+                "lodMap" => $lodMapWithoutLodZero,
             ];
         }
     }
@@ -155,6 +134,16 @@ class Question {
         } else {
             return null;
         }
+    }
+
+    public function lodList($modelId, $rotationId) {
+        if (!isset(
+            $this->modelLodMap[$modelId], 
+            $this->modelLodMap[$modelId][$rotationId]))
+        {
+            return [];
+        }
+        return array_keys($this->modelLodMap[$modelId][$rotationId]);
     }
 
     // テストに利用できない無効なデータセットを返す

@@ -30,6 +30,7 @@ h3 {
     margin-bottom: 0.8em;
     letter-spacing: 0.1em;
 }
+
 .radio-button {
     display: inline-block;
     width: 40%;
@@ -64,6 +65,21 @@ h3 {
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.15),0 1px 2px rgba(0,0,0,0.05);
     background-color: #4aaaa5;
 }
+
+.index-button {
+    display: inline-block;
+}
+.index-button > input {
+    display: none;
+}
+.index-button img {
+    border: 10px solid #fff;
+    cursor: pointer;
+}
+.index-button input[type="radio"]:checked + label > img {
+    border-color: #4aaaa5;
+}
+
 .progress-bar {
     position: relative;
     margin: 0 auto;

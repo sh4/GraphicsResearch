@@ -35,8 +35,47 @@ class JobUnit extends AbstractUnit {
         return $this->updatedOn;
     }
 
-    public function getRandomizeQuestionOrder() {
-        return null;
+    public function getRandomQuestionOrder(Question $question, $answerContext) {
+        // 回答済み ModelID のリスト (テスト対象から除外するため)
+        $answeredIds = $this->getAnsweredIds();
+        $modelNo = count($answeredIds);
+        if ($answerContext) {
+            $lastAnswer = $answerContext["lastAnswer"];
+            $modelId = $lastAnswer["model_id"];
+            $rotationId = $lastAnswer["rotation_id"];
+            $lodLists = $question->lodList($modelId, $rotationId);
+            // 残り回答が必要な LOD のリストを得る
+            $judgeLods = array_diff(
+                $lodLists,
+                $answerContext["answeredLods"]
+            );
+            shuffle($judgeLods);
+            foreach ($judgeLods as $lod) {
+                yield $modelNo => [
+                    "no" => $modelNo,
+                    "id" => $modelId,
+                    "rotation" => $rotationId,
+                    "lod" => $lod,
+                ];
+                $modelNo++;
+            }
+        }
+        // ランダムな並び順
+        $questionOrder = $question->createRandomOrderQuestions($answeredIds);
+        // あるモデルにおけるランダムなローテーションについて、LOD をランダムな順番で列挙
+        foreach ($questionOrder as $order) {
+            $lodLists = array_keys($order["lodMap"]);
+            shuffle($lodLists);
+            foreach ($lodLists as $lod) {
+                yield $modelNo => [
+                    "no" => $modelNo,
+                    "id" => $order["id"],
+                    "rotation" => $order["rotation"],
+                    "lod" => $lod,
+                ];
+                $modelNo++;
+            }
+        }
     }
 
     public function getProgress() {

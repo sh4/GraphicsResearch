@@ -5,6 +5,7 @@ require_once "config.php";
 use GraphicsResearch\Form;
 use GraphicsResearch\AbstractUnit;
 use GraphicsResearch\Job;
+use GraphicsResearch\JobUnit;
 use GraphicsResearch\DB;
 use GraphicsResearch\Question;
 use GraphicsResearch\QuestionPage;
@@ -356,7 +357,7 @@ class Router {
             "ModelID",
             "RotationID",
             "LOD",
-            "Same",
+            "IsBetterThanReferenceModel",
             "Filename",
         ]);
         echo "\r\n";
@@ -375,7 +376,7 @@ class Router {
                 $model_id,
                 $rotation_id,
                 $lod,
-                $is_same,
+                $is_better_than_ref,
                 basename($modelPath),
             ]);
             echo "\r\n";

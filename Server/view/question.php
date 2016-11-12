@@ -9,15 +9,11 @@ if ($progress->remain === 0) {
     Router::redirect("done", ["quizMode" => Form::request("quizMode", 0)]);
 }
 
-function question(Page\Index $page, $model) {
-    $modelId = $model["id"];
-    $lod = $model["lod"];
-    $rotation = $model["rotation"];
-    $root = Router::Path();
+function question(Page\Index $page, $models) {
     $questionPage = $page->getQuestionPage();
-
-    $leftModel = $page->getModelPath($modelId, $rotation, 0);
-    $rightModel = $page->getModelPath($modelId, $rotation, $lod);
+    $root = Router::Path();
+    $modelOrder = array_keys($models);
+    shuffle($modelOrder);
 ?>
     <div style="margin-bottom:3em">
     <div class="question">
@@ -25,26 +21,20 @@ function question(Page\Index $page, $model) {
     </div>
     <table style="width:100%">
         <tr class="test-item">
+            <?php
+            foreach ($modelOrder as $order): 
+                $model = $models[$order];
+            ?>
             <td>
-                <?php if (file_exists($leftModel)): ?>
-                <img src="<?php echo $root, "/", $leftModel; ?>">
+                <?php if (file_exists($model["path"])): ?>
+                <div class="index-button">
+                    <input autocomplete="off" type="radio" id="<?php echo $model["formId"] ?>" name="answer[<?php echo $model["no"] ?>]" value="<?php echo $model["formValue"] ?>">
+                    <label for="<?php echo $model["formId"] ?>"><img src="<?php echo $root, "/", $model["path"]; ?>"></label>
+                </div>
                 <?php endif ?>
             </td>
-            <td>
-                <?php if (file_exists($rightModel)): ?>
-                <img src="<?php echo $root, "/", $rightModel; ?>">
-                <?php endif ?>
-            </td>
-            </tr>
-        <tr>
-            <td colspan="2" style="text-align: center; padding-top:2em">
-            <?php foreach ($page->getAnswers($modelId, $rotation, $lod) as $input): ?>
-            <div class="radio-button">
-                <input autocomplete="off" type="radio" id="<?php echo $input->id ?>" name="answer[]" value="<?php echo $input->value ?>">
-                <label for="<?php echo $input->id ?>"><?php echo $input->answer ?></label>
-            </div>
             <?php endforeach ?>
-        </td>
+        </tr>
     </tr>
     </table>
     </div>
@@ -79,15 +69,26 @@ function question(Page\Index $page, $model) {
 
 <?php
 $num = $page->getNumber();
-foreach ($page->getQuestionOrders() as $i => $model) {
+foreach ($page->getQuestionOrders() as $i => $models) {
     if ($num !== null && --$num < 0) {
         break;
     }
     echo '<h2>No.', ($i+1), '</h2>';
-    question($page, $model);
+    question($page, $models);
 }
 ?>
 </div>
+
+<?php
+if ($answerContext = $page->getAnswerContext()):
+    $modelId = $answerContext["lastAnswer"]["model_id"];
+    foreach ($answerContext["answeredLods"] as $lod):
+?>
+    <input type="hidden" name="answeredLods[]" value="<?php echo (int)$modelId ?>,<?php echo (int)$lod ?>">
+<?php
+    endforeach;
+endif
+?>
 
 <?php if ($page->getNumber() > 1): ?>
     <div style="margin-top:5em">
@@ -101,7 +102,7 @@ foreach ($page->getQuestionOrders() as $i => $model) {
 (function () {
 
 <?php if ($page->getNumber() === 1): ?>
-Array.prototype.slice.call(document.querySelectorAll(".radio-button") || []).forEach(function (el) {
+Array.prototype.slice.call(document.querySelectorAll(".index-button") || []).forEach(function (el) {
     el.addEventListener("change", function () {
         document.querySelector("#answer-form").submit();
     });

@@ -191,9 +191,8 @@ class DB {
             function () { $this->deleteJudgementJsonData(); },
             function () { $this->supportQuizMode(); },
             function () { $this->lodComparable(); },
-        ] as $version => $migrateInfo) {
-            $version += 1; // version is 1 origin 
-            list ($migrateVersion, $migrater) = $migrateInfo;
+        ] as $migrateVersion => $migrater) {
+            $migrateVersion += 1; // migrate version is 1 origin 
             if ($version < $migrateVersion) {
                 $migrater();
                 $version = $migrateVersion;

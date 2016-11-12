@@ -17,10 +17,12 @@ class Index {
     private $unit;
     private $number;
     private $formAction;
+    private $lastAnswers;
 
     const WorkerId = "questionWorkerId";
 
     public function __construct() {
+        $this->lastAnswers = [];
         $this->number = (int)Form::get("num", 1);
         $this->formAction = \Router::Path("/");
         if ($this->number !== null && $this->number > 0) {
@@ -44,9 +46,20 @@ class Index {
     }
 
     public function getQuestionOrders() {
-        $questions = $this->question->createQuestionOrder($this->unit);
+        $answerContext = $this->getAnswerContext();
+        $questions = $this->unit->getRandomQuestionOrder($this->question, $answerContext);
+        // $model = [
+        //   "id" => ModelID,
+        //   "rotation" => RotationId,
+        //   "lod" => LOD,
+        // ]
         foreach ($questions as $i => $model) {
-            yield $i => $model;
+            $refModel = $this->prepareModelParams($model, 0);
+            $model    = $this->prepareModelParams($model, $model["lod"]);
+            yield $i => [
+                $refModel,
+                $model,
+            ];
         }
     }
 
@@ -61,21 +74,6 @@ class Index {
 
     public function getUnitId() {
         return $this->unit->getUnitId();
-    }
-
-    public function getModelPath($modelId, $rotation, $lod) {
-        return $this->question->modelPath($modelId, $rotation, $lod);
-    }
-    
-    public function getAnswers($modelId, $rotation, $lod) {
-        $choices = ["Yes", "No"];
-        foreach ($choices as $i => $ans) {
-            $input = new \stdClass();
-            $input->value = implode(",", [$modelId, $rotation, $lod, $ans]);
-            $input->id = "answer-form-$modelId-$i";
-            $input->answer = $ans;
-            yield $input;
-        }
     }
 
     public static function loadUnit() {
@@ -93,6 +91,40 @@ class Index {
         return $unit;
     }
 
+    public function getAnswerContext() {
+        $rawAnsweredLods = Form::post("answeredLods", []);
+        if (!is_array($rawAnsweredLods)) {
+            $rawAnsweredLods = [];
+        }
+        $lastModelId = -1;
+        $answerLods = [];
+        foreach ($rawAnsweredLods as $rawAnswerLod) {
+            list ($modelId, $lod) = explode(",", $rawAnswerLod);
+            if ($lastModelId != $modelId) {
+                $answerLods = [$lod];
+                $lastModelId = $modelId;
+            } else {
+                $answerLods[] = $lod;
+            }
+        }
+        foreach ($this->lastAnswers as $answer) {
+            if ($lastModelId != $answer["model_id"]) {
+                $answerLods = [$answer["lod"]];
+                $lastModelId = $answer["model_id"];
+            } else {
+                $answerLods[] = $answer["lod"];
+            }
+        }
+        if (empty($answerLods)) {
+            return null;
+        }
+        $lastAnswer = $this->lastAnswers[count($this->lastAnswers) - 1];
+        return [
+            "lastAnswer" => $lastAnswer,
+            "answeredLods" => $answerLods,
+        ];
+    }
+
     private function createOrUpdateUnit() {
         $unit = null;
         if (!Form::get("reset")) {
@@ -107,10 +139,11 @@ class Index {
         $unit->setWorkerId($workerId);
 
         // 回答データがポストされていればそれを保存
-        if ($answerRawData = Form::post("answer", [])) { // ["ModelID,Rotation,LOD,Judge", ...]
+        if ($answerRawData = Form::post("answer", [])) { // ["ModelID,Rotation,LOD,IsBetterThanRef", ...]
             $answerData = self::ensureAnswerDataFormat($unit, $answerRawData);
             if (!empty($answerData)) {
                 $unit->writeJudgeData($answerData);
+                $this->lastAnswers = $answerData;
             }
         }
         // Unit に設定されているワーカー ID をセッションに格納
@@ -130,7 +163,7 @@ class Index {
     private static function ensureAnswerDataFormat($unit, $answerRawData) {
         $answerData = [];
         foreach ($answerRawData as $answer) {
-            list($modelId, $rotation, $lod, $judge) = explode(",", $answer);
+            list($modelId, $rotation, $lod, $isBetterThanRef) = explode(",", $answer);
             if (is_numeric($modelId) 
                 && is_numeric($lod)
                 && is_numeric($rotation))
@@ -140,12 +173,26 @@ class Index {
                     "model_id" => $modelId,
                     "rotation_id" => $rotation,
                     "lod" => $lod,
-                    "is_same" => $judge == "Yes" ? 0 : 1,
+                    "is_same" => 0,
+                    // リファレンスモデル (LOD=0) よりもよく見えたかどうか
+                    "is_better_than_ref" => $isBetterThanRef == 1 ? 1 : 0,
                     "worker_id" => $unit->getWorkerId(),
                 ];
             }
         }
         return $answerData;
     }
-   
+
+    private function prepareModelParams($model, $lod) {
+        $model["path"] = $this->question->modelPath($model["id"], $model["rotation"], $lod);
+        $model["formId"] = "answer-form-".$model["no"]."-".$lod;
+        $model["formValue"] = implode(",", [
+            $model["id"],
+            $model["rotation"],
+            $model["lod"],
+            // リファレンスモデル (LOD=0) よりよく見えるなら 1
+            $lod != 0 ? 1 : 0,
+        ]);
+        return $model;
+    }
 }

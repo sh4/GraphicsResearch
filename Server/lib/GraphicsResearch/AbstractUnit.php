@@ -44,7 +44,7 @@ abstract class AbstractUnit {
         return $answeredIds;
     }
 
-    abstract public function getRandomizeQuestionOrder();
+    abstract public function getRandomQuestionOrder(Question $question, $answerContext);
 
     abstract public function getProgress();
 
