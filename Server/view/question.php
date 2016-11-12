@@ -15,6 +15,9 @@ function question(Page\Index $page, $model) {
     $rotation = $model["rotation"];
     $root = Router::Path();
     $questionPage = $page->getQuestionPage();
+
+    $leftModel = $page->getModelPath($modelId, $rotation, 0);
+    $rightModel = $page->getModelPath($modelId, $rotation, $lod);
 ?>
     <div style="margin-bottom:3em">
     <div class="question">
@@ -22,8 +25,16 @@ function question(Page\Index $page, $model) {
     </div>
     <table style="width:100%">
         <tr class="test-item">
-            <td><img src="<?php echo $root, "/", $page->getModelPath($modelId, $rotation, 0); ?>"></td>
-            <td><img src="<?php echo $root, "/", $page->getModelPath($modelId, $rotation, $lod); ?>"></td>
+            <td>
+                <?php if (file_exists($leftModel)): ?>
+                <img src="<?php echo $root, "/", $leftModel; ?>">
+                <?php endif ?>
+            </td>
+            <td>
+                <?php if (file_exists($rightModel)): ?>
+                <img src="<?php echo $root, "/", $rightModel; ?>">
+                <?php endif ?>
+            </td>
             </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top:2em">
