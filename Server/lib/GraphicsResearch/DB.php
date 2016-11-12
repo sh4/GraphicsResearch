@@ -151,35 +151,6 @@ class DB {
             response_body TEXT
         );
     ";
-    
-    public function migrateSchema() {
-        $this->dbh->exec(self::initialTableSql);
-        $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
-        $schemaVersion = $version;
-
-        // メモ: JSON フォーマットを内部に持つ job テーブルの　question_order_json は、
-        //      回答データファイルのメタ情報が増えた時には内部データの変換が必要になるはずなので注意
-
-        // マイグレーション処理
-        foreach ([
-            // <SchemaVersion>, <Migrater>
-            [1, function () { $this->migrateSchemaVersion_1(); }],
-            [2, function () { $this->migrateSchemaVersion_2(); }],
-            [3, function () { $this->migrateSchemaVersion_3(); }],
-            [4, function () { $this->migrateSchemaVersion_4(); }],
-            [5, function () { $this->migrateSchemaVersion_5(); }],
-        ] as $migrateInfo) {
-            list ($migrateVersion, $migrater) = $migrateInfo;
-            if ($version < $migrateVersion) {
-                $migrater();
-                $version = $migrateVersion;
-            }
-        }
-
-        if ($schemaVersion < $version) {
-            $this->insert("schema_version", ["version" => $version]);
-        }
-    }
 
     private function metaExecute($operation, $table, $params) {
         $columns = [];
@@ -204,14 +175,50 @@ class DB {
         return self::$defaultConnection;
     }
 
+    public function migrateSchema() {
+        $this->dbh->exec(self::initialTableSql);
+        $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
+        $schemaVersion = $version;
+
+        // メモ: JSON フォーマットを内部に持つ job テーブルの　question_order_json は、
+        //      回答データファイルのメタ情報が増えた時には内部データの変換が必要になるはずなので注意
+
+        // マイグレーション処理
+        foreach ([
+            function () { $this->extendQuestionOrderJson(); },
+            function () { $this->editableQuestionPageMessage(); },
+            function () { $this->migrateJudgementDataJsonToTable(); },
+            function () { $this->deleteJudgementJsonData(); },
+            function () { $this->supportQuizMode(); },
+            function () { $this->lodComparable(); },
+        ] as $version => $migrateInfo) {
+            $version += 1; // version is 1 origin 
+            list ($migrateVersion, $migrater) = $migrateInfo;
+            if ($version < $migrateVersion) {
+                $migrater();
+                $version = $migrateVersion;
+            }
+        }
+
+        if ($schemaVersion < $version) {
+            $this->insert("schema_version", ["version" => $version]);
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////
+    //
+    // マイグレーション処理
+    //
+    /////////////////////////////////////////////////////////////////
+
     // データの表示順序を保持するカラムを追加 (データ量 > 64KB になりそうなので MEDIUMBLOB)
-    private function migrateSchemaVersion_1() {
+    private function extendQuestionOrderJson() {
         $migrateSql = "ALTER TABLE job ADD COLUMN question_order_json MEDIUMBLOB";
         $this->dbh->exec($migrateSql);
     }
 
     // 質問ページのメッセージを管理画面で編集できるようにカラムを追加
-    private function migrateSchemaVersion_2() {
+    private function editableQuestionPageMessage() {
         $migrateSql = "
         CREATE TABLE IF NOT EXISTS question_page (
             page_key VARCHAR(32) PRIMARY KEY NOT NULL,
@@ -226,7 +233,7 @@ class DB {
     }
 
     // 判定データを JSON からテーブルの行に移行
-    private function migrateSchemaVersion_3() {
+    private function migrateJudgementDataJsonToTable() {
         $migrateSql = "
         CREATE TABLE IF NOT EXISTS job_unit_judgement (
             id INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
@@ -273,7 +280,7 @@ class DB {
     }
 
     // 判定データ格納用 JSON カラムを削除
-    private function migrateSchemaVersion_4() {
+    private function deleteJudgementJsonData() {
         $deleteJudgmentDataJsonColumn = "
         ALTER TABLE job_unit DROP judgement_data_json;
         ";
@@ -281,7 +288,7 @@ class DB {
     }
 
     // 足切り用データ格納用テーブル
-    private function migrateSchemaVersion_5() {
+    private function supportQuizMode() {
         $createQuizTables = "
         CREATE TABLE IF NOT EXISTS job_quiz_unit (
             unit_id VARCHAR(16) PRIMARY KEY NOT NULL,
@@ -311,5 +318,13 @@ class DB {
         ALTER TABLE job ADD COLUMN quiz_accuracy_rate FLOAT;
         ";
         $this->dbh->exec($createQuizTables);
+    }
+
+    // LOD個別比較用
+    private function lodComparable() {
+        $sql = "
+        ALTER TABLE job_unit_judgement ADD COLUMN is_better_than_ref TINYINT
+        ";
+        $this->dbh->exec($sql);
     }
 }
