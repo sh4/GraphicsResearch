@@ -78,10 +78,6 @@ class JobUnit extends AbstractUnit {
         }
     }
 
-    public function getProgress() {
-        return $this->getAnsweredQuestionCount() / $this->getTotalQuestionCount();
-    }
-
     public function getTotalQuestionCount() {
         if ($this->questions === null) {
             if ($jobId = $this->getJobId()) {

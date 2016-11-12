@@ -83,10 +83,6 @@ class QuizUnit extends AbstractUnit {
         }
     }
 
-    public function getProgress() {
-        return $this->getAnsweredQuestionCount() / $this->getTotalQuestionCount();
-    }
-
     public function getTotalQuestionCount() {
         return (int)($this->questionCount / Job::crowdFlowerRowPerPage);
     }

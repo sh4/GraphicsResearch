@@ -1,6 +1,9 @@
 <?php
 
 use GraphicsResearch\Form;
+use GraphicsResearch\Question;
+
+$question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
 
 $unitStatusFilter = strtolower(Form::get("status", ""));
 
@@ -33,7 +36,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     <thead class="thead-inverse">
     <tr>
         <th>Total Reward Amount</th>
-        <th># of Questions</th>
+        <th># of Scenes</th>
         <th># of Workers</th>
         <th>Progress</th>
         <th>Created Date</th>
@@ -41,7 +44,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     </tr>
     </thead>
     <tbody>
-    <?php $progressPercent = min([100.0, round($job->getAnswerProgress() * 100, 2)]); ?>
+    <?php $progressPercent = min([100.0, round($job->getProgress($question) * 100, 2)]); ?>
     <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td>
             <?php echo sprintf("%.2f", $job->estimateTotalAmountUSD()) ?> USD

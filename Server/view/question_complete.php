@@ -3,17 +3,19 @@ use GraphicsResearch\Page\Index;
 use GraphicsResearch\Job;
 use GraphicsResearch\Crypto;
 
-$unit = Index::loadUnit();
-$verificationCode = $unit->getVerificationCode();
+$verificationCode = "";
+if ($unit = Index::loadUnit()) {
+    $verificationCode = $unit->getVerificationCode();
 
-// クイズモードならジョブの正答率に基づいて正しい答えを返すべきか判定
-if (is_a($unit, "GraphicsResearch\\QuizUnit") 
-    && ($jobId = $unit->getJobId())
-    && ($job = Job::loadFromId($jobId)))
-{
-    // 正答率がジョブの要求水準に満たなければ偽の SurveryCode を返す
-    if (!$unit->isTestPassed($job)) {
-        $verificationCode = Crypto::createUniqueNumber(10);
+    // クイズモードならジョブの正答率に基づいて正しい答えを返すべきか判定
+    if (is_a($unit, "GraphicsResearch\\QuizUnit") 
+        && ($jobId = $unit->getJobId())
+        && ($job = Job::loadFromId($jobId)))
+    {
+        // 正答率がジョブの要求水準に満たなければ偽の SurveryCode を返す
+        if (!$unit->isTestPassed($job)) {
+            $verificationCode = Crypto::createUniqueNumber(10);
+        }
     }
 }
 
@@ -51,8 +53,6 @@ if (is_a($unit, "GraphicsResearch\\QuizUnit")
     <h2>Survey Code</h2>
     <input type="text" id="survey-code" value="<?php echo $verificationCode ?>" onfocus="this.select()">
 </div>
-<?php else: ?>
-<p>Invalid test state, Please contact website administrator.</p>
 <?php endif ?>
 
 </body>

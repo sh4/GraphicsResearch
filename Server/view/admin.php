@@ -66,7 +66,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 <thead class="thead-inverse">
     <tr>
         <th>Title</th>
-        <th># of Questions</th>
+        <th># of Scenes</th>
         <th># of Workers</th>
         <th>Progress</th>
         <th>Created Date</th>
@@ -76,7 +76,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 <tbody>
 <?php
 foreach (Job::getJobs() as $job):
-    $progressPercent = min([100.0, round($job->getAnswerProgress() * 100, 2)]);
+    $progressPercent = min([100.0, round($job->getProgress($question) * 100, 2)]);
     ?>
     <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td><a href="<?php echo Router::Path("admin/jobs") ?>/?jobId=<?php echo $job->getJobId() ?>"><?php Form::e($job->getTitle()) ?></a></td>
@@ -117,7 +117,7 @@ if (!is_array($jobForm)) {
 $jobForm = array_merge($jobForm, [
     "title" => "",
     "instructions" => "",
-    "questions" => "100",
+    "questions" => "10",
     "max_assignments" => "100",
     "reward_amount_usd" => "0.10",
     "quiz_accuracy_rate" => "70",
@@ -145,7 +145,7 @@ $jobForm = array_merge($jobForm, [
     <h3>Order</h3>
 
     <div class="form-group">
-        <label for="new-job-num-question"># of Questions</label>
+        <label for="new-job-num-question"># of Scenes</label>
         <input type="text" class="form-control numeric" id="new-job-num-question" name="job[questions]" value="<?php Form::e($jobForm["questions"]) ?>">
         <label for="new-job-num-question" class="form-control-label validate"></label>
     </div>
@@ -168,6 +168,10 @@ $jobForm = array_merge($jobForm, [
         <div><b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD</div>
     </div>
 
+    <div class="form-group">
+        <label>Total Questions per Worker</label>
+        <div><b><span id="total-questions" style="font-size:120%">0</span></b></div>
+    </div>
 <?php /*
 
     <h3>Quiz</h3>
@@ -234,7 +238,7 @@ $jobForm = array_merge($jobForm, [
 
 <?php if (count($invalidModelInfos) > 0): ?>
 
-<h3>Invalid DataSet (Not appear in judge page)</h3>
+<h3>Invalid DataSet (Not appear in question page)</h3>
 
 <p>
 <form method="post" action="<?php echo Router::Path("admin/question/remove") ?>">
@@ -430,8 +434,18 @@ function updateTotalCost() {
     $("#total-job-cost").text(totalCostUSD.toFixed(2));
 }
 
-setInterval(updateTotalCost, 1000);
-updateTotalCost();
+function updateTotalQuestions() {
+    var totalQuestions = $("#new-job-num-question").val() * <?php echo $question->lodVariationCount() ?>;
+    $("#total-questions").text(totalQuestions);
+}
+
+function refreshEtimsateNumbers() {
+    updateTotalCost();
+    updateTotalQuestions();
+}
+
+setInterval(refreshEtimsateNumbers, 500);
+refreshEtimsateNumbers();
 
 $(".table-sorter").sortableTable();
 

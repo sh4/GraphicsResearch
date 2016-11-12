@@ -10,8 +10,10 @@ class Question {
     // [ ModelId1 => true, ... ]
     private $testAvailableModelIdMap;
     private $invalidModelSet;
+    private $lodSetCount;
 
     private function __constructor() {
+        $this->lodSetCount = null;
     }
 
     public static function buildFromModelDirectory($relativeModelDirectory) {
@@ -119,12 +121,17 @@ class Question {
 
     public function answerProgress(AbstractUnit $unit) {
         $answeredCount = $unit->getAnsweredQuestionCount();
-        $remainTestModelIds = count($this->modelLodMap) - $answeredCount;
+        $remainTestCount = (count($this->modelLodMap) * $this->lodSetCount) - $answeredCount;
         $progress = new \stdClass();
-        $progress->remain = $remainTestModelIds;
+        $progress->remain = $remainTestCount;
         $progress->answered = $answeredCount;
         $progress->total = $progress->remain + $progress->answered;
+        $progress->ratio = $progress->answered / $progress->total;
         return $progress;
+    }
+
+    public function lodVariationCount() {
+        return $this->lodSetCount;
     }
 
     public function modelPath($modelId, $rotation, $lod) {
@@ -229,6 +236,19 @@ class Question {
                 }
                 // LOD0 は比較先データとしては使用しない（常に比較元となるため)ので削除
                 unset($this->modelLodMap[$modelId][$rotationId][0]);
+                // データセットの LOD 数が同一か比較
+                $lodCount = count($lodMap) - 1;
+                if ($this->lodSetCount === null) {
+                    $this->lodSetCount = $lodCount;
+                } else if ($this->lodSetCount !== $lodCount) {
+                    // LOD の数がモデル間で異なる
+                    $this->invalidModelSet[] = [
+                        "files" => $modelFiles,
+                        "message" => "LOD variation count mismatch: expected = ".($this->lodSetCount+1).", actual = ".($lodCount+1),
+                    ];
+                    unset($this->modelLodMap[$modelId][$rotationId]);
+                    continue;
+                }
             }
             if (count($this->modelLodMap[$modelId]) === 0) {
                 // ローテーションセットが存在しない

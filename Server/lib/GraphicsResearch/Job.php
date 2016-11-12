@@ -111,10 +111,10 @@ class Job {
         }
     }
 
-    public function getAnswerProgress() {
+    public function getProgress(Question $question) {
         $progress = 0.0;
         foreach ($this->getUnits() as $unit) {
-            $progress += $unit->getProgress();
+            $progress += $question->answerProgress($unit)->ratio;
         }
         return $progress / $this->getMaxAssignments();
     }
