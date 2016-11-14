@@ -170,8 +170,8 @@ class Router {
         $unitId = Form::get("unitId", "");
         $verificationCode = Form::get("verificationCode", "");
         if ($unit = JobUnit::loadFromId($unitId)) {
-            $remainQuestions = $unit->getTotalQuestionCount() - $unit->getAnsweredQuestionCount();
-            if ($remainQuestions <= 0) {
+            $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+            if ($question->answerProgress($unit)->completed) {
                 $ok = $unit->getVerificationCode() == $verificationCode;
             }
         }
@@ -297,10 +297,10 @@ class Router {
             if ($job->launchJob($channel)) {
                 Router::Flash("success", "Successfully launched the job: ".htmlspecialchars($job->getTitle()));
             } else {
-                $jobId = $job->getJobId();
+                $cfJobId = $job->getCrowdFlowerJobId();
                 Router::Flash("warning", 
                     "Launch job failed, ".
-                    '<a href="https://make.crowdflower.com/jobs/'.$jobId.'" target="_blank">Please retry launch the job from the CrowdFlower job page.</a>');
+                    '<a href="https://make.crowdflower.com/jobs/'.$cfJobId.'" target="_blank">Please retry launch the job from the CrowdFlower job page.</a>');
             }
         }
         Router::redirect("admin");
@@ -318,10 +318,10 @@ class Router {
             if ($job) {
                 if (Job::deleteFromId($job->getJobId())) {
                     // ジョブの削除を行っても、外部サイトの情報は消えない点に注意
-                    $jobId = $job->getJobId();
+                    $cfJobId = $job->getCrowdFlowerJobId();
                     Router::Flash("success", 
                         "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
-                        ', <a href="https://make.crowdflower.com/jobs/$jobId/">Please delete manually of the CrowdFlower job.</a>'
+                        ', <a href="https://make.crowdflower.com/jobs/'.$cfJobId.'/">Please delete manually of the CrowdFlower job.</a>'
                     );
                 } else {
                     Router::Flash("warning", "Delete job failed.");

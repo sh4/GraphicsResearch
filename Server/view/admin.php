@@ -80,7 +80,10 @@ foreach (Job::getJobs() as $job):
     ?>
     <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td><a href="<?php echo Router::Path("admin/jobs") ?>/?jobId=<?php echo $job->getJobId() ?>"><?php Form::e($job->getTitle()) ?></a></td>
-        <td><?php echo $job->getQuestions() ?></td>
+        <td>
+            <?php echo $job->getQuestions() ?>
+            (<?php echo $job->getQuestions() * $question->lodVariationCount() ?> questions)
+        </td>
         <td><?php echo $job->getMaxAssignments() ?></td>
         <td><?php echo $progressPercent ?>%</td>
         <td><?php echo $job->createdOn()->format("Y/m/d H:i:s") ?></td>
@@ -169,8 +172,11 @@ $jobForm = array_merge($jobForm, [
     </div>
 
     <div class="form-group">
-        <label>Total Questions per Worker</label>
-        <div><b><span id="total-questions" style="font-size:120%">0</span></b></div>
+        <label>Estimated Total Answer Count</label>
+        <div>
+            <b><span id="total-questions" style="font-size:120%">0</span></b>
+            (<span id="questions-per-worker">0</span> answers/worker)
+        </div>
     </div>
 <?php /*
 
@@ -280,6 +286,10 @@ $jobForm = array_merge($jobForm, [
 <script type="text/javascript">
 (function ($) {
 
+function formatNumber(num) {
+    return num.toString().replace(/(\d)(?=(\d{3})+$)/g , '$1,');
+}
+
 function onError($el, text) {
     $el.siblings(".validate:first").show().text(text);
     $el.parent().addClass("has-danger");
@@ -362,6 +372,7 @@ var validateRules = {
             return true;
         }
     },
+    /*
     "#new-job-quiz-accuracy-rate": function () {
         var $el = $("#new-job-quiz-accuracy-rate");
         var accuracyRate = parseFloat($el.val());
@@ -387,6 +398,7 @@ var validateRules = {
         clearError($el);
         return true;
     },
+    */
 };
 
 for (var elemId in validateRules) {
@@ -435,8 +447,9 @@ function updateTotalCost() {
 }
 
 function updateTotalQuestions() {
-    var totalQuestions = $("#new-job-num-question").val() * <?php echo $question->lodVariationCount() ?>;
-    $("#total-questions").text(totalQuestions);
+    var questionsPerWorker = $("#new-job-num-question").val() * <?php echo $question->lodVariationCount() ?>;
+    $("#questions-per-worker").text(formatNumber(questionsPerWorker));
+    $("#total-questions").text(formatNumber(questionsPerWorker * parseInt($("#new-job-num-assignments").val(), 10)));
 }
 
 function refreshEtimsateNumbers() {

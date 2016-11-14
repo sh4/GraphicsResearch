@@ -82,8 +82,8 @@ class QuizUnit extends AbstractUnit {
         }
     }
 
-    public function getTotalQuestionCount() {
-        return (int)($this->questionCount / Job::crowdFlowerRowPerPage);
+    public function getTotalQuestionCount(Question $question) {
+        return (int)($this->questionCount / Job::crowdFlowerRowPerPage) * $question->lodVariationCount();
     }
 
     public function getAnsweredQuestionCount() {

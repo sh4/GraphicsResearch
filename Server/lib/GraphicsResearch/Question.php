@@ -121,12 +121,17 @@ class Question {
 
     public function answerProgress(AbstractUnit $unit) {
         $answeredCount = $unit->getAnsweredQuestionCount();
-        $remainTestCount = (count($this->modelLodMap) * $this->lodSetCount) - $answeredCount;
+        $totalCount = $unit->getTotalQuestionCount($this);
+        if ($totalCount === null) {
+            $totalCount = count($this->modelLodMap) * $this->lodVariationCount();
+        }
+        $remainCount = $totalCount - $answeredCount;            
         $progress = new \stdClass();
-        $progress->remain = $remainTestCount;
+        $progress->remain = max(0, $remainCount);
         $progress->answered = $answeredCount;
-        $progress->total = $progress->remain + $progress->answered;
-        $progress->ratio = $progress->answered / $progress->total;
+        $progress->total = $totalCount;
+        $progress->ratio = min(1.0, $progress->answered / $progress->total);
+        $progress->completed = $remainCount <= 0;
         return $progress;
     }
 

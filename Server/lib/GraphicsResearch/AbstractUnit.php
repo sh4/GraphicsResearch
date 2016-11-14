@@ -46,7 +46,7 @@ abstract class AbstractUnit {
 
     abstract public function getRandomQuestionOrder(Question $question, $answerContext);
 
-    abstract public function getTotalQuestionCount();
+    abstract public function getTotalQuestionCount(Question $question);
 
     abstract public function getAnsweredQuestionCount();
 

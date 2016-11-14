@@ -61,12 +61,7 @@ class Index {
     }
 
     public function getAnswerProgress() {
-        $progress = $this->question->answerProgress($this->unit);
-        if ($this->unit->getJobId()) {
-            $progress->total = $this->unit->getTotalQuestionCount();
-        }
-        $progress->remain = max(0, min($progress->remain, $progress->total - $progress->answered));
-        return $progress;
+        return $this->question->answerProgress($this->unit);
     }
 
     public function getUnitId() {

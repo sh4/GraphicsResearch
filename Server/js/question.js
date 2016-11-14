@@ -57,7 +57,7 @@ function updateQuestionItems(questions, progress) {
                         .append(createQuestionInput(preload.model, index))
                         .append($labelEl);
                     $img.fadeIn(300, function () {
-                        $questionEl.find(".question-no").text(progress.answered + index);
+                        $questionEl.find(".question-no").text(progress.answered + index + 1);
                         d.resolve();
                     });
                 });
@@ -112,12 +112,24 @@ function updateAnsweredLods(answerContext) {
         $formAnsweredLods.append($lodEl);
     });
 
-    // UnitId を最新の状態に更新
-    $('[name="unitId"]').val(answerContext.lastAnswer.unit_id);
+    var unitId = answerContext.lastAnswer.unit_id;
+    if (window.GS.unitId != unitId) {
+        // UnitId を最新の状態に更新
+        window.GS.unitId = unitId;
+        $('[name="unitId"]').val(window.GS.unitId);
+    }
 }
 
 function updateQuestions(questionRequest) {
     return questionRequest.then(function (r) {
+        if (r.progress.completed) {
+            var doneUrl = "index.php/done?" + [
+                "quizMode=" + window.GS.quizMode,
+                "unitId=" + window.GS.unitId,
+            ].join("&");
+            window.location.href = doneUrl;
+            return;
+        }
         var questions = [];
         if (bufferedQuestions.length > 0) {
             questions.push(bufferedQuestions.shift());
@@ -159,6 +171,7 @@ $("#answer-form").submit(function (event) {
 
 updateQuestions($.getJSON("index.php/api/question", {
     fetchLods: 1,
+    unitId: window.GS.unitId,
 }));
 
 }(jQuery);

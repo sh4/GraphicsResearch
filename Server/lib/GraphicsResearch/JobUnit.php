@@ -73,10 +73,10 @@ class JobUnit extends AbstractUnit {
         }
     }
 
-    public function getTotalQuestionCount() {
+    public function getTotalQuestionCount(Question $question) {
         if ($this->questions === null) {
             if ($jobId = $this->getJobId()) {
-                $this->questions = Job::getQuestionsPerUnitFromId($jobId);
+                $this->questions = Job::getQuestionsPerUnitFromId($jobId) * $question->lodVariationCount();
             }
         }
         return $this->questions;

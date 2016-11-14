@@ -25,6 +25,9 @@ $judgementFilter = Form::get("filter", "");
             padding: 0em;
             border: 5px solid #aaa;
         }
+        .judgement-table td {
+            padding: 0 0.5em;
+        }
         .judgement-table td.active > img {
             border: 5px solid red;
         }
@@ -46,16 +49,16 @@ $judgementFilter = Form::get("filter", "");
         <a href="<?php echo $baseUrl ?>">All</a>
     <?php endif ?>
     |
-    <?php if ($judgementFilter === "diff"): ?>
-        Contain differences
+    <?php if ($judgementFilter === "ref"): ?>
+        Reference is better
     <?php else: ?>
-        <a href="<?php echo $baseUrl ?>&amp;filter=diff">Contain differences</a>
+        <a href="<?php echo $baseUrl ?>&amp;filter=ref">Reference is better</a>
     <?php endif ?>
     |
-    <?php if ($judgementFilter === "same"): ?>
-        Same
+    <?php if ($judgementFilter === "comp"): ?>
+        Comparison is better
     <?php else: ?>
-        <a href="<?php echo $baseUrl ?>&amp;filter=same">Same</a>
+        <a href="<?php echo $baseUrl ?>&amp;filter=comp">Comparison is better</a>
     <?php endif ?>
 </div>
 
@@ -64,18 +67,28 @@ foreach ($unit->getJudgementData() as $data):
     $modelId = $data["model_id"];
     $modelLod = $data["lod"];
     $modelRotation = $data["rotation_id"];
-    $modelIsDifferent = $data["is_same"] == 0;
-    if ($judgementFilter === "same" && $modelIsDifferent):
+    $modelIsBetterThanRef = $data["is_better_than_ref"] == 0;
+    if ($judgementFilter === "ref" && $modelIsBetterThanRef):
         continue;
-    elseif ($judgementFilter === "diff" && !$modelIsDifferent):
+    elseif ($judgementFilter === "comp" && !$modelIsBetterThanRef):
         continue;
     endif
 ?>
 <table class="judgement-table">
+<thead>
+    <tr>
+        <th>Reference</th>
+        <th>Comparison</th>
+    </tr>
+</thead>
 <tbody>
     <tr>
-    <td><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
-    <td<?php if ($modelIsDifferent): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
+        <td>LOD 0</td>
+        <td>LOD <?php echo $modelLod ?></td>
+    </tr>
+    <tr>
+        <td<?php if (!$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
+        <td<?php if ($modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
     </tr>
 </tbody>
 </table>

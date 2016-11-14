@@ -50,7 +50,10 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
             <?php echo sprintf("%.2f", $job->estimateTotalAmountUSD()) ?> USD
             (<?php echo $job->getMaxAssignments() ?> * <?php echo $job->getRewardAmountUSD() ?> USD)
         </td>
-        <td><?php echo $job->getQuestions() ?></td>
+        <td>
+            <?php echo $job->getQuestions() ?>
+            (<?php echo $job->getQuestions() * $question->lodVariationCount() ?> questions)
+        </td>
         <td><?php echo $job->getMaxAssignments() ?></td>
         <td><?php echo $progressPercent ?>%</td>
         <td><?php echo $job->createdOn()->format("Y/m/d H:i:s") ?></td>
@@ -110,9 +113,10 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
 $no = 0;
 foreach ($job->getUnits() as $unit):
     $status = "";
-    $judgedCount = $unit->getAnsweredQuestionCount();
+    $progress = $question->answerProgress($unit);
+    $judgedCount = $progress->answered;
 
-    if ($judgedCount >= $unit->getTotalQuestionCount()) {
+    if ($progress->completed) {
         $status = "completed";
     } else if ($judgedCount > 0) {
         $status = "judging";

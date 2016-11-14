@@ -6,7 +6,10 @@ $page = new Page\Index();
 $progress = $page->getAnswerProgress();
 // すでに作業が完了していれば、完了ページに遷移
 if ($progress->remain === 0) {
-    Router::redirect("done", ["quizMode" => Form::request("quizMode", 0)]);
+    Router::redirect("done", [
+        "quizMode" => Form::request("quizMode", 0),
+        "unitId" => $page->getUnitId(),
+    ]);
 }
 $num = $page->getNumber();
 $root = Router::Path();
@@ -73,7 +76,7 @@ foreach ($page->getQuestionOrders() as $i => $models):
     }
 ?>
 <div class="question-item">
-    <h2>No.<span class="question-no"><?php echo ($progress->answered+$i) ?></span></h2>
+    <h2>No.<span class="question-no"><?php echo ($progress->answered+$i+1) ?></span></h2>
     <div style="margin-bottom:3em">
         <div class="question"><?php echo $questionPage["instructions"] ?></div>
         <?php
@@ -118,6 +121,11 @@ endif
 
 <script type="text/javascript">
 (function () {
+
+window.GS = {
+    quizMode: <?php echo json_encode((int)Form::request("quizMode", 0) == 1) ?>,
+    unitId: "<?php Form::e($page->getUnitId()) ?>"
+};
 
 <?php if ($page->getNumber() === 1): ?>
 $(".index-button").change(function () {
