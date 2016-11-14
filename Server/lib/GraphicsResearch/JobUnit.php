@@ -36,9 +36,6 @@ class JobUnit extends AbstractUnit {
     }
 
     public function getRandomQuestionOrder(Question $question, $answerContext) {
-        // 回答済み ModelID のリスト (テスト対象から除外するため)
-        $answeredIds = $this->getAnsweredIds();
-        $modelNo = count($answeredIds);
         if ($answerContext) {
             $lastAnswer = $answerContext["lastAnswer"];
             $modelId = $lastAnswer["model_id"];
@@ -51,15 +48,15 @@ class JobUnit extends AbstractUnit {
             );
             shuffle($judgeLods);
             foreach ($judgeLods as $lod) {
-                yield $modelNo => [
-                    "no" => $modelNo,
+                yield [
                     "id" => $modelId,
                     "rotation" => $rotationId,
                     "lod" => $lod,
                 ];
-                $modelNo++;
             }
         }
+        // 回答済み ModelID のリスト (テスト対象から除外するため)
+        $answeredIds = $this->getAnsweredIds();
         // ランダムな並び順
         $questionOrder = $question->createRandomOrderQuestions($answeredIds);
         // あるモデルにおけるランダムなローテーションについて、LOD をランダムな順番で列挙
@@ -67,13 +64,11 @@ class JobUnit extends AbstractUnit {
             $lodLists = array_keys($order["lodMap"]);
             shuffle($lodLists);
             foreach ($lodLists as $lod) {
-                yield $modelNo => [
-                    "no" => $modelNo,
+                yield [
                     "id" => $order["id"],
                     "rotation" => $order["rotation"],
                     "lod" => $lod,
                 ];
-                $modelNo++;
             }
         }
     }
@@ -105,18 +100,18 @@ class JobUnit extends AbstractUnit {
             $db->insertMulti("job_unit_judgement", $answers);
             $db->execute("INSERT INTO job_unit
                 (unit_id, job_id, created_on, answered_questions)
-                VALUES (:unit_id, :job_id, :created_on, :answered_questions)
+                VALUES (:unit_id, :job_id, :created_on, :add_answered_questions)
                 ON DUPLICATE KEY UPDATE
-                     answered_questions = answered_questions + :answered_questions
+                     answered_questions = answered_questions + :add_answered_questions
                     ,updated_on = :updated_on
             ", [
                 "unit_id" => $this->getUnitId(),
                 "job_id" => $this->getJobId(),
                 "created_on" => $now,
                 "updated_on" => $now,
-                "answered_questions" => count($answers),
+                "add_answered_questions" => count($answers),
             ]);
-            $this->answeredQuestions = $db->fetchOne("SELECT answered_questions FROM job_unit WHERE unit_id = ?", $this->getUnitId());
+            $this->answeredQuestions = (int)$db->fetchOne("SELECT answered_questions FROM job_unit WHERE unit_id = ?", $this->getUnitId());
         });
     }
 

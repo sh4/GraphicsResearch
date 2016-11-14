@@ -8,17 +8,15 @@ $progress = $page->getAnswerProgress();
 if ($progress->remain === 0) {
     Router::redirect("done", ["quizMode" => Form::request("quizMode", 0)]);
 }
+$num = $page->getNumber();
+$root = Router::Path();
 
-function question(Page\Index $page, $models) {
+function question(Page\Index $page, $models, $no) {
     $questionPage = $page->getQuestionPage();
     $root = Router::Path();
     $modelOrder = array_keys($models);
     shuffle($modelOrder);
 ?>
-    <div style="margin-bottom:3em">
-    <div class="question">
-    <?php echo $questionPage["instructions"] ?>
-    </div>
     <table style="width:100%">
         <tr class="test-item">
             <?php
@@ -28,8 +26,8 @@ function question(Page\Index $page, $models) {
             <td>
                 <?php if (file_exists($model["path"])): ?>
                 <div class="index-button">
-                    <input autocomplete="off" type="radio" id="<?php echo $model["formId"] ?>" name="answer[<?php echo $model["no"] ?>]" value="<?php echo $model["formValue"] ?>">
-                    <label for="<?php echo $model["formId"] ?>"><img src="<?php echo $root, "/", $model["path"]; ?>"></label>
+                    <input autocomplete="off" type="radio" id="<?php echo $model["formId"] ?>" name="answer[<?php echo $no ?>]" value="<?php echo $model["formValue"] ?>">
+                    <label for="<?php echo $model["formId"] ?>"><img class="question-image" src="<?php echo $root, "/", $model["path"]; ?>"></label>
                 </div>
                 <?php endif ?>
             </td>
@@ -37,7 +35,6 @@ function question(Page\Index $page, $models) {
         </tr>
     </tr>
     </table>
-    </div>
 <?php
 }
 
@@ -45,7 +42,8 @@ function question(Page\Index $page, $models) {
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<link rel="stylesheet" type="text/css" href="<?php echo Router::Path() ?>/index.css">
+<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/index.css">
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <title>Test</title>
 </head>
 <body>
@@ -68,17 +66,38 @@ function question(Page\Index $page, $models) {
     </div>
 
 <?php
-$num = $page->getNumber();
-foreach ($page->getQuestionOrders() as $i => $models) {
+$questionPage = $page->getQuestionPage();
+foreach ($page->getQuestionOrders() as $i => $models):
     if ($num !== null && --$num < 0) {
         break;
     }
-    echo '<h2>No.', ($i+1), '</h2>';
-    question($page, $models);
-}
 ?>
+<div class="question-item">
+    <h2>No.<span class="question-no"><?php echo ($progress->answered+$i) ?></span></h2>
+    <div style="margin-bottom:3em">
+        <div class="question"><?php echo $questionPage["instructions"] ?></div>
+        <?php
+        //question($page, $models, $i);
+        ?>
+        <table style="width:100%">
+        <tr class="test-item">
+            <td>
+                <img src="<?php echo $root ?>/css/loading.svg" class="question-loading">
+                <div class="index-button">
+                </div>
+            </td>
+            <td>
+                <img src="<?php echo $root ?>/css/loading.svg" class="question-loading">
+                <div class="index-button">
+                </div>
+            </td>
+        </tr>
+        </table>
+    </div>
 </div>
+<?php endforeach ?>
 
+<div class="form-answered-lods">
 <?php
 if ($answerContext = $page->getAnswerContext()):
     $modelId = $answerContext["lastAnswer"]["model_id"];
@@ -89,12 +108,11 @@ if ($answerContext = $page->getAnswerContext()):
     endforeach;
 endif
 ?>
+</div>
 
-<?php if ($page->getNumber() > 1): ?>
-    <div style="margin-top:5em">
-        <input type="submit" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
-    </div>
-<?php endif ?>
+<div style="margin-top:5em;<?php if ($page->getNumber() <= 1): ?>display:none<?php endif ?>">
+    <input type="submit" id="question-submit" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
+</div>
 
 </form>
 
@@ -102,15 +120,15 @@ endif
 (function () {
 
 <?php if ($page->getNumber() === 1): ?>
-Array.prototype.slice.call(document.querySelectorAll(".index-button") || []).forEach(function (el) {
-    el.addEventListener("change", function () {
-        document.querySelector("#answer-form").submit();
-    });
+$(".index-button").change(function () {
+    $(this).addClass("active");
+    $("#question-submit").click();
 });
 <?php endif ?>
 
 })();
 </script>
+<script type="text/javascript" src="<?php echo $root ?>/js/question.js"></script>
 
 </body>
 </html>

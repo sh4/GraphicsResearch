@@ -10,6 +10,7 @@ use GraphicsResearch\DB;
 use GraphicsResearch\Question;
 use GraphicsResearch\QuestionPage;
 use GraphicsResearch\Page\Upload;
+use GraphicsResearch\Page\Index;
 
 class Router {
     private $routingMap = [];
@@ -411,6 +412,12 @@ class Router {
             }
         }
         echo json_encode($result);
-    }
+    },
 
+    "/api/question" => function () {
+        session_start();
+        header("Content-Type: application/json; charset=utf-8");
+        $page = new Index();
+        $page->renderQuestionJson();
+    },
 ]);

@@ -14,14 +14,9 @@ h3 {
     color: #303030;
     text-align: center;
 }
-.test-item {
-}
 .test-item > td {
-    width: 50%;
     text-align: center;
-}
-.test-item > td > img {
-    width: 100%;
+    width: 50%;
 }
 .question {
     text-align: center;
@@ -66,21 +61,28 @@ h3 {
     background-color: #4aaaa5;
 }
 .index-button {
-    padding: 1em;
+    width: 95%;
+    margin: 0 auto;
+    background: black;
+    border: 10px solid #fff;
 }
 .index-button > input {
     display: none;
 }
-.index-button img:hover {
-    border-color: #a9495b;
+.index-button:hover {
+    border-color: #64e5de;
 }
-.index-button img {
-    width: 100%;
-    border: 10px solid #fff;
+.index-button .question-image {
     cursor: pointer;
+    width: 100%;
 }
-.index-button input[type="radio"]:checked + label > img {
+.index-button.active {
     border-color: #4aaaa5;
+}
+
+.question-loading {
+    margin-top: 5%;
+    width: 50%;
 }
 
 .progress-bar {

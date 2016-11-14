@@ -72,10 +72,9 @@ class QuizUnit extends AbstractUnit {
         ]);
         $remainQuestionKeys = array_keys($remainQuestions);
         shuffle($remainQuestionKeys);
-        $answeredCount = $this->getAnsweredQuestionCount();
-        foreach ($remainQuestionKeys as $i => $key) {
+        foreach ($remainQuestionKeys as $key) {
             $question = $remainQuestions[$key];
-            yield ($answeredCount+$i) => [
+            yield [
                 "id" => $question["model_id"],
                 "rotation" => $question["rotation_id"],
                 "lod" => $question["lod"],
@@ -89,7 +88,7 @@ class QuizUnit extends AbstractUnit {
 
     public function getAnsweredQuestionCount() {
         if ($this->answeredQuestions === null) {
-            $this->answeredQuestions = DB::instance()->fetchOne("
+            $this->answeredQuestions = (int)DB::instance()->fetchOne("
                 SELECT COUNT(*) 
                 FROM job_quiz_unit_judgement
                 WHERE unit_id = ? AND quiz_sid = ?",

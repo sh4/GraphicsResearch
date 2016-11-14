@@ -18,10 +18,12 @@ class Index {
     private $number;
     private $formAction;
     private $lastAnswers;
+    private $modelFormId;
 
     const WorkerId = "questionWorkerId";
 
     public function __construct() {
+        $this->modelFormId = 0;
         $this->lastAnswers = [];
         $this->number = (int)Form::get("num", 1);
         $this->formAction = \Router::Path("/");
@@ -53,13 +55,8 @@ class Index {
         //   "rotation" => RotationId,
         //   "lod" => LOD,
         // ]
-        foreach ($questions as $i => $model) {
-            $refModel = $this->prepareModelParams($model, 0);
-            $model    = $this->prepareModelParams($model, $model["lod"]);
-            yield $i => [
-                $refModel,
-                $model,
-            ];
+        foreach ($questions as $model) {
+            yield $this->yieldModel($model);
         }
     }
 
@@ -89,6 +86,44 @@ class Index {
         }
 
         return $unit;
+    }
+
+    public function renderQuestionJson() {
+        $progress = $this->getAnswerProgress();
+        $isFetchLods = (int)Form::get("fetchLods", 0) == 1;
+        $questions = [];
+        if ($isFetchLods) {
+            $lastModelId = null;
+            $skipModelId = null;
+            if ($answerContext = $this->getAnswerContext()) {
+                $skipModelId = (int)$answerContext["lastAnswer"]["model_id"];
+            }
+            foreach ($this->getQuestionOrders() as $origModels) {
+                list ($model) = $origModels;
+                if ($model["id"] == $skipModelId) {
+                    continue;
+                } 
+                if ($model["id"] !== $lastModelId) {
+                    $isInitialModelId = $lastModelId === null;
+                    $lastModelId = $model["id"];
+                    if (!$isInitialModelId) {
+                        break;
+                    }
+                }
+                $modelOrder = array_keys($origModels);
+                shuffle($modelOrder);
+                $models = [];
+                foreach ($modelOrder as $order) {
+                    $models[] = $origModels[$order];
+                }
+                $questions[] = $models;
+            }
+        }
+        echo json_encode([
+            "questions" => $questions,
+            "progress" => $progress,
+            "answerContext" => $this->getAnswerContext(),
+        ]);
     }
 
     public function getAnswerContext() {
@@ -123,6 +158,12 @@ class Index {
             "lastAnswer" => $lastAnswer,
             "answeredLods" => $answerLods,
         ];
+    }
+
+    private function yieldModel($model) {
+        $refModel = $this->prepareModelParams($model, 0);
+        $model    = $this->prepareModelParams($model, $model["lod"]);
+        return [$refModel, $model];
     }
 
     private function createOrUpdateUnit() {
@@ -185,7 +226,8 @@ class Index {
 
     private function prepareModelParams($model, $lod) {
         $model["path"] = $this->question->modelPath($model["id"], $model["rotation"], $lod);
-        $model["formId"] = "answer-form-".$model["no"]."-".$lod;
+        $model["formId"] = "answer-form-".$this->modelFormId;
+        $this->modelFormId++;
         $model["formValue"] = implode(",", [
             $model["id"],
             $model["rotation"],
