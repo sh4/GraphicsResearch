@@ -117,9 +117,19 @@ class JobUnit extends AbstractUnit {
 
     public static function eachJudgementData($jobId = null) {
         if (is_numeric($jobId)) {
-            $judgements = DB::instance()->each("SELECT * FROM job_unit_judgement WHERE job_id = ?", $jobId);
+            $judgements = DB::instance()->each("
+                SELECT * FROM job_unit_judgement 
+                WHERE
+                    unit_id IN (SELECT unit_id FROM job_unit WHERE job_id = ?)
+            ", $jobId);
         } else {
-            $judgements = DB::instance()->each("SELECT * FROM job_unit_judgement");
+            $judgements = DB::instance()->each("
+                SELECT * FROM job_unit_judgement
+                WHERE
+                    unit_id IN (
+                        SELECT unit_id FROM job_unit WHERE job_id IS NOT NULL
+                    )
+            ");
         }
         foreach ($judgements as $judgement) {
             if (empty($judgement["worker_id"])) {
