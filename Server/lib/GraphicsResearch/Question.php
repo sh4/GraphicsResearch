@@ -130,7 +130,10 @@ class Question {
         $progress->remain = max(0, $remainCount);
         $progress->answered = $answeredCount;
         $progress->total = $totalCount;
-        $progress->ratio = min(1.0, $progress->answered / $progress->total);
+        $progress->ratio = 0.0;
+        if ($totalCount > 0) {
+            $progress->ratio = min(1.0, $progress->answered / $progress->total);
+        }
         $progress->completed = $remainCount <= 0;
         return $progress;
     }
