@@ -89,10 +89,10 @@ class Router {
                 $executeAction = $this->routingMap[$path];
                 return $executeAction();
             } catch (Exception $e) {
-                header_remove("Location");
-                header_remove("Content-Type");
-                header("HTTP/1.1 500 Server Internal Error");
-                header("Content-Type: text/plain; charset=utf-8");
+                @header_remove("Location");
+                @header_remove("Content-Type");
+                @header("HTTP/1.1 500 Server Internal Error");
+                @header("Content-Type: text/plain; charset=utf-8");
                 $error = $this->toErrorMessage($e);
                 if (DEBUG) {
                     echo $error;
@@ -100,7 +100,7 @@ class Router {
                     // ユーザー向けのエラーメッセージ出す
                     echo "Internal Server Error: Please refresh this page.";
                 }
-                error_log($error, 3, __DIR__."/../logs/error.log");
+                error_log($error, 3, __DIR__."/../../logs/error.log");
             } finally {
                 $this->Cleanup();
             }
