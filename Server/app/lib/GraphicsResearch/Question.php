@@ -78,24 +78,6 @@ class Question {
         return $result;
     }
 
-    private function createUserDefinedOrderQuestions($answeredIds, $questionOrder) {
-        $answeredIdMap = [];
-        foreach ($answeredIds as $id) {
-            $answeredIdMap[$id] = true;
-        }
-        $remainQuestions = array_filter($questionOrder, function ($model) use ($answeredIdMap) {
-            $id = (int)$model["id"];
-            // 未回答の回答データ && テストが可能なモデルID
-            return !isset($answeredIdMap[$id]) 
-                && isset($this->testAvailableModelIdMap[$id]);
-        });
-
-        $no = count($answeredIds);
-        foreach ($remainQuestions as $i => $model) {
-            yield ($no+$i) => $model;
-        }
-    }
-
     public function createRandomOrderQuestions($answeredIds) {
         // マスターデータのキーリスト(ModelID のリスト) だけに含まれる ModelID を得る
         // (残りテストが必要な　ModelID のリストを返す) 
