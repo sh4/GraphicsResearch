@@ -214,14 +214,14 @@ $jobForm = array_merge($jobForm, [
     </div>
 </form>
 
-<h2>Model Information</h2>
+<h2>Scene Information</h2>
 
 <h3>Summary</h3>
 
 <table class="table table-hover">
 <tbody>
     <tr>
-        <th>Test available model count</th>
+        <th>Test available scene count</th>
         <td><?php echo $question->availableModelCount() ?></td>
     </tr>
 </tbody>
@@ -328,15 +328,16 @@ var validateRules = {
         var $el = $("#new-job-num-question");
         var num = parseInt($el.val(), 10);
         var rowPerPage = <?php echo Job::crowdFlowerRowPerPage ?>;
+        var availableSceneCount = <?php echo $question->availableModelCount() ?>;
         if (num % rowPerPage !== 0) {
-            onError($el, "Number of questions must be a multiple of " + rowPerPage + ".");
+            onError($el, "Number of scenes must be a multiple of " + rowPerPage + ".");
             return false;
         }
         if (num <= 0) {
-            onError($el, "One or more the number of questions.");
+            onError($el, "One or more the number of scenes.");
             return false;
-        } else if (num > 1000) {
-            onError($el, "Less than 1,000 is the number of questions.");
+        } else if (num > availableSceneCount) {
+            onError($el, "Number of scenes must be less than " + availableSceneCount + ".");
             return false;
         } else {
             clearError($el);
