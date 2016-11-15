@@ -35,6 +35,18 @@ class JobUnit extends AbstractUnit {
         return $this->updatedOn;
     }
 
+    public function getFinishedAnsweredIds(Question $question) {
+        $modelIds = DB::instance()->fetchColumn("
+            SELECT model_id FROM job_unit_judgement
+            WHERE unit_id = ?
+            GROUP BY model_id HAVING COUNT(model_id) >= ?", 
+            [
+                $this->getUnitId(),
+                $question->lodVariationCount() - 1,
+            ]);
+        return $modelIds;
+    }
+
     public function getRandomQuestionOrder(Question $question, $answerContext) {
         if ($answerContext) {
             $lastAnswer = $answerContext["lastAnswer"];
@@ -55,8 +67,8 @@ class JobUnit extends AbstractUnit {
                 ];
             }
         }
-        // 回答済み ModelID のリスト (テスト対象から除外するため)
-        $answeredIds = $this->getAnsweredIds();
+        // 回答完了済み ModelID のリスト (テスト対象から除外するため)
+        $answeredIds = $this->getFinishedAnsweredIds($question);
         // ランダムな並び順
         $questionOrder = $question->createRandomOrderQuestions($answeredIds);
         // あるモデルにおけるランダムなローテーションについて、LOD をランダムな順番で列挙

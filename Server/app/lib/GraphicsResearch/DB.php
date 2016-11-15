@@ -58,6 +58,15 @@ class DB {
         return $stmt->fetch(PDO::FETCH_NUM)[0];
     }
 
+    public function fetchColumn($sql, $params = [], $column = 0) {
+        $stmt = $this->execute($sql, $params);
+        $rows = [];
+        while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
+            $rows[] = $row[$column];
+        }
+        return $rows;
+    }
+
     public function fetchRow($sql, $params = []) {
         $stmt = $this->execute($sql, $params);
         return $stmt->fetch(PDO::FETCH_ASSOC);

@@ -104,14 +104,13 @@ class Question {
             array_keys($this->testAvailableModelIdMap),
             $answeredIds);
         shuffle($remainTestModelIds); // ModelID のリストをシャッフル
-        $no = count($answeredIds);
-        foreach ($remainTestModelIds as $i => $modelId) {
+        foreach ($remainTestModelIds as $modelId) {
             $rotationSet = $this->modelLodMap[$modelId];
             $rotationId = array_rand($rotationSet);
 
             $lodMapWithoutLodZero = $rotationSet[$rotationId];
 
-            yield ($no+$i) => [
+            yield [
                 "id" => $modelId,
                 "rotation" => $rotationId,
                 "lodMap" => $lodMapWithoutLodZero,
@@ -122,8 +121,12 @@ class Question {
     public function answerProgress(AbstractUnit $unit) {
         $answeredCount = $unit->getAnsweredQuestionCount();
         $totalCount = $unit->getTotalQuestionCount($this);
+        // 設定された出題数よりも既存のモデル数が少ない場合は、そちらにキャップする
+        $existsTotalCount = count($this->modelLodMap) * $this->lodVariationCount();
         if ($totalCount === null) {
-            $totalCount = count($this->modelLodMap) * $this->lodVariationCount();
+            $totalCount = $existsTotalCount;
+        } else {
+            $totalCount = min($existsTotalCount, $totalCount);
         }
         $remainCount = $totalCount - $answeredCount;            
         $progress = new \stdClass();
