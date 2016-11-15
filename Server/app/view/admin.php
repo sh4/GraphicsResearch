@@ -108,7 +108,7 @@ foreach (Job::getJobs() as $job):
 </tbody>
 </table>
 
-<h2><a href="<?php echo Router::Path("/download") ?>" target="_blank">Download CSV (All)</a></h2>
+<h2><a href="<?php echo Router::Path("download") ?>" target="_blank">Download CSV (All)</a></h2>
 
 <h2>Create New Job</h2>
 

@@ -9,7 +9,7 @@
     "tasks": [
         {
             "taskName": "test",
-            "args": ["/c ${workspaceRoot}/test.cmd"],
+            "args": ["/c ${workspaceRoot}/app/test.cmd"],
             "isTestCommand": true,
             "isWatching": false
         }
