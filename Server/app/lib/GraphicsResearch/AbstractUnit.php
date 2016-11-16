@@ -36,8 +36,6 @@ abstract class AbstractUnit {
         $this->workerId = $workerId;
     }
 
-    abstract public function getFinishedAnsweredIds(Question $question);
-
     abstract public function getRandomQuestionOrder(Question $question, $answerContext);
 
     abstract public function getTotalQuestionCount(Question $question);

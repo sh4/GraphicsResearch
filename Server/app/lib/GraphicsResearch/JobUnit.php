@@ -35,18 +35,6 @@ class JobUnit extends AbstractUnit {
         return $this->updatedOn;
     }
 
-    public function getFinishedAnsweredIds(Question $question) {
-        $modelIds = DB::instance()->fetchColumn("
-            SELECT model_id FROM job_unit_judgement
-            WHERE unit_id = ?
-            GROUP BY model_id HAVING COUNT(model_id) >= ?", 
-            [
-                $this->getUnitId(),
-                $question->lodVariationCount() - 1,
-            ]);
-        return $modelIds;
-    }
-
     public function getRandomQuestionOrder(Question $question, $answerContext) {
         if ($answerContext) {
             $lastAnswer = $answerContext["lastAnswer"];
@@ -168,5 +156,17 @@ class JobUnit extends AbstractUnit {
             "created_on" => $now,
             "updated_on" => $now,
         ]);
+    }
+
+    private function getFinishedAnsweredIds(Question $question) {
+        $modelIds = DB::instance()->fetchColumn("
+            SELECT model_id FROM job_unit_judgement
+            WHERE unit_id = ?
+            GROUP BY model_id HAVING COUNT(model_id) >= ?", 
+            [
+                $this->getUnitId(),
+                $question->lodVariationCount() - 1,
+            ]);
+        return $modelIds;
     }
 }
