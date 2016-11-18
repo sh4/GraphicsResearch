@@ -178,7 +178,6 @@ $jobForm = array_merge($jobForm, [
             (<span id="questions-per-worker">0</span> answers/worker)
         </div>
     </div>
-<?php /*
 
     <h3>Quiz</h3>
 
@@ -186,7 +185,7 @@ $jobForm = array_merge($jobForm, [
         <label for="new-job-quiz-questions">Quiz Questions Dataset</label>
         <input type="file" id="new-job-quiz-questions" name="quiz_questions">
         <div style="margin:0.5em 1em">
-        CSV File Examples (filename and answer[diff=0, same=1] list):<br>
+        CSV File Examples ('filename' and 'Model is better than reference (1=true, 0=false)' list):<br>
         <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">
 00776_1_4_05028_09_0_104_099.jpg,0
 00763_3_1_05022_01_1_351_011.jpg,1
@@ -206,8 +205,6 @@ $jobForm = array_merge($jobForm, [
         %
         <label for="new-job-quiz-accuracy-rate" class="form-control-label validate"></label>
     </div>
-
-*/ ?>
 
     <div class="form-group">
         <input id="submit-create-new-job" type="submit">
@@ -373,7 +370,6 @@ var validateRules = {
             return true;
         }
     },
-    /*
     "#new-job-quiz-accuracy-rate": function () {
         var $el = $("#new-job-quiz-accuracy-rate");
         var accuracyRate = parseFloat($el.val());
@@ -399,7 +395,6 @@ var validateRules = {
         clearError($el);
         return true;
     },
-    */
 };
 
 for (var elemId in validateRules) {

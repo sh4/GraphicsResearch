@@ -1,15 +1,33 @@
 <?php
 use GraphicsResearch\Page;
 use GraphicsResearch\Form;
+use GraphicsResearch\Crypto;
 
 $page = new Page\Index();
 $progress = $page->getAnswerProgress();
+
+$unitId = "";
+if (Crypto::isValidUniqueId($page->getUnitId())) {
+    $unitId = $page->getUnitId();
+}
+$quizUnitId = "";
+if (Crypto::isValidUniqueId(Form::request("quizUnitId", ""))) {
+    $quizUnitId = Form::request("quizUnitId");
+}
+$quizSid = "";
+if (Crypto::isValidUniqueId(Form::request("quizSid", ""))) {
+    $quizSid = Form::request("quizSid");
+}
+$gsParams = [
+    "quizMode" => (int)Form::request("quizMode", 0) == 1,
+    "unitId" => $unitId,
+    "quizSid" => $quizSid,
+    "quizUnitId" => $quizUnitId,
+];
+
 // すでに作業が完了していれば、完了ページに遷移
-if ($progress->remain === 0) {
-    Router::redirect("done", [
-        "quizMode" => Form::request("quizMode", 0),
-        "unitId" => $page->getUnitId(),
-    ]);
+if ($progress->remain <= 0) {
+    Router::redirect("done", $gsParams);
 }
 $num = $page->getNumber();
 $root = Router::Path();
@@ -53,9 +71,9 @@ function question(Page\Index $page, $models, $no) {
 
 <form id="answer-form" method="post" action="<?php echo $page->getFormAction() ?>">
 
-<input type="hidden" name="quizMode" value="<?php echo Form::request("quizMode", 0) == 1 ? 1 : 0 ?>">
-<input type="hidden" name="quizSid" valuie="<?php Form::e(Form::request("quizSid")) ?>">
-<input type="hidden" name="unitId" value="<?php Form::e($page->getUnitId()) ?>">
+<?php foreach ($gsParams as $key => $value): ?>
+<input type="hidden" name="<?php echo $key ?>" value="<?php Form::e($value) ?>">
+<?php endforeach ?>
 
 <div class="answer-region">
 
@@ -122,10 +140,7 @@ endif
 <script type="text/javascript">
 (function () {
 
-window.GS = {
-    quizMode: <?php echo json_encode((int)Form::request("quizMode", 0) == 1) ?>,
-    unitId: "<?php Form::e($page->getUnitId()) ?>"
-};
+window.GS = <?php echo json_encode($gsParams) ?>;
 
 <?php if ($page->getNumber() === 1): ?>
 $(".index-button").change(function () {

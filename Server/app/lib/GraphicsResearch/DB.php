@@ -200,6 +200,8 @@ class DB {
             function () { $this->deleteJudgementJsonData(); },
             function () { $this->supportQuizMode(); },
             function () { $this->lodComparable(); },
+            function () { $this->lodComparableOnQuiz(); },
+            function () { $this->extendQuizSessionId(); },
         ] as $migrateVersion => $migrater) {
             $migrateVersion += 1; // migrate version is 1 origin 
             if ($version < $migrateVersion) {
@@ -335,4 +337,19 @@ class DB {
         ";
         $this->dbh->exec($sql);
     }
+
+    private function lodComparableOnQuiz() {
+        $sql = "
+        ALTER TABLE job_quiz_unit_golden ADD COLUMN is_better_than_ref TINYINT
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    private function extendQuizSessionId() {
+        $sql = "
+        ALTER TABLE job_quiz_unit_judgement MODIFY quiz_sid VARCHAR(32);
+        ";
+        $this->dbh->exec($sql);
+    }
+
 }

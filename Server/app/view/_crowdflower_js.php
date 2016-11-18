@@ -14,6 +14,9 @@ var message = "Checking survey code, Please wait a moment..";
 var surveyCodeConfirmed = {};
 var surveyUnits = [];
 
+var inQuizMode = false;
+var quizSid = getRandomId();
+
 !function () {
   jQuery(".cml").each(function (i, el) {
     var cmlInput = jQuery(".cml_row > input", el);
@@ -21,15 +24,23 @@ var surveyUnits = [];
     var linkEl = jQuery(".external-survey-site-link", el);
     var unit = { link: linkEl, input: cmlInput, field: cmlField };
     surveyUnits.push(unit);
-  })
+  });
+  inQuizMode = surveyUnits.every(function (unit) {
+    return unit.field.data("is-golden");
+  });
 }();
 
 !function () {
   surveyUnits.forEach(function (unit) {
     var href = unit.link.attr("href");
     if (unit.field.data("is-golden")) {
-      href += "&quizMode=1";
-      rhef += "&quizSid=" + getRandomId();
+      if (inQuizMode) {
+        href += "&quizMode=1";
+      } else {
+        href += "&quizMode=0";
+        href += "&quizUnitId=" + unit.field.data("unit-id");
+      }
+      href += "&quizSid=" + quizSid;
     }
     unit.link.attr("href", href);
   });
@@ -61,10 +72,14 @@ CMLFormValidator.addAllThese([
         return true;
       }
       var isGolden = $surveryCodeEl.data("is-golden");
-      if (isGolden) {
+      if (isGolden && inQuizMode) {
         return true;
       }
-      jQuery.getJSON(verifyUrl + "/verify?unitId=" + unitId + "&verificationCode=" + elem.value).then(function (r) {
+      var verifyParams = [
+        "verificationCode=" + elem.value,
+      ];
+      verifyParams.push("unitId=" + (isGolden ? quizSid : unitId));
+      jQuery.getJSON(verifyUrl + "/verify?" + verifyParams.join("&")).then(function (r) {
         if (r.ok) {
           surveyCodeConfirmed[unitId] = true;
           pass();

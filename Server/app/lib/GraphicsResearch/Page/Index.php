@@ -72,12 +72,32 @@ class Index {
         $unitId = Form::request("unitId", "");
 
         $quizModeEnabled = Form::request("quizMode", 0) == 1;
+        $quizSessionId = Form::request("quizSid", "");
         if ($quizModeEnabled) {
-            $quizSessionId = Form::request("quizSid", "");
+            // クイズモードの回答状況を復元
             $unit = QuizUnit::loadFromId($unitId);
+            if (empty($quizSessionId)) {
+                return null;
+            }
             $unit->setQuizSessionId($quizSessionId);
         } else {
             $unit = JobUnit::loadFromId($unitId);
+
+            // 指定された quizUnitId で QuizUnit からの読み込みが可能な場合は、
+            // 新規に JobUnit を作成する (参照先の JobId は QuizUnit から得る)
+            if (!$unit
+                && ($quizUnitId = Form::request("quizUnitId"))
+                && ($quizUnit = QuizUnit::loadFromId($quizUnitId))
+                && !($unit = JobUnit::loadFromId($quizSessionId))
+            ) {
+                // quiz データの回答は golden データと一致しないと正答率が下がるため、
+                // 回答データは quiz のそれと同一にする
+                $unit = JobUnit::createNewSession([
+                    "unit_id" => $quizSessionId,
+                    "job_id" => $quizUnit->getJobId(),
+                    "verification_code" => $quizUnit->getVerificationCode(),
+                ]);
+            }
         }
 
         return $unit;

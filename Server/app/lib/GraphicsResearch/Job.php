@@ -16,8 +16,10 @@ class Job {
 
     // Quiz Mode を有効化する場合は 2 にする
     // 2 にすると RowPerPage == 2 になり、ジョブ実行前にクイズが挟まれるのと、1 問 Quiz 行が入る
-    const crowdFlowerRowPerPage = 1;
+    const crowdFlowerRowPerPage = 2;
     // CrowdFlower の Quiz Mode を有効化するために必要な問題数 
+    // クラウドワーカーはこのクイズ数分だけジョブをアサインされる
+    // 同じクイズ行が単一クラウドワーカーに 2 回以上現れることはない
     const crowdFlowerMinimumQuizQuestions = 5;
 
     private function __construct($job) {
@@ -112,11 +114,12 @@ class Job {
     }
 
     public function getProgress(Question $question) {
-        $progress = 0.0;
+        $totalQuestions = $this->getQuestions() * $question->lodVariationCount() * $this->getMaxAssignments();
+        $answeredQuestions =  0;
         foreach ($this->getUnits() as $unit) {
-            $progress += $question->answerProgress($unit)->ratio;
+            $answeredQuestions += $unit->getAnsweredQuestionCount();
         }
-        return $progress / $this->getMaxAssignments();
+        return $answeredQuestions / $totalQuestions;
     }
 
     public function launchJob($channel) {
@@ -242,9 +245,7 @@ class Job {
         $this->insertJobUnits($db);
     
         // クイズ必要回答数も質問数も 1 以上ならクイズ用データを挿入
-        if ($this->quizQuestionCount > 0
-            && count($this->quizQuestions) > $this->quizQuestionCount)
-        {
+        if ($this->quizQuestionCount >= 1) {
             $this->insertQuizJobUnits($db);
             $this->insertQuizGoldenData($db);
         }
@@ -253,31 +254,32 @@ class Job {
     private function insertJobUnits(DB $db) {
         $now = date("Y-m-d H:i:s");
         $rows = [];
-        // 必要回答数の job_unit を保存
-        // 1ページあたりの必要設問数 * 1人当たりの回答数 * 回答必要人数 分の行を生成
-        for ($page = 0; $page < self::crowdFlowerRowPerPage; $page++) {
-            for ($i = 0, $n = $this->getMaxAssignments(); $i < $n; $i++) {
-                $rows[] = [
-                    "unit_id" => Crypto::CreateUniqueId(16),
-                    "job_id" => $this->getJobId(),
-                    "verification_code" => Crypto::CreateUniqueNumber(10),
-                    "created_on" => $now,
-                    "answered_questions" => 0,
-                ];
-            }
+        // 必要回答数分の Unit を作成する
+        // 1 Unit 当たりの回答数は questions / 2 (crowdFlowerRowPerPage) 件だが、
+        // 残りの半分は QuizMode 用の行から動的に Unit を作成する
+        for ($i = 0, $n = $this->getMaxAssignments(); $i < $n; $i++) {
+            $rows[] = [
+                "unit_id" => Crypto::CreateUniqueId(16),
+                "job_id" => $this->getJobId(),
+                "verification_code" => Crypto::CreateUniqueNumber(10),
+                "created_on" => $now,
+                "answered_questions" => 0,
+            ];
         }
         $db->insertMulti("job_unit", $rows);
     }
 
     private function insertQuizJobUnits(DB $db) {
         $quizUnits = [];
+        // 出題リストの問題数と必要回答数のうち、少ないほうに合わせる
+        $questionCount = min(count($this->quizQuestions), $this->quizQuestionCount);
         // クイズ用の行を挿入
         for ($i = 0; $i < self::crowdFlowerMinimumQuizQuestions; $i++) {
             $quizUnits[] = [
                 "unit_id" => Crypto::CreateUniqueId(16),
                 "job_id" => $this->getJobId(),
                 "verification_code" => Crypto::CreateUniqueNumber(10),
-                "question_count" => $this->quizQuestionCount,
+                "question_count" => $questionCount,
             ];
         }
         $db->insertMulti("job_quiz_unit", $quizUnits);

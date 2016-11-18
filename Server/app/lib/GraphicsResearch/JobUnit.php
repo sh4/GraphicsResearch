@@ -77,7 +77,7 @@ class JobUnit extends AbstractUnit {
         if ($this->questions === null) {
             if ($jobId = $this->getJobId()) {
                 $this->questions = Job::getQuestionsPerUnitFromId($jobId) * $question->lodVariationCount();
-            }
+            }   
         }
         return $this->questions;
     }
@@ -99,8 +99,8 @@ class JobUnit extends AbstractUnit {
             $now = date('Y-m-d H;i:s');
             $db->insertMulti("job_unit_judgement", $answers);
             $db->execute("INSERT INTO job_unit
-                (unit_id, job_id, created_on, answered_questions)
-                VALUES (:unit_id, :job_id, :created_on, :add_answered_questions)
+                (unit_id, job_id, created_on, answered_questions, verification_code)
+                VALUES (:unit_id, :job_id, :created_on, :add_answered_questions, :verification_code)
                 ON DUPLICATE KEY UPDATE
                      answered_questions = answered_questions + :add_answered_questions
                     ,updated_on = :updated_on
@@ -110,6 +110,7 @@ class JobUnit extends AbstractUnit {
                 "created_on" => $now,
                 "updated_on" => $now,
                 "add_answered_questions" => count($answers),
+                "verification_code" => $this->getVerificationCode(),
             ]);
             $this->answeredQuestions = (int)$db->fetchOne("SELECT answered_questions FROM job_unit WHERE unit_id = ?", $this->getUnitId());
         });
@@ -148,14 +149,13 @@ class JobUnit extends AbstractUnit {
         }
     }
 
-    public static function createNewSession() {
-        $unitId = Crypto::CreateUniqueId(16);
+    public static function createNewSession($params = []) {
         $now = date("Y-m-d H:i:s");
-        return new self([
-            "unit_id" => $unitId,
+        return new self(array_merge([
+            "unit_id" => Crypto::CreateUniqueId(16),
             "created_on" => $now,
             "updated_on" => $now,
-        ]);
+        ], $params));
     }
 
     private function getFinishedAnsweredIds(Question $question) {

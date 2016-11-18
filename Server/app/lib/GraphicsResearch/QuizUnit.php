@@ -73,17 +73,17 @@ class QuizUnit extends AbstractUnit {
         $remainQuestionKeys = array_keys($remainQuestions);
         shuffle($remainQuestionKeys);
         foreach ($remainQuestionKeys as $key) {
-            $question = $remainQuestions[$key];
+            $q = $remainQuestions[$key];
             yield [
-                "id" => $question["model_id"],
-                "rotation" => $question["rotation_id"],
-                "lod" => $question["lod"],
+                "id" => $q["model_id"],
+                "rotation" => $q["rotation_id"],
+                "lod" => $q["lod"],
             ];
         }
     }
 
     public function getTotalQuestionCount(Question $question) {
-        return (int)($this->questionCount / Job::crowdFlowerRowPerPage) * $question->lodVariationCount();
+        return (int)($this->questionCount / Job::crowdFlowerRowPerPage);
     }
 
     public function getAnsweredQuestionCount() {
@@ -113,7 +113,7 @@ class QuizUnit extends AbstractUnit {
         $db = DB::instance();
         foreach ($answers as $answer) {
             $row = $db->fetchRow("
-            SELECT id, is_same FROM job_quiz_unit_golden 
+            SELECT * FROM job_quiz_unit_golden 
             WHERE 
                 job_id = ? 
                 AND model_id = ? 
@@ -125,8 +125,8 @@ class QuizUnit extends AbstractUnit {
                 $answer["rotation_id"],
                 $answer["lod"],
             ]);
-            $isSame = $row["is_same"];
-            $isCorrect = $isSame !== null && $isSame == $answer["is_same"];
+            $isBetterThanRef = $row["is_better_than_ref"];
+            $isCorrect = $isBetterThanRef !== null && $isBetterThanRef == $answer["is_better_than_ref"];
             $rows[] = [
                 "golden_id" => $row["id"],
                 "unit_id" => $this->getUnitId(),

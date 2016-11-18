@@ -63,7 +63,7 @@ class Question {
             if (empty($row)) {
                 continue;
             }
-            list($modelFile, $isSame) = $row;
+            list($modelFile, $isBetterThanRef) = $row;
             $model = self::parseModelFilename($modelFile);
             if (!is_numeric($model->modelId)) {
                 continue;
@@ -72,7 +72,8 @@ class Question {
                 "model_id" => $model->modelId,
                 "rotation_id" => $model->rotationId,
                 "lod" => $model->lod,
-                "is_same" => $isSame,
+                "is_same" => 0,
+                "is_better_than_ref" =>  (int)$isBetterThanRef,
             ];
         }
         return $result;

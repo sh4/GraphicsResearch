@@ -120,13 +120,18 @@ function updateAnsweredLods(answerContext) {
     }
 }
 
+function toQueryString(params) {
+    return Object.keys(params).map(function (key) {
+        return [key, encodeURIComponent(params[key])].join("=");
+    }).join("&");
+}
+
 function updateQuestions(questionRequest) {
     return questionRequest.then(function (r) {
         if (r.progress.completed) {
-            var doneUrl = "index.php/done?" + [
-                "quizMode=" + window.GS.quizMode,
-                "unitId=" + window.GS.unitId,
-            ].join("&");
+            var doneUrl = "index.php/done?" + toQueryString(fetchParams({
+                isFetchLods: false,
+            }));
             window.location.href = doneUrl;
             return;
         }
@@ -151,6 +156,16 @@ function updateQuestions(questionRequest) {
     });
 }
 
+function fetchParams(params) {
+    return {
+        fetchLods: params.isFetchLods ? 1 : 0,
+        quizMode: window.GS.quizMode ? 1: 0,
+        unitId: window.GS.unitId,
+        quizSid: window.GS.quizSid || "",
+        quizUnitId: window.GS.quizUnitId || "",
+    };
+}
+
 var bufferedQuestions = [];
 
 $("#answer-form").submit(function (event) {
@@ -169,9 +184,6 @@ $("#answer-form").submit(function (event) {
     return false;
 });
 
-updateQuestions($.getJSON("index.php/api/question", {
-    fetchLods: 1,
-    unitId: window.GS.unitId,
-}));
+updateQuestions($.getJSON("index.php/api/question", fetchParams({ isFetchLods: true })));
 
 }(jQuery);
