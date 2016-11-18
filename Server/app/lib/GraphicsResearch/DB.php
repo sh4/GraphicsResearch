@@ -126,40 +126,6 @@ class DB {
         $stmt->execute($params);
         return $stmt;
     }
-    
-    const initialTableSql = "
-        CREATE TABLE IF NOT EXISTS schema_version (
-            version INTEGER PRIMARY KEY NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS job (
-            job_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-            title TEXT NOT NULL,
-            instructions TEXT NOT NULL,
-            questions INTEGER NOT NULL,
-            max_assignments INTEGER NOT NULL,
-            reward_amount_usd REAL NOT NULL,
-            created_on DATETIME NOT NULL,
-            crowdflower_job_id INTEGER NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS job_unit (
-            unit_id VARCHAR(32) PRIMARY KEY,
-            job_id INTEGER,
-            verification_code VARCHAR(32),
-            created_on DATETIME NOT NULL,
-            updated_on DATETIME,
-            answered_questions INTEGER NOT NULL,
-            judgement_data_json MEDIUMBLOB NOT NULL,
-            INDEX (job_id)
-        );
-        CREATE TABLE IF NOT EXISTS http_audit_log (
-            created_on DATETIME NOT NULL,
-            handshake TEXT,
-            request_header TEXT,
-            request_body TEXT,
-            response_header TEXT,
-            response_body TEXT
-        );
-    ";
 
     private function metaExecute($operation, $table, $params) {
         $columns = [];
@@ -202,6 +168,8 @@ class DB {
             function () { $this->lodComparable(); },
             function () { $this->lodComparableOnQuiz(); },
             function () { $this->extendQuizSessionId(); },
+            function () { $this->extendUnitId(); },
+            function () { $this->addQuizCount(); },
         ] as $migrateVersion => $migrater) {
             $migrateVersion += 1; // migrate version is 1 origin 
             if ($version < $migrateVersion) {
@@ -351,5 +319,72 @@ class DB {
         ";
         $this->dbh->exec($sql);
     }
+
+    private function extendUnitId() {
+        $sql = "
+        ALTER TABLE job_quiz_unit MODIFY unit_id VARCHAR(32);
+        ALTER TABLE job_quiz_unit_judgement MODIFY unit_id VARCHAR(32);
+        ALTER TABLE job_quiz_unit_judgement MODIFY worker_id VARCHAR(32);
+        ALTER TABLE job_unit_judgement MODIFY unit_id VARCHAR(32);
+        ALTER TABLE job_unit_judgement MODIFY worker_id VARCHAR(32);
+        ";
+        $this->dbh->exec($sql);
+
+        // job_unit_judgement が持つ外部キーの長さを参照先のものと揃える 
+        $foreignKeyConstraint = "
+        UPDATE 
+            job_unit_judgement
+            INNER JOIN job_unit 
+                ON job_unit_judgement.unit_id = SUBSTR(job_unit.unit_id, 1, 16)
+            SET job_unit_judgement.unit_id = job_unit.unit_id
+            WHERE job_unit_judgement.unit_id <> job_unit.unit_id;
+        ";
+        $this->dbh->exec($foreignKeyConstraint);
+    }
+
+    private function addQuizCount() {
+        $sql = "
+        ALTER TABLE job ADD COLUMN quiz_question_count INTEGER;
+        UPDATE
+            job
+            INNER JOIN job_quiz_unit ON job.job_id = job_quiz_unit.job_id     
+            SET job.quiz_question_count = job_quiz_unit.question_count;
+        ";
+        $this->dbh->exec($sql);
+    }
+    
+    const initialTableSql = "
+        CREATE TABLE IF NOT EXISTS schema_version (
+            version INTEGER PRIMARY KEY NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS job (
+            job_id INTEGER PRIMARY KEY AUTO_INCREMENT,
+            title TEXT NOT NULL,
+            instructions TEXT NOT NULL,
+            questions INTEGER NOT NULL,
+            max_assignments INTEGER NOT NULL,
+            reward_amount_usd REAL NOT NULL,
+            created_on DATETIME NOT NULL,
+            crowdflower_job_id INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS job_unit (
+            unit_id VARCHAR(32) PRIMARY KEY,
+            job_id INTEGER,
+            verification_code VARCHAR(32),
+            created_on DATETIME NOT NULL,
+            updated_on DATETIME,
+            answered_questions INTEGER NOT NULL,
+            judgement_data_json MEDIUMBLOB NOT NULL,
+            INDEX (job_id)
+        );
+        CREATE TABLE IF NOT EXISTS http_audit_log (
+            created_on DATETIME NOT NULL,
+            handshake TEXT,
+            request_header TEXT,
+            request_body TEXT,
+            response_header TEXT,
+            response_body TEXT
+        );
+    ";
 
 }

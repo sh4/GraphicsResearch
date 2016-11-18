@@ -69,6 +69,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
         <th># of Scenes</th>
         <th># of Workers</th>
         <th>Progress</th>
+        <th>Quiz PassRate</th>
         <th>Created Date</th>
         <th>Menu</th>
     </tr>
@@ -86,6 +87,17 @@ foreach (Job::getJobs() as $job):
         </td>
         <td><?php echo $job->getMaxAssignments() ?></td>
         <td><?php echo $progressPercent ?>%</td>
+        <td>
+            <?php if ($job->getQuizQuestionCount() > 0): ?>
+            <?php
+            $rate = $job->getQuizPassRate();
+            echo min([100.0, round($rate->ratio * 100, 2)]);
+            ?>%
+            (<?php echo $rate->pass ?> / <?php echo $rate->total ?>)
+            <?php else: ?>
+            N/A
+            <?php endif ?>
+        </td>
         <td><?php echo $job->createdOn()->format("Y/m/d H:i:s") ?></td>
         <td>
             <ul class="nav">

@@ -50,15 +50,15 @@ class Job {
         if (isset($job["job_id"])) {
             $this->jobId = (int)$job["job_id"];
         }
+        $this->quizQuestionCount = 0;
+        if (isset($job["quiz_question_count"])) {
+            $this->quizQuestionCount = (int)$job["quiz_question_count"];
+        }
 
         // CreateNewJob 呼び出し時に使用する一時的な変数
         $this->quizQuestions = [];
         if (isset($job["quiz_questions"])) {
             $this->quizQuestions = $job["quiz_questions"];
-        }
-        $this->quizQuestionCount = 0;
-        if (isset($job["quiz_question_count"])) {
-            $this->quizQuestionCount = (int)$job["quiz_question_count"];
         }
 
         $this->crowdFlower = new CrowdFlowerClient();
@@ -102,6 +102,10 @@ class Job {
         return $this->quizAccuracyRate;   
     }
 
+    public function getQuizQuestionCount() {
+        return $this->quizQuestionCount;
+    }
+
     public function estimateTotalAmountUSD() {
         return $this->getMaxAssignments() * $this->getRewardAmountUSD();
     }
@@ -124,6 +128,38 @@ class Job {
 
     public function launchJob($channel) {
         return $this->crowdFlower->launchJob($this->getCrowdFlowerJobId(), $this->getMaxAssignments(), $channel);
+    }
+
+    public function getQuizPassRate() {
+        $passRate = new \StdClass();
+        $row = DB::instance()->fetchRow("
+            SELECT
+                COUNT(correct_count) AS total_correct_count,
+                SUM(CASE WHEN correct_count >= ? THEN 1
+                    ELSE 0
+                    END
+                ) AS pass_count
+            FROM (
+                SELECT
+                    SUM(judgement.is_correct) AS correct_count
+                FROM 
+                    job_quiz_unit_judgement AS judgement
+                    INNER JOIN job_quiz_unit_golden AS golden ON judgement.golden_id = golden.id
+                WHERE job_id = ?
+                GROUP BY quiz_sid
+            ) AS correct_tbl
+        ", [
+            (int)($this->getQuizQuestionCount() * ($this->getQuizAccuracyRate() / 100.0)),
+            $this->getJobId(),
+        ]);
+        $passRate->total = (int)$row["total_correct_count"];
+        $passRate->pass = (int)$row["pass_count"];
+        if ($passRate->total > 0) {
+            $passRate->ratio = $passRate->pass / $passRate->total;
+        } else {
+            $passRate->ratio = 0.0;
+        }
+        return $passRate;
     }
 
     public static function createNewJob($jobAssoc) {
@@ -240,12 +276,13 @@ class Job {
             "crowdflower_job_id" => $this->crowdFlowerJobId,
             "question_order_json" => "[]",
             "quiz_accuracy_rate" => $this->getQuizAccuracyRate(),
+            "quiz_question_count" => $this->getQuizQuestionCount(),
         ]);
 
         $this->insertJobUnits($db);
     
         // クイズ必要回答数も質問数も 1 以上ならクイズ用データを挿入
-        if ($this->quizQuestionCount >= 1) {
+        if ($this->quizQuestionCount >= 1 && count($this->quizQuestions) >= 1) {
             $this->insertQuizJobUnits($db);
             $this->insertQuizGoldenData($db);
         }

@@ -67,7 +67,7 @@ foreach ($unit->getJudgementData() as $data):
     $modelId = $data["model_id"];
     $modelLod = $data["lod"];
     $modelRotation = $data["rotation_id"];
-    $modelIsBetterThanRef = $data["is_better_than_ref"] == 0;
+    $modelIsBetterThanRef = $data["is_better_than_ref"] == 1;
     if ($judgementFilter === "ref" && $modelIsBetterThanRef):
         continue;
     elseif ($judgementFilter === "comp" && !$modelIsBetterThanRef):
@@ -87,8 +87,8 @@ foreach ($unit->getJudgementData() as $data):
         <td>LOD <?php echo $modelLod ?></td>
     </tr>
     <tr>
-        <td<?php if (!$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
-        <td<?php if ($modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
+        <td<?php if (!$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
+        <td<?php if ($modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
     </tr>
 </tbody>
 </table>
