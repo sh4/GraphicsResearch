@@ -189,6 +189,17 @@ class CrowdFlower {
         ]));
     }
 
+    // 指定したジョブのタスクを行った特定ワーカーに対してボーナスを支払う
+    public function payContributorBonus($jobId, $workerId, $amountInUSDCents) {
+        $params = [
+            // ワーカーに支払うボーナス (USD Cents)
+            "amount" => $amountInUSDCents,
+        ];
+        $bonusUrl = self::Url."/jobs/$jobId/workers/$workerId/bonus.json?key=$this->apiKey";
+        $form = Rest\Request::form($params);
+        return $this->restClient->post($bonusUrl, $form);
+    }
+
     private function unitUrl($jobId, $unitId) {
         return self::Url."/jobs/$jobId/units/$unitId.json?key=$this->apiKey";
     }
