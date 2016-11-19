@@ -4,9 +4,31 @@
 // 設定ファイル
 /////////////////////////////////////////////////////////////////////
 
+// デフォルトのタイムゾーン
+date_default_timezone_set('Asia/Tokyo');
+
 // アップロード用のキー (クライアント、サーバー共通のパスワード. キーのないアップロードを禁止する)
-define("UPLOAD_KEY", "");
-// テストの回答データを保存するディレクトリ (相対パス)
-define("TEST_SESSION_DIRECTORY", "sessions");
-// テストに使う画像データを保存/参照するディレクトリ (相対パス)
-define("TEST_IMAGE_DIRECTORY", "images");
+define("UPLOAD_KEY", "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}");
+// 判定用画像データを保存/参照するディレクトリ (相対パス)
+define("JUDGEMENT_IMAGES", "images");
+// ユーザーが投降したペイントデータの保存先
+define("PAINTING_TASK_IMAGES", "painting");
+// 管理者パスワード
+define("ADMIN_PASSWORD", "PASSWORD");
+// CrowdFlower API キー
+define("CROWDFLOWER_API_KEY", "");
+
+// データベース接続情報
+if (file_exists(".local")) {
+    define("DEBUG", true);
+    define("MYSQL_HOSTNAME", "localhost");
+    define("MYSQL_DATABASE", "research");
+    define("MYSQL_USERNAME", "root");
+    define("MYSQL_PASSWORD", "");
+} else {
+    define("DEBUG", false);
+    define("MYSQL_HOSTNAME", "production-hostname");
+    define("MYSQL_DATABASE", "production");
+    define("MYSQL_USERNAME", "production");
+    define("MYSQL_PASSWORD", "");
+}
