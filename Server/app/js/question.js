@@ -113,10 +113,10 @@ function updateAnsweredLods(answerContext) {
     });
 
     var unitId = answerContext.lastAnswer.unit_id;
-    if (window.GS.unitId != unitId) {
+    if (window.GS.params.unitId != unitId) {
         // UnitId を最新の状態に更新
-        window.GS.unitId = unitId;
-        $('[name="unitId"]').val(window.GS.unitId);
+        window.GS.params.unitId = unitId;
+        $('[name="unitId"]').val(window.GS.params.unitId);
     }
 }
 
@@ -159,10 +159,10 @@ function updateQuestions(questionRequest) {
 function fetchParams(params) {
     return {
         fetchLods: params.isFetchLods ? 1 : 0,
-        quizMode: window.GS.quizMode ? 1: 0,
-        unitId: window.GS.unitId,
-        quizSid: window.GS.quizSid || "",
-        quizUnitId: window.GS.quizUnitId || "",
+        quizMode: window.GS.params.quizMode ? 1: 0,
+        unitId: window.GS.params.unitId,
+        quizSid: window.GS.params.quizSid || "",
+        quizUnitId: window.GS.params.quizUnitId || "",
     };
 }
 
@@ -183,6 +183,13 @@ $("#answer-form").submit(function (event) {
     }));
     return false;
 });
+
+if (window.GS.num > 1) {
+    $(".index-button").change(function () {
+        $(this).addClass("active");
+        $("#question-submit").click();
+    });
+}
 
 updateQuestions($.getJSON("index.php/api/question", fetchParams({ isFetchLods: true })));
 

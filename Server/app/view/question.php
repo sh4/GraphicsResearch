@@ -138,18 +138,14 @@ endif
 </form>
 
 <script type="text/javascript">
-(function () {
+!function () {
 
-window.GS = <?php echo json_encode($gsParams) ?>;
+window.GS = {
+    params: <?php echo json_encode($gsParams) ?>,
+    num: <?php echo $page->getNumber() ?>,
+};
 
-<?php if ($page->getNumber() === 1): ?>
-$(".index-button").change(function () {
-    $(this).addClass("active");
-    $("#question-submit").click();
-});
-<?php endif ?>
-
-})();
+}();
 </script>
 <script type="text/javascript" src="<?php echo $root ?>/js/question.js"></script>
 
