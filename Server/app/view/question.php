@@ -18,11 +18,16 @@ $quizSid = "";
 if (Crypto::isValidUniqueId(Form::request("quizSid", ""))) {
     $quizSid = Form::request("quizSid");
 }
+$answerGroupId = "";
+if (Crypto::isValidUniqueId(Form::request("gid", ""))) {
+    $answerGroupId = Form::request("gid");
+}
 $gsParams = [
     "quizMode" => (int)Form::request("quizMode", 0) == 1,
     "unitId" => $unitId,
     "quizSid" => $quizSid,
     "quizUnitId" => $quizUnitId,
+    "gid" => $answerGroupId,
 ];
 
 // すでに作業が完了していれば、完了ページに遷移

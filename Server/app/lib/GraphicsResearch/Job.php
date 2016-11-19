@@ -117,6 +117,31 @@ class Job {
         }
     }
 
+    public function getUnitsByAnswerGroup() {
+        $units = DB::instance()->each("
+        SELECT
+            unit_id,
+            job_id,
+            verification_code,
+            MAX(created_on) AS created_on,
+            MAX(updated_on) AS updated_on,
+            SUM(job_unit.answered_questions) AS answered_questions,
+            answer_group_id
+        FROM job_unit
+        WHERE job_id = :job_id AND answer_group_id IS NOT NULL
+        GROUP BY answer_group_id
+        UNION
+        SELECT * FROM job_unit
+        WHERE job_id = :job_id AND answer_group_id IS NULL
+        ",
+        [
+            "job_id" => $this->getJobId(),
+        ]);
+        foreach ($units as $unit) {
+            yield new JobUnit($unit);
+        }
+    }
+
     public function getProgress(Question $question) {
         $totalQuestions = $this->getQuestions() * $question->lodVariationCount() * $this->getMaxAssignments();
         $answeredQuestions =  0;

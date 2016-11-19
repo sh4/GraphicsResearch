@@ -150,6 +150,12 @@ class DB {
         return self::$defaultConnection;
     }
 
+    /////////////////////////////////////////////////////////////////
+    //
+    // マイグレーション定義
+    //
+    /////////////////////////////////////////////////////////////////
+
     public function migrateSchema() {
         $this->dbh->exec(self::initialTableSql);
         $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
@@ -170,6 +176,7 @@ class DB {
             function () { $this->extendQuizSessionId(); },
             function () { $this->extendUnitId(); },
             function () { $this->addQuizCount(); },
+            function () { $this->addAnswerGroupId(); },
         ] as $migrateVersion => $migrater) {
             $migrateVersion += 1; // migrate version is 1 origin 
             if ($version < $migrateVersion) {
@@ -182,6 +189,46 @@ class DB {
             $this->insert("schema_version", ["version" => $version]);
         }
     }
+
+    /////////////////////////////////////////////////////////////////
+    //
+    // DB 初期化用 SQL
+    //
+    /////////////////////////////////////////////////////////////////
+
+    const initialTableSql = "
+        CREATE TABLE IF NOT EXISTS schema_version (
+            version INTEGER PRIMARY KEY NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS job (
+            job_id INTEGER PRIMARY KEY AUTO_INCREMENT,
+            title TEXT NOT NULL,
+            instructions TEXT NOT NULL,
+            questions INTEGER NOT NULL,
+            max_assignments INTEGER NOT NULL,
+            reward_amount_usd REAL NOT NULL,
+            created_on DATETIME NOT NULL,
+            crowdflower_job_id INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS job_unit (
+            unit_id VARCHAR(32) PRIMARY KEY,
+            job_id INTEGER,
+            verification_code VARCHAR(32),
+            created_on DATETIME NOT NULL,
+            updated_on DATETIME,
+            answered_questions INTEGER NOT NULL,
+            judgement_data_json MEDIUMBLOB NOT NULL,
+            INDEX (job_id)
+        );
+        CREATE TABLE IF NOT EXISTS http_audit_log (
+            created_on DATETIME NOT NULL,
+            handshake TEXT,
+            request_header TEXT,
+            request_body TEXT,
+            response_header TEXT,
+            response_body TEXT
+        );
+    ";
 
     /////////////////////////////////////////////////////////////////
     //
@@ -353,38 +400,10 @@ class DB {
         $this->dbh->exec($sql);
     }
     
-    const initialTableSql = "
-        CREATE TABLE IF NOT EXISTS schema_version (
-            version INTEGER PRIMARY KEY NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS job (
-            job_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-            title TEXT NOT NULL,
-            instructions TEXT NOT NULL,
-            questions INTEGER NOT NULL,
-            max_assignments INTEGER NOT NULL,
-            reward_amount_usd REAL NOT NULL,
-            created_on DATETIME NOT NULL,
-            crowdflower_job_id INTEGER NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS job_unit (
-            unit_id VARCHAR(32) PRIMARY KEY,
-            job_id INTEGER,
-            verification_code VARCHAR(32),
-            created_on DATETIME NOT NULL,
-            updated_on DATETIME,
-            answered_questions INTEGER NOT NULL,
-            judgement_data_json MEDIUMBLOB NOT NULL,
-            INDEX (job_id)
-        );
-        CREATE TABLE IF NOT EXISTS http_audit_log (
-            created_on DATETIME NOT NULL,
-            handshake TEXT,
-            request_header TEXT,
-            request_body TEXT,
-            response_header TEXT,
-            response_body TEXT
-        );
-    ";
-
+    private function addAnswerGroupId() {
+        $sql = "
+        ALTER TABLE job_unit ADD COLUMN answer_group_id VARCHAR(32);
+        ";
+        $this->dbh->exec($sql);
+    }
 }

@@ -17,6 +17,7 @@ var surveyUnits = [];
 var inQuizMode = false;
 var quizSid = getRandomId();
 var dynamicUnitId = getRandomId();
+var answerGroupId = getRandomId();
 
 !function () {
   jQuery(".cml").each(function (i, el) {
@@ -45,6 +46,8 @@ var dynamicUnitId = getRandomId();
     } else {
       params.push("unitId=" + unit.field.data("unit-id"));
     }
+    params.push("gid=" + answerGroupId);
+
     href += params.join("&");
     unit.link.attr("href", href);
   });

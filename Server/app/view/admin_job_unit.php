@@ -4,7 +4,12 @@ use GraphicsResearch\JobUnit;
 use GraphicsResearch\Form;
 
 $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
-$unit = JobUnit::loadFromId(Form::get("unitId", ""));
+$units = [];
+if ($answerGroupId = Form::get("gid", "")) {
+    $units = JobUnit::loadsFromAnswerGroupId($answerGroupId);
+} else {
+    $units[] = JobUnit::loadFromId(Form::get("unitId", ""));
+}
 $root = \Router::Path();
 $judgementFilter = Form::get("filter", "");
 ?><!DOCTYPE html>
@@ -62,36 +67,40 @@ $judgementFilter = Form::get("filter", "");
     <?php endif ?>
 </div>
 
-<?php
-foreach ($unit->getJudgementData() as $data):
-    $modelId = $data["model_id"];
-    $modelLod = $data["lod"];
-    $modelRotation = $data["rotation_id"];
-    $modelIsBetterThanRef = $data["is_better_than_ref"] == 1;
-    if ($judgementFilter === "ref" && $modelIsBetterThanRef):
-        continue;
-    elseif ($judgementFilter === "comp" && !$modelIsBetterThanRef):
-        continue;
-    endif
-?>
-<table class="judgement-table">
-<thead>
-    <tr>
-        <th>Reference</th>
-        <th>Comparison</th>
-    </tr>
-</thead>
-<tbody>
-    <tr>
-        <td>LOD 0</td>
-        <td>LOD <?php echo $modelLod ?></td>
-    </tr>
-    <tr>
-        <td<?php if (!$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
-        <td<?php if ($modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
-    </tr>
-</tbody>
-</table>
+<?php foreach ($units as $unit): ?>
+
+    <?php
+    foreach ($unit->getJudgementData() as $data):
+        $modelId = $data["model_id"];
+        $modelLod = $data["lod"];
+        $modelRotation = $data["rotation_id"];
+        $modelIsBetterThanRef = $data["is_better_than_ref"] == 1;
+        if ($judgementFilter === "ref" && $modelIsBetterThanRef):
+            continue;
+        elseif ($judgementFilter === "comp" && !$modelIsBetterThanRef):
+            continue;
+        endif
+    ?>
+    <table class="judgement-table">
+    <thead>
+        <tr>
+            <th>Reference</th>
+            <th>Comparison</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>LOD 0</td>
+            <td>LOD <?php echo $modelLod ?></td>
+        </tr>
+        <tr>
+            <td<?php if (!$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
+            <td<?php if ($modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
+        </tr>
+    </tbody>
+    </table>
+    <?php endforeach ?>
+
 <?php endforeach ?>
 
 </div>

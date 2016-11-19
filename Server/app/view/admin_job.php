@@ -123,7 +123,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
 <tbody>
 <?php
 $no = 0;
-foreach ($job->getUnits() as $unit):
+foreach ($job->getUnitsByAnswerGroup() as $unit):
     $status = "";
     $progress = $question->answerProgress($unit);
     $judgedCount = $progress->answered;
@@ -163,7 +163,7 @@ foreach ($job->getUnits() as $unit):
         <td>
             <ul class="nav">
                 <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("/") ?>?jobId=<?php echo $job->getJobId() ?>&amp;unitId=<?php echo $unit->getUnitId() ?>" target="_blank">Question Page (for DEBUG)</a></li>
-                <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("admin/jobs/unit") ?>?jobId=<?php echo $job->getJobId() ?>&amp;unitId=<?php echo $unit->getUnitId() ?>">Judgement Detail</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("admin/jobs/unit") ?>?jobId=<?php echo $job->getJobId() ?>&amp;unitId=<?php echo $unit->getUnitId() ?>&amp;gid=<?php echo $unit->getAnswerGroupId() ?>">Judgement Detail</a></li>
             </ul>
         </td>
     </tr>

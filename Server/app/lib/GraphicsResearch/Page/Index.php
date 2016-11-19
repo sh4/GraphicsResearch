@@ -99,6 +99,10 @@ class Index {
                     "verification_code" => $quizUnit->getVerificationCode(),
                 ]);
             }
+            // JobUnit 同士を結びつける回答グループID が定義されていれば、それを反映
+            if ($unit && ($answerGroupId = Form::request("gid"))) {
+                $unit->setAnswerGroupId($answerGroupId);
+            }
         }
 
         return $unit;
