@@ -12,6 +12,7 @@ use GraphicsResearch\QuestionPage;
 use GraphicsResearch\Page\Upload;
 use GraphicsResearch\Page\Download;
 use GraphicsResearch\Page\Index;
+use GraphicsResearch\Page\Webhook;
 
 \Router::instance()->Register([
 
@@ -237,6 +238,7 @@ use GraphicsResearch\Page\Index;
 
     // CrowdFlower からの Webhook を受け付ける
     "/webhook" => function () {
-        
+        $webhook = new Webhook();
+        $webhook->handle();
     },
 ]);

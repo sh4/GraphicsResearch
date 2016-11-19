@@ -18,6 +18,7 @@ class Index {
     private $number;
     private $formAction;
     private $lastAnswers;
+    private $lastJudgementIds;
     private $modelFormId;
     private $isPaintMode;
 
@@ -26,6 +27,7 @@ class Index {
     public function __construct() {
         $this->modelFormId = 0;
         $this->lastAnswers = [];
+        $this->lastJudgementIds = [];
         $this->number = (int)Form::get("num", 1);
         $this->formAction = \Router::Path("/");
         if ($this->number !== null && $this->number > 0) {
@@ -143,6 +145,7 @@ class Index {
             "questions" => $questions,
             "progress" => $progress,
             "answerContext" => $this->getAnswerContext(),
+            "lastJudgementIds" => $this->lastJudgementIds,
         ];
     }
 
@@ -207,13 +210,32 @@ class Index {
         if ($answerRawData = Form::post("answer", [])) { // ["ModelID,Rotation,LOD,IsBetterThanRef", ...]
             $answerData = self::ensureAnswerDataFormat($unit, $answerRawData);
             if (!empty($answerData)) {
-                $unit->writeJudgeData($answerData);
+                $this->lastJudgementIds = $unit->writeJudgeData($answerData);
                 $this->lastAnswers = $answerData;
             }
         }
+
+        // ペイントデータが存在すればそれを DB に保存
+        // [["name" => "upload_form_name", "id" => job_unit_judgement_id], ...]
+        if ($paintRawData = Form::post("paint", [])) { 
+            $rootDir = dirname(__FILE__)."/../../../".PAINTING_TASK_IMAGES;
+            foreach ($paintRawData as $paint) {
+                $judgementId = $paint["id"];
+                $paintingFilePath = $rootDir."/".$unit->getPaintingFilePath($this->question, $judgementId);
+                $paintingDir = dirname($paintingFilePath);
+                if (!file_exists($paintingDir)) {
+                    mkdir($paintingDir, 0777, true);
+                }
+                if (Form::saveFile($paint["name"], $paintingFilePath)) {
+                    $unit->setIsPaintingCompleted($jobUnitJudgementId);
+                }
+            }
+        }
+
         // Unit に設定されているワーカー ID をセッションに格納
         // (同一ユーザーかどうかを判定するためのもの。クライアント側でセッションが破棄された場合は不正確)
         $_SESSION[self::WorkerId] = $unit->getWorkerId();
+
         return $unit;
     }
 

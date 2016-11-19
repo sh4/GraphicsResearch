@@ -109,10 +109,23 @@ class JobUnit extends AbstractUnit {
         return $this->answerGroupId;
     }
 
+    public function getPaintingFilePath(Question $question, $judgementId) {
+        $judgement = DB::instance()->fetchRow("
+            SELECT * FROM job_unit_judgement WHERE id = ? 
+        ", $judgementId);
+        $modelFilename = basename($question->modelPath(
+            $judgement["model_id"], 
+            $judgement["rotation_id"], 
+            $judgement["lod"]));
+        return $this->getJobId() . "/" .
+               $this->getUnitId() . "/" . 
+               preg_replace('#\.jpe?g$#ui', ".png", $modelFilename);
+    }
+
     public function writeJudgeData($answers) {
-        DB::instance()->transaction(function (DB $db) use ($answers) {
+        return DB::instance()->transaction(function (DB $db) use ($answers) {
             $now = date('Y-m-d H;i:s');
-            $db->insertMulti("job_unit_judgement", $answers);
+            $judgementIds = $db->insertMulti("job_unit_judgement", $answers);
             $db->execute("INSERT INTO job_unit
                 (unit_id, job_id, created_on, answered_questions, verification_code, answer_group_id)
                 VALUES (:unit_id, :job_id, :created_on, :add_answered_questions, :verification_code, :answer_group_id)
@@ -130,7 +143,31 @@ class JobUnit extends AbstractUnit {
                 "answer_group_id" => $this->getAnswerGroupId(),
             ]);
             $this->answeredQuestions = (int)$db->fetchOne("SELECT answered_questions FROM job_unit WHERE unit_id = ?", $this->getUnitId());
+            return $judgementIds;
         });
+    }
+
+    public function setIsPaintingCompleted($judgementId) {
+        DB::instance()->execute("
+            UPDATE job_unit_judgement
+            SET is_painting_completed = :completed
+            WHERE id = :id
+        ",
+        [
+            "completed" => 1,
+            "id" => $judgementId,
+        ]);
+    }
+
+    public function getPaintingCount() {
+        return (int)DB::instance()->fetchOne("
+            SELECT COUNT(*)
+            FROM job_unit_judgement
+            WHERE unit_id = ? AND is_painting_completed = 1
+        ",
+        [
+            $this->getUnitId(),
+        ]);
     }
 
     public static function eachJudgementData($jobId = null) {

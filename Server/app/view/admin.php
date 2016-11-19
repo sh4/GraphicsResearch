@@ -135,6 +135,7 @@ $jobForm = array_merge($jobForm, [
     "questions" => "10",
     "max_assignments" => "10",
     "reward_amount_usd" => "0.10",
+    "bonus_amount_usd" => "0.00",
     "quiz_accuracy_rate" => "70",
     "quiz_question_count" => "10",
 ]);
@@ -179,8 +180,19 @@ $jobForm = array_merge($jobForm, [
     </div>
 
     <div class="form-group">
-        <label>Total Reward Cost</label>
-        <div><b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD</div>
+        <label for="new-job-bonus-amount">Bonus Reward Cost (Per Painting)</label>
+        <input type="text" class="form-control numeric" id="new-job-bonus-amount" name="job[bonus_amount_usd]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["bonus_amount_usd"]) ?>">
+        &nbsp; USD/Painting
+        <label for="new-job-bonus-amount" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label>Estimated Total Reward Cost</label>
+        <div>
+            <b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD
+            + 
+            <b><span id="total-job-bonus-cost" style="font-size:120%">0.00</span></b> USD (Maximum Bonus)
+        </div>
     </div>
 
     <div class="form-group">
@@ -309,6 +321,8 @@ function clearError($el) {
     $el.parent().removeClass("has-danger");
 }
 
+var lodVariationCount = <?php echo $question->lodVariationCount() ?>;
+
 var validateRules = {
     "#new-job-title": function () {
         var $el = $("#new-job-title");
@@ -374,8 +388,23 @@ var validateRules = {
         if (amount < 0.1) {
             onError($el, "Reward amount must be above 10 cents.");
             return false;
-        } else if (amount * maxAssignments > 1000) {
-            onError($el, "Reward amount limit exceeded: 1,000 dollars");
+        } else if (amount * maxAssignments > 100) {
+            onError($el, "Reward amount limit exceeded: 100 dollars");
+            return false;
+        } else {
+            clearError($el);
+            return true;
+        }
+    },
+    "#new-job-bonus-amount": function () {
+        var $el = $("#new-job-bonus-amount");
+        var maxAssignments = parseInt($("#max_assignments").val(), 10);
+        var amount = parseFloat($el.val());
+        if (amount < 0.01) {
+            onError($el, "Bonus amount must be above 1 cents.");
+            return false;
+        } else if (amount > 10) {
+            onError($el, "Bonus amount limit exceeded: 10 dollars");
             return false;
         } else {
             clearError($el);
@@ -450,12 +479,15 @@ $(".form-delete-job-page").submit(function (e) {
 });
 
 function updateTotalCost() {
-    var totalCostUSD = parseFloat($("#new-job-reward-amount").val(), 10) *  parseFloat($("#new-job-num-assignments").val(), 10);
+    var maxAssignments = parseInt($("#new-job-num-assignments").val(), 10);
+    var totalCostUSD = (parseFloat($("#new-job-reward-amount").val(), 10) * maxAssignments);
+    var maximumBonusCostUSD = (parseFloat($("#new-job-bonus-amount").val(), 10) * lodVariationCount * maxAssignments);
     $("#total-job-cost").text(totalCostUSD.toFixed(2));
+    $("#total-job-bonus-cost").text(maximumBonusCostUSD.toFixed(2));
 }
 
 function updateTotalQuestions() {
-    var questionsPerWorker = $("#new-job-num-question").val() * <?php echo $question->lodVariationCount() ?>;
+    var questionsPerWorker = $("#new-job-num-question").val() * lodVariationCount;
     $("#questions-per-worker").text(formatNumber(questionsPerWorker));
     $("#total-questions").text(formatNumber(questionsPerWorker * parseInt($("#new-job-num-assignments").val(), 10)));
 }

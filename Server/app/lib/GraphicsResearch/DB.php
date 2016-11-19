@@ -99,9 +99,12 @@ class DB {
         }
         $sql = "INSERT INTO $table (".implode(",", $columns).") VALUES (".implode(", ", $values).")";
         $stmt = $this->dbh->prepare($sql);
+        $rowIds = [];
         foreach ($rows as $row) {
             $stmt->execute($row);
+            $rowIds[] = $this->dbh->lastInsertId();
         }
+        return $rowIds;
     }
 
     public function replace($table, $params = []) {
@@ -177,6 +180,7 @@ class DB {
             function () { $this->extendUnitId(); },
             function () { $this->addQuizCount(); },
             function () { $this->addAnswerGroupId(); },
+            function () { $this->addPaymentBonus(); },
         ] as $migrateVersion => $migrater) {
             $migrateVersion += 1; // migrate version is 1 origin 
             if ($version < $migrateVersion) {
@@ -403,6 +407,14 @@ class DB {
     private function addAnswerGroupId() {
         $sql = "
         ALTER TABLE job_unit ADD COLUMN answer_group_id VARCHAR(32);
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    private function addPaymentBonus() {
+        $sql = "
+        ALTER TABLE job ADD COLUMN bonus_amount_usd REAL;
+        ALTER TABLE job_unit_judgement ADD COLUMN is_painting_completed TINYINT NOT NULL DEFAULT 0;
         ";
         $this->dbh->exec($sql);
     }

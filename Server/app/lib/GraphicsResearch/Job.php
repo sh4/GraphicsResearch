@@ -37,6 +37,7 @@ class Job {
         $this->maxAssignments = (int)$job["max_assignments"];
         $this->rewardAmountUSD = (float)$job["reward_amount_usd"];
         $this->quizAccuracyRate = (float)$job["quiz_accuracy_rate"];
+
         if (isset($job["created_on"])) {
             $this->createdOn = new \DateTime($job["created_on"]);
         } else {
@@ -53,6 +54,11 @@ class Job {
         $this->quizQuestionCount = 0;
         if (isset($job["quiz_question_count"])) {
             $this->quizQuestionCount = (int)$job["quiz_question_count"];
+        }
+
+        $this->bonusAmountUSD = 0.0;
+        if (isset($job["bonus_amount_usd"])) {
+            $this->bonusAmountUSD = (float)$job["bonus_amount_usd"];
         }
 
         // CreateNewJob 呼び出し時に使用する一時的な変数
@@ -91,6 +97,10 @@ class Job {
 
     public function getRewardAmountUSD() {
         return (float)$this->rewardAmountUSD;
+    }
+
+    public function getBonusAmountUSD() {
+        return (float)$this->bonusAmountUSD;
     }
 
     public function getCrowdFlowerJobId() {
@@ -299,6 +309,7 @@ class Job {
             "questions" => $this->getQuestions(),
             "max_assignments" => $this->getMaxAssignments(),
             "reward_amount_usd" => $this->getRewardAmountUSD(),
+            "bonus_amount_usd" => $this->getBonusAmountUSD(),
             "created_on" => $this->createdOn()->format("Y-m-d H:i:s"),
             "crowdflower_job_id" => $this->crowdFlowerJobId,
             "question_order_json" => "[]",
