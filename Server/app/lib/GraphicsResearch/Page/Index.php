@@ -104,7 +104,7 @@ class Index {
         return $unit;
     }
 
-    public function renderQuestionJson() {
+    public function getQuestionInfo() {
         $progress = $this->getAnswerProgress();
         $isFetchLods = (int)Form::get("fetchLods", 0) == 1;
         $questions = [];
@@ -135,11 +135,11 @@ class Index {
                 $questions[] = $models;
             }
         }
-        echo json_encode([
+        return [
             "questions" => $questions,
             "progress" => $progress,
             "answerContext" => $this->getAnswerContext(),
-        ]);
+        ];
     }
 
     public function getAnswerContext() {

@@ -8,12 +8,37 @@ class Upload {
     public function __construct() {
     }
 
-    public function isValidUploadKey() {
+    public function receiveFiles() {
+        $result = [ "ok" => false ];
+        if (!$this->isValidUploadKey()) {
+            return $result;
+        }
+        if (Form::file("file")) {
+            // upload file
+            $result["ok"] = $this->uploadModelFile();
+        }
+        if (Form::post("ls")) {
+            // list files
+            $result["files"] = $this->listModelFile();
+            $result["ok"] = true;
+        }
+        if (Form::post("rm")) {
+            // remove files
+            $removedFiles = $this->removeModelFile(Form::post("rm", []));
+            if (!empty($removedFiles)) {
+                $result["ok"] = true;
+                $result["removedFiles"] = $removedFiles;
+            }
+        }
+        return $result;
+    }
+
+    private function isValidUploadKey() {
         $uploadKey = Form::post("uploadKey", "");
         return $uploadKey != "" && $uploadKey === UPLOAD_KEY;
     }
 
-    public function uploadModelFile() {
+    private function uploadModelFile() {
         $file = Form::file("file");
         if ($file === null) {
             return false;
@@ -23,7 +48,7 @@ class Upload {
         return Form::saveFile("file", $filePath);
     }
 
-    public function listModelFile() {
+    private function listModelFile() {
         $files = [];
         foreach (scandir(JUDGEMENT_IMAGES) as $file) {
             if (!preg_match('#\.(?:gif|png|jpe?g)$#iu', $file)) {
@@ -34,7 +59,7 @@ class Upload {
         return $files;
     }
 
-    public function removeModelFile($targetFiles) {
+    private function removeModelFile($targetFiles) {
         $removedFiles = [];
         foreach ($targetFiles as $removeFile) {
             if (!preg_match('#^[a-z0-9_\-]+\.(?:gif|png|jpe?g)$#iu', $removeFile)) {

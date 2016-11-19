@@ -10,6 +10,7 @@ use GraphicsResearch\DB;
 use GraphicsResearch\Question;
 use GraphicsResearch\QuestionPage;
 use GraphicsResearch\Page\Upload;
+use GraphicsResearch\Page\Download;
 use GraphicsResearch\Page\Index;
 
 \Router::instance()->Register([
@@ -211,81 +212,31 @@ use GraphicsResearch\Page\Index;
     "/download" => function () {
         session_start();
         if (!Form::session("admin_login", false)) {
-            Router::redirect("admin");
+            \Router::redirect("admin");
         }
-        
         // 回答済みデータダウンロード
-        header("Content-Type: application/octet-stream");
-        header("Content-Disposition: attachment; filename=judgement.csv");
-
-        $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
-        $jobId = Form::get("jobId", "");
-        // ヘッダ行を書き出し
-        echo implode(",", [
-            "WorkerID",
-            "ModelID",
-            "RotationID",
-            "LOD",
-            "IsBetterThanReferenceModel",
-            "Filename",
-        ]);
-        echo "\r\n";
-        // 回答データを書き出し
-        foreach (JobUnit::eachJudgementData($jobId) as $judgement) {
-            // 連想配列をローカル変数に展開
-            extract($judgement);
-            // ワーカーIDが未設定なら、正確ではないが UnitId を設定
-            // （必ずしも単一の人物が回答したとは限らないため）
-            if (empty($worker_id)) {
-                $worker_id = $unit_id;
-            }
-            $modelPath = $question->modelPath($model_id, $rotation_id, $lod);
-            echo implode(",", [
-                $worker_id,
-                $model_id,
-                $rotation_id,
-                $lod,
-                $is_better_than_ref,
-                basename($modelPath),
-            ]);
-            echo "\r\n";
-        }
+        $downloadPage = new Download();
+        $downloadPage->echoCSV();
     },
 
     "/upload" => function () {
         // 回答用データアップロード
+        $uploadPage = new Upload();
+        $result = $uploadPage->receiveFiles();
         header("Content-Type: application/json; charset=utf-8");
-
-        $page = new Upload();
-        $result = [ "ok" => false ];
-        if (!$page->isValidUploadKey()) {
-            echo json_encode($result);
-            exit;
-        }
-        if (Form::file("file")) {
-            // upload file
-            $result["ok"] = $page->uploadModelFile();
-        }
-        if (Form::post("ls")) {
-            // list files
-            $result["files"] = $page->listModelFile();
-            $result["ok"] = true;
-        }
-        if (Form::post("rm")) {
-            // remove files
-            $removedFiles = $page->removeModelFile(Form::post("rm", []));
-            if (!empty($removedFiles)) {
-                $result["ok"] = true;
-                $result["removedFiles"] = $removedFiles;
-            }
-        }
         echo json_encode($result);
     },
 
     "/api/question" => function () {
         session_start();
+        $indexPage = new Index();
+        $info = $indexPage->getQuestionInfo();
         header("Content-Type: application/json; charset=utf-8");
-        $page = new Index();
-        $page->renderQuestionJson();
+        echo json_encode($info);
+    },
+
+    // CrowdFlower からの Webhook を受け付ける
+    "/webhook" => function () {
+        
     },
 ]);
