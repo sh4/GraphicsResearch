@@ -16,6 +16,7 @@ var surveyUnits = [];
 
 var inQuizMode = false;
 var quizSid = getRandomId();
+var dynamicUnitId = getRandomId();
 
 !function () {
   jQuery(".cml").each(function (i, el) {
@@ -28,20 +29,23 @@ var quizSid = getRandomId();
   inQuizMode = surveyUnits.every(function (unit) {
     return unit.field.data("is-golden");
   });
-}();
 
-!function () {
   surveyUnits.forEach(function (unit) {
     var href = unit.link.attr("href");
+    var params = [];
     if (unit.field.data("is-golden")) {
       if (inQuizMode) {
-        href += "&quizMode=1";
+        params.push("quizMode=1");
       } else {
-        href += "&quizMode=0";
-        href += "&quizUnitId=" + unit.field.data("unit-id");
+        params.push("quizMode=0");
+        params.push("unitId=" + dynamicUnitId);
       }
-      href += "&quizSid=" + quizSid;
+      params.push("quizUnitId=" + unit.field.data("unit-id"));
+      params.push("quizSid=" + quizSid);
+    } else {
+      params.push("unitId=" + unit.field.data("unit-id"));
     }
+    href += params.join("&");
     unit.link.attr("href", href);
   });
 }();
@@ -77,8 +81,8 @@ CMLFormValidator.addAllThese([
       }
       var verifyParams = [
         "verificationCode=" + elem.value,
+        "unitId=" + (isGolden ? dynamicUnitId : unitId),
       ];
-      verifyParams.push("unitId=" + (isGolden ? quizSid : unitId));
       jQuery.getJSON(verifyUrl + "/verify?" + verifyParams.join("&")).then(function (r) {
         if (r.ok) {
           surveyCodeConfirmed[unitId] = true;

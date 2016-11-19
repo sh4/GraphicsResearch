@@ -72,30 +72,29 @@ class Index {
 
     public static function loadUnit() {
         $unitId = Form::request("unitId", "");
+        $quizUnit = null;
+        if ($quizUnitId = Form::request("quizUnitId", "")) {
+            $quizUnit = QuizUnit::loadFromId($quizUnitId);
+        }
 
         $quizModeEnabled = Form::request("quizMode", 0) == 1;
-        $quizSessionId = Form::request("quizSid", "");
         if ($quizModeEnabled) {
             // クイズモードの回答状況を復元
-            $unit = QuizUnit::loadFromId($unitId);
+            $quizSessionId = Form::request("quizSid", "");
             if (empty($quizSessionId)) {
                 return null;
             }
+            $unit = $quizUnit;
             $unit->setQuizSessionId($quizSessionId);
         } else {
             $unit = JobUnit::loadFromId($unitId);
-
             // 指定された quizUnitId で QuizUnit からの読み込みが可能な場合は、
             // 新規に JobUnit を作成する (参照先の JobId は QuizUnit から得る)
-            if (!$unit
-                && ($quizUnitId = Form::request("quizUnitId"))
-                && ($quizUnit = QuizUnit::loadFromId($quizUnitId))
-                && !($unit = JobUnit::loadFromId($quizSessionId))
-            ) {
+            if (!$unit && $quizUnit) {
                 // quiz データの回答は golden データと一致しないと正答率が下がるため、
-                // 回答データは quiz のそれと同一にする
+                // 確認コードは quiz データのそれと同一にする
                 $unit = JobUnit::createNewSession([
-                    "unit_id" => $quizSessionId,
+                    "unit_id" => $unitId,
                     "job_id" => $quizUnit->getJobId(),
                     "verification_code" => $quizUnit->getVerificationCode(),
                 ]);

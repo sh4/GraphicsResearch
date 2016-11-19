@@ -1,5 +1,5 @@
 <p>
-    <a class="external-survey-site-link clicked" href="<?php echo $url ?>?unitId={{unit_id}}" target="_blank">Click Here to visit the survey</a>
+    <a class="external-survey-site-link clicked" href="<?php echo $url ?>?" target="_blank">Click Here to visit the survey</a>
 </p>
 <cml:text 
     name="survey_code"
