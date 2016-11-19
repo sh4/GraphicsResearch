@@ -167,7 +167,7 @@ class JobUnit extends AbstractUnit {
     }
 
     public static function loadsFromAnswerGroupId($answerGroupId) {
-        $units = DB::instance()->ecah("SELECT * FROM job_unit WHERE answer_group_id = ?", $answerGroupId);
+        $units = DB::instance()->each("SELECT * FROM job_unit WHERE answer_group_id = ?", $answerGroupId);
         foreach ($units as $unit) {
             yield new self($unit);
         }

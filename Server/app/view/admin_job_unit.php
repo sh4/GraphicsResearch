@@ -5,10 +5,12 @@ use GraphicsResearch\Form;
 
 $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
 $units = [];
+$jobId = (int)Form::get("jobId", 0);
+$unitId = Form::get("unitId", "");
 if ($answerGroupId = Form::get("gid", "")) {
     $units = JobUnit::loadsFromAnswerGroupId($answerGroupId);
 } else {
-    $units[] = JobUnit::loadFromId(Form::get("unitId", ""));
+    $units[] = JobUnit::loadFromId($unitId);
 }
 $root = \Router::Path();
 $judgementFilter = Form::get("filter", "");
@@ -42,12 +44,12 @@ $judgementFilter = Form::get("filter", "");
 
 <div class="container">
 
-<a href="<?php echo Router::Path("admin/jobs")?>?jobId=<?php echo $unit->getJobId() ?>">Return Job page</a>
+<a href="<?php echo Router::Path("admin/jobs")?>?jobId=<?php echo $jobId ?>">Return Job page</a>
 
 <h1>Judgement Detail</h1>
 
 <div style="margin:1em">
-    <?php $baseUrl = Router::Path("admin/jobs/unit")."?jobId=".$unit->getJobId()."&amp;unitId=".$unit->getUnitId() ?>
+    <?php $baseUrl = Router::Path("admin/jobs/unit")."?jobId=$jobId&amp;unitId=$unitId" ?>
     <?php if ($judgementFilter === ""): ?>
         All
     <?php else: ?>
@@ -67,10 +69,14 @@ $judgementFilter = Form::get("filter", "");
     <?php endif ?>
 </div>
 
-<?php foreach ($units as $unit): ?>
+<?php
+$index = 0;
+foreach ($units as $unit):
+?>
 
     <?php
     foreach ($unit->getJudgementData() as $data):
+        $index++;
         $modelId = $data["model_id"];
         $modelLod = $data["lod"];
         $modelRotation = $data["rotation_id"];
@@ -83,6 +89,9 @@ $judgementFilter = Form::get("filter", "");
     ?>
     <table class="judgement-table">
     <thead>
+        <tr>
+            <td colspan="2" style="height:2em;border:2px solid #666; background: #eee;">No. <?php echo $index ?></td>
+        </tr>
         <tr>
             <th>Reference</th>
             <th>Comparison</th>

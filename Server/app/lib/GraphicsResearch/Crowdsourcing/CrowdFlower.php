@@ -3,6 +3,7 @@
 namespace GraphicsResearch\Crowdsourcing;
 
 use GraphicsResearch\Rest;
+use GraphicsResearch\DB;
 
 // CrowdFlower リリースノート:
 // https://make.crowdflower.com/product-release-notes
