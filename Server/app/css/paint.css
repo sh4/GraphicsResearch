@@ -1,0 +1,11 @@
+td.left-test-item > .index-button .question-image {
+    cursor: not-allowed;
+}
+td.left-test-item > .index-button:hover,
+td.right-test-item > .index-button:hover {
+    border-color:white;
+}
+
+td.right-test-item > .index-button .question-image {
+    cursor: crosshair;
+}

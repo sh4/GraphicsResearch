@@ -19,6 +19,7 @@ class Index {
     private $formAction;
     private $lastAnswers;
     private $modelFormId;
+    private $isPaintMode;
 
     const WorkerId = "questionWorkerId";
 
@@ -33,6 +34,7 @@ class Index {
         $this->question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
         $this->unit = $this->createOrUpdateUnit();
         $this->questionPage = QuestionPage::DefaultPage();
+        $this->isPaintMode = (int)Form::get("paint", 0) == 1;
     }
 
     public function getFormAction() {
@@ -173,6 +175,10 @@ class Index {
             "lastAnswer" => $lastAnswer,
             "answeredLods" => $answerLods,
         ];
+    }
+
+    public function isPaintMode() {
+        return $this->isPaintMode;
     }
 
     private function yieldModel($model) {

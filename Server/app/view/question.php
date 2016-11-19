@@ -64,6 +64,9 @@ function question(Page\Index $page, $models, $no) {
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/index.css">
+<?php if ($page->isPaintMode()): ?>
+<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/paint.css">
+<?php endif ?>
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <title>Test</title>
 </head>
@@ -102,12 +105,12 @@ foreach ($page->getQuestionOrders() as $i => $models):
         ?>
         <table style="width:100%">
         <tr class="test-item">
-            <td>
+            <td class="left-test-item">
                 <img src="<?php echo $root ?>/css/loading.svg" class="question-loading">
                 <div class="index-button">
                 </div>
             </td>
-            <td>
+            <td class="right-test-item">
                 <img src="<?php echo $root ?>/css/loading.svg" class="question-loading">
                 <div class="index-button">
                 </div>
@@ -148,6 +151,10 @@ window.GS = {
 }();
 </script>
 <script type="text/javascript" src="<?php echo $root ?>/js/question.js"></script>
+
+<?php if ($page->isPaintMode()): ?>
+<script type="text/javascript" src="<?php echo $root ?>/js/paint.js"></script>
+<?php endif ?>
 
 </body>
 </html>
