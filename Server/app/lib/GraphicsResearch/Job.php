@@ -220,7 +220,7 @@ class Job {
         // 1 Row (Unit) あたりの判定数 (回答可能な Contributor 数)
         $this->crowdFlower->judgementsPerUnit($job->id, 1);
         // 1クラウドワーカーあたりの最大回答数を 1 回に制限する
-        // TODO: この制限が必要になった段階でコメントを外す
+        // (この値を指定しなくても、最大回答数は Job あたりの QuizUnit 数にキャップされる)
         //$this->crowdFlower->maxJudgmentsPerWorker($job->id, 1);
         // WebHook を設定
         $this->crowdFlower->enableWebHook($job->id, \Router::Url() . "/webhook");
