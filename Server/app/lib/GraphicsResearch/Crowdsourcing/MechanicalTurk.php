@@ -1,6 +1,6 @@
 <?php
 
-namespace GraphicsResearch;
+namespace GraphicsResearch\Crowdsourcing;
 
 use GraphicsResearch\Rest;
 
@@ -67,7 +67,7 @@ class Reward {
     }
 }
 
-class MechanicalTurkClient {
+class MechanicalTurk {
     private $secretKey;
     private $accessKey;
 

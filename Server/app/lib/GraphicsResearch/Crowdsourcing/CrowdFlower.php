@@ -1,6 +1,6 @@
 <?php
 
-namespace GraphicsResearch;
+namespace GraphicsResearch\Crowdsourcing;
 
 use GraphicsResearch\Rest;
 
@@ -10,7 +10,7 @@ use GraphicsResearch\Rest;
 // API リファレンス:
 // https://success.crowdflower.com/hc/en-us/articles/202703425-CrowdFlower-API-Requests-Guide
 // * Undocumented だが、job オブジェクトの要素は大体 PUT リクエストで書き換えが可能
-class CrowdFlowerClient {
+class CrowdFlower {
     private $restClient;
     private $apiKey;
 
@@ -95,7 +95,8 @@ class CrowdFlowerClient {
         }
         $url = self::Url."/jobs/$jobId/upload.json?key=$this->apiKey";
         $json = new Rest\Request(implode("\n", $jsonRows), "application/json");
-        return $this->restClient->post($url, $json);
+        $response = $this->restClient->post($url, $json);
+        return json_decode($response, true);
     }
 
     public function createNewRow($jobId, $params, $unitParams = []) {
@@ -108,7 +109,7 @@ class CrowdFlowerClient {
         }
         $url = self::Url."/jobs/$jobId/units.json?key=$this->apiKey";
         $response = $this->restClient->post($url, Rest\Request::form($encodedParams));
-        return json_decode($response);
+        return json_decode($response, true);
     }
 
     // https://success.crowdflower.com/hc/en-us/articles/202703305-Glossary-of-Terms
@@ -176,6 +177,16 @@ class CrowdFlowerClient {
             "job[units_per_assignment]" => $numJudgment,
         ]);
         return $this->restClient->put($url, $form);
+    }
+
+    // Webhook による通知を有効化
+    // https://success.crowdflower.com/hc/en-us/articles/201856249-CrowdFlower-Webhook-Basics
+    public function enableWebhook($jobId, $url) {
+        $requestUrl = self::Url."/jobs/$jobId.json?key=$this->apiKey";
+        return $this->restClient->put($requestUrl, Rest\Request::form([
+            "job[webhook_uri]" => $url,
+            "job[send_judgments_webhook]" => "true",
+        ]));
     }
 
     private function unitUrl($jobId, $unitId) {

@@ -61,7 +61,7 @@ class Job {
             $this->quizQuestions = $job["quiz_questions"];
         }
 
-        $this->crowdFlower = new CrowdFlowerClient();
+        $this->crowdFlower = new Crowdsourcing\CrowdFlower();
         $this->crowdFlower->setAPIKey(CROWDFLOWER_API_KEY);
     }
 
@@ -222,6 +222,8 @@ class Job {
         // 1クラウドワーカーあたりの最大回答数を 1 回に制限する
         // TODO: この制限が必要になった段階でコメントを外す
         //$this->crowdFlower->maxJudgmentsPerWorker($job->id, 1);
+        // WebHook を設定
+        $this->crowdFlower->enableWebHook($job->id, \Router::Url() . "/webhook");
 
         // DB に CrowdFlower のジョブ情報を設定
         $this->crowdFlowerJobId = $job->id;
