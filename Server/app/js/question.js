@@ -184,7 +184,7 @@ $("#answer-form").submit(function (event) {
     return false;
 });
 
-if (window.GS.num > 1) {
+if (window.GS.num == 1) {
     $(".index-button").change(function () {
         $(this).addClass("active");
         $("#question-submit").click();
