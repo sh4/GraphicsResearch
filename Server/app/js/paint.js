@@ -125,6 +125,12 @@ PaintingCanvas.prototype.enableEraserMode = function (enableEraser) {
     ctx.globalCompositeOperation = enableEraser ? "destination-out" : "source-over";
 };
 
+PaintingCanvas.prototype.clear = function () {
+    var canvas = this.$canvas[0];
+    canvas.width = canvas.width;
+    canvas.height = canvas.height;
+};
+
 var brushReady = prepareBrushes();
 
 window.GS.paint.UI = function ($el) {
@@ -141,12 +147,14 @@ window.GS.paint.UI = function ($el) {
             html += "<ul>";
             html += '<li><i class="tool-brush button fa fa-paint-brush fa-2x"></i></li>';
             html += '<li><i class="tool-eraser button fa fa-eraser fa-2x"></i></li>';
+            html += '<li><i class="tool-clear button fa fa-trash fa-2x"></i></li>';
             html += "</ul>";
             html += "</div>";
             var $toolbox = $($.parseHTML(html));
             var tools = {
                 $brush: $toolbox.find(".tool-brush"),
                 $eraser: $toolbox.find(".tool-eraser"),
+                $clear: $toolbox.find(".tool-clear"),
             };
             tools.$brush.click(function () {
                 paintingCanvas.enableEraserMode(false);
@@ -157,6 +165,12 @@ window.GS.paint.UI = function ($el) {
                 paintingCanvas.enableEraserMode(true);
                 tools.$eraser.addClass("button-checked");
                 tools.$brush.removeClass("button-checked");
+            });
+            tools.$clear.click(function () {
+                if (!confirm("Do you really want to clear painting?")) {
+                    return;
+                }
+                paintingCanvas.clear();
             });
             tools.$brush.click();
             return $toolbox;
