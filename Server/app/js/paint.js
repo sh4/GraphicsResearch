@@ -118,6 +118,7 @@ function PaintingCanvas($el) {
     };
 
     this.$canvas.mousedown(this.onMouseDown);
+    this.$canvas.addClass("painting-canvas");
 }
 
 PaintingCanvas.prototype.enableEraserMode = function (enableEraser) {

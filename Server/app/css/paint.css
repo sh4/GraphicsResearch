@@ -43,3 +43,11 @@ td.right-test-item > .index-button canvas {
 .painting-toolbox ul i {
     padding: 6px 12px;
 }
+
+.painting-canvas {
+    z-index: 100;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+}

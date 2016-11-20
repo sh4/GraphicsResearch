@@ -87,13 +87,6 @@ h3 {
 .index-button > label {
     display: block;
 }
-.index-button > label > canvas {
-    z-index: 100;
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: block;
-}
 
 .question-loading {
     margin-top: 5%;
