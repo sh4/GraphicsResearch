@@ -33,7 +33,7 @@ function createQuestionInput(model, index) {
 }
 
 function updateQuestionItems(questions, progress) {
-    var d = new $.Deferred();
+    var updateCompleted = new $.Deferred();
     var questionEls = Array.prototype.slice.call(document.querySelectorAll(".question-item"));
 
     questions.forEach(function (models, index) {
@@ -47,6 +47,7 @@ function updateQuestionItems(questions, progress) {
             });
         })).then(function () {
             function showNewQuestion() {
+                var dlist = [];
                 $questionEl.find(".index-button").each(function (i, el) {
                     var preload = preloadModels[i];
                     var $img = $(preload.img).addClass("question-image").hide();
@@ -56,12 +57,18 @@ function updateQuestionItems(questions, progress) {
                     $(el)
                         .append(createQuestionInput(preload.model, index))
                         .append($labelEl);
+                    var d = new $.Deferred();
+                    dlist.push(d.promise());
                     $img.fadeIn(300, function () {
                         $questionEl.find(".question-no").text(progress.answered + index + 1);
                         d.resolve();
                     });
                 });
-            }            
+                $.when.apply($, dlist).then(function () {
+                    updateCompleted.resolve();
+                });
+            }
+
             var preloadModels = Array.prototype.slice.call(arguments);
             var $questionEl = $(questionEls[index]);
             var $testItemEl = $questionEl.find(".test-item");
@@ -94,7 +101,7 @@ function updateQuestionItems(questions, progress) {
             }
         });
     });
-    return d.promise();
+    return updateCompleted.promise();
 }
 
 function updateAnsweredLods(answerContext) {
@@ -146,8 +153,12 @@ function updateQuestions(questionRequest) {
         }
         updateQuestionItems(questions, r.progress).then(function () {
             updateProgress(r.progress);
+            // ペイントUI を有効化
+            $(".test-item input").attr("disabled", "disabled");
+            window.GS.paint.UI($(".right-test-item .index-button > label"));
         });
         updateAnsweredLods(r.answerContext);
+        // 画像の先読みを開始
         if (bufferedQuestions.length > 0) {
             bufferedQuestions[0].forEach(function (m) {
                 new Image().src = m.path;

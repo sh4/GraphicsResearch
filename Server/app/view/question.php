@@ -71,6 +71,7 @@ function question(Page\Index $page, $models, $no) {
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/index.css">
 <?php if ($page->isPaintMode()): ?>
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/paint.css">
+<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/vendor/font-awesome-4.7.0/css/font-awesome.css">
 <?php endif ?>
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <title>Test</title>
@@ -151,6 +152,7 @@ endif
 window.GS = {
     params: <?php echo json_encode($gsParams) ?>,
     num: <?php echo $page->getNumber() ?>,
+    paint: {},
 };
 
 }();

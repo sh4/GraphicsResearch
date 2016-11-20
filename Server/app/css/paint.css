@@ -6,6 +6,40 @@ td.right-test-item > .index-button:hover {
     border-color:white;
 }
 
-td.right-test-item > .index-button .question-image {
+td.right-test-item > .index-button canvas {
     cursor: crosshair;
+}
+
+.invalid-selection {
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none; 
+    user-select: none;
+}
+
+.painting-toolbox {
+    position: absolute;
+    top: -3.5em;
+    left: 0;
+    height: 2em;
+}
+.painting-toolbox ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    border: 1px solid #333;
+    border-width: 1px 0 1px 0;
+    background: white;
+}
+.painting-toolbox ul > li {
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+    border: 1px solid #333;
+}
+.painting-toolbox ul > li:first-child {
+    border-right-width: 0px;
+}
+.painting-toolbox ul i {
+    padding: 6px 12px;
 }
