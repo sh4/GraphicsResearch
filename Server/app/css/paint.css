@@ -50,4 +50,5 @@ td.right-test-item > .index-button canvas {
     top: 0;
     left: 0;
     display: block;
+    opacity: 0.2;
 }

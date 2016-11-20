@@ -22,9 +22,6 @@ function renderHighlightBrush(texture, img) {
     for (var i = 0; i < imageLength; i += 4) {
         imageData[i] = 255;
         imageData[i+1] = 255;
-        if (imageData[i+3] > 0) {
-            imageData[i+3] = 16;
-        }
     }
     image.data = imageData;
     ctx.putImageData(image, 0, 0);
