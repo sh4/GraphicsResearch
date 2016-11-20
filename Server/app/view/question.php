@@ -68,7 +68,7 @@ function question(Page\Index $page, $models, $no) {
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/index.css">
+<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/index.css">
 <?php if ($page->isPaintMode()): ?>
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/paint.css">
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/vendor/font-awesome-4.7.0/css/font-awesome.css">
