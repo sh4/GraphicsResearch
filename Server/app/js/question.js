@@ -154,8 +154,9 @@ function updateQuestions(questionRequest) {
         updateQuestionItems(questions, r.progress).then(function () {
             updateProgress(r.progress);
             // ペイントUI を有効化
-            $(".test-item input").attr("disabled", "disabled");
-            window.GS.paint.UI($(".right-test-item .index-button > label"));
+            if (window.GS.paint.UI) {
+                window.GS.paint.UI($(".right-test-item .index-button > label"));
+            }
         });
         updateAnsweredLods(r.answerContext);
         // 画像の先読みを開始

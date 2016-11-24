@@ -258,7 +258,7 @@ class Job {
         // (この値を指定しなくても、最大回答数は Job あたりの QuizUnit 数にキャップされる)
         //$this->crowdFlower->maxJudgmentsPerWorker($job->id, 1);
         // WebHook を設定
-        $this->crowdFlower->enableWebHook($job->id, \Router::Url() . "/webhook");
+        //$this->crowdFlower->enableWebHook($job->id, \Router::Url() . "/webhook");
 
         // DB に CrowdFlower のジョブ情報を設定
         $this->crowdFlowerJobId = $job->id;

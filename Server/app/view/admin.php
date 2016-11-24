@@ -179,22 +179,25 @@ $jobForm = array_merge($jobForm, [
         <label for="new-job-reward-amount" class="form-control-label validate"></label>
     </div>
 
+<?php /*
     <div class="form-group">
         <label for="new-job-bonus-amount">Bonus Reward Cost (Per Painting)</label>
         <input type="text" class="form-control numeric" id="new-job-bonus-amount" name="job[bonus_amount_usd]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["bonus_amount_usd"]) ?>">
         &nbsp; USD/Painting
         <label for="new-job-bonus-amount" class="form-control-label validate"></label>
     </div>
+*/ ?>
 
     <div class="form-group">
         <label>Estimated Total Reward Cost</label>
         <div>
             <b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD
+            <?php /*
             + 
             <b><span id="total-job-bonus-cost" style="font-size:120%">0.00</span></b> USD (Maximum Bonus)
+            */ ?>
         </div>
     </div>
-
     <div class="form-group">
         <label>Estimated Total Answer Count</label>
         <div>
@@ -481,9 +484,10 @@ $(".form-delete-job-page").submit(function (e) {
 function updateTotalCost() {
     var maxAssignments = parseInt($("#new-job-num-assignments").val(), 10);
     var totalCostUSD = (parseFloat($("#new-job-reward-amount").val(), 10) * maxAssignments);
-    var maximumBonusCostUSD = (parseFloat($("#new-job-bonus-amount").val(), 10) * lodVariationCount * maxAssignments);
     $("#total-job-cost").text(totalCostUSD.toFixed(2));
-    $("#total-job-bonus-cost").text(maximumBonusCostUSD.toFixed(2));
+
+    //var maximumBonusCostUSD = (parseFloat($("#new-job-bonus-amount").val(), 10) * lodVariationCount * maxAssignments);
+    //$("#total-job-bonus-cost").text(maximumBonusCostUSD.toFixed(2));
 }
 
 function updateTotalQuestions() {
