@@ -38,7 +38,6 @@ $num = $page->getNumber();
 $root = Router::Path();
 
 function question(Page\Index $page, $models, $no) {
-    $questionPage = $page->getQuestionPage();
     $root = Router::Path();
     $modelOrder = array_keys($models);
     shuffle($modelOrder);
@@ -96,7 +95,12 @@ function question(Page\Index $page, $models, $no) {
     </div>
 
 <?php
-$questionPage = $page->getQuestionPage();
+$defaultQuestionPage = $page->getDefaultQuestionPage();
+$instructions = $defaultQuestionPage["instructions"];
+if ($job = $page->getJob()) {
+    $instructions = $job->getQuestionInstructions();
+}
+
 foreach ($page->getQuestionOrders() as $i => $models):
     if ($num !== null && --$num < 0) {
         break;
@@ -105,7 +109,7 @@ foreach ($page->getQuestionOrders() as $i => $models):
 <div class="question-item">
     <h2>No.<span class="question-no"><?php echo ($progress->answered+$i+1) ?></span></h2>
     <div style="margin-bottom:3em">
-        <div class="question"><?php echo $questionPage["instructions"] ?></div>
+        <div class="question"><?php echo $instructions ?></div>
         <?php
         //question($page, $models, $i);
         ?>
@@ -152,7 +156,9 @@ endif
 window.GS = {
     params: <?php echo json_encode($gsParams) ?>,
     num: <?php echo $page->getNumber() ?>,
-    paint: {},
+    paint: {
+        enabled: <?php echo json_encode($page->isPaintMode()) ?>,
+    },
 };
 
 }();

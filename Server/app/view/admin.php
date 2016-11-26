@@ -45,13 +45,13 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 
 <?php include "_flash_alert.php" ?>
 
-<h2>Question Page</h2>
+<h2>Question Page (Default)</h2>
 
 <form method="post" id="form-update-question-page" action="<?php echo Router::Path("admin/question") ?>">
     <?php Form::enableCSRF() ?>
 
     <div class="form-group">
-        <label for="question-instructions">Instructions</label>
+        <label for="question-instructions">Instructions (Default)</label>
         <textarea class="form-control longfield" id="question-instructions" name="question[instructions]"><?php Form::e($questionPage["instructions"]) ?></textarea>
     </div>
 
@@ -132,12 +132,14 @@ if (!is_array($jobForm)) {
 $jobForm = array_merge($jobForm, [
     "title" => "",
     "instructions" => "",
+    "question_instructions" => $questionPage["instructions"],
     "questions" => "10",
     "max_assignments" => "10",
     "reward_amount_usd" => "0.10",
     "bonus_amount_usd" => "0.00",
     "quiz_accuracy_rate" => "70",
     "quiz_question_count" => "10",
+    "task_type" => Job::TaskType_Choice,
 ]);
 ?>
 
@@ -153,12 +155,29 @@ $jobForm = array_merge($jobForm, [
     </div>
 
     <div class="form-group">
-        <label for="new-job-instructions">Instructions (HTML)</label>
+        <label for="new-job-instructions">Instructions(HTML)</label>
         <textarea class="form-control longfield" id="new-job-instructions" name="job[instructions]"><?php Form::e($jobForm["instructions"]) ?></textarea>
         <label for="new-job-instructions" class="form-control-label validate"></label>
     </div>
 
+    <h3>Question Page</h3>
+
+    <div class="form-group">
+        <label for="new-job-question-instructions">Question Instructions (HTML)</label>
+        <textarea class="form-control longfield" id="new-job-question-instructions" name="job[question_instructions]"><?php Form::e($jobForm["question_instructions"]) ?></textarea>
+        <label for="new-job-question-instructions" class="form-control-label validate"></label>
+    </div>
+
     <h3>Order</h3>
+
+    <div class="form-group">
+        <label for="new-job-task-type">Type</label>
+        <select class="form-control" id="new-job-task-type" style="width:auto" name="job[task_type]">
+            <option value="<?php echo Job::TaskType_Choice ?>"<?php if ($jobForm["task_type"] == Job::TaskType_Choice): ?> selected=""<?php endif ?>>Choice</option>
+            <option value="<?php echo Job::TaskType_Painting ?>"<?php if ($jobForm["task_type"] == Job::TaskType_Painting): ?> selected=""<?php endif ?>>Painting</option>
+        </select>
+        <label for="new-job-task-type" class="form-control-label validate"></label>
+    </div>
 
     <div class="form-group">
         <label for="new-job-num-question"># of Scenes</label>
@@ -345,6 +364,15 @@ var validateRules = {
         var $el = $("#new-job-instructions");
         if ($el.val().length === 0) {
             onError($el, "Enter the job instructions.");
+            return false;
+        }
+        clearError($el);
+        return true;
+    },
+    "#new-job-question-instructions": function () {
+        var $el = $("#new-job-question-instructions");
+        if ($el.val().length === 0) {
+            onError($el, "Enter the question page instructions.");
             return false;
         }
         clearError($el);

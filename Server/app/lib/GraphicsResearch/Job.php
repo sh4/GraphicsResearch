@@ -6,6 +6,7 @@ class Job {
     private $jobId;
     private $title;
     private $instructions;
+    private $questionInstructions;
     private $questions;
     private $maxAssignments;
     private $rewardAmountUSD;
@@ -13,6 +14,12 @@ class Job {
 
     private $crowdFlowerJobId;
     private $crowdFlower;
+
+    private $taskType;
+
+    // タスク種別
+    const TaskType_Choice   = "choice";   // 選択(Reference と Comparision モデルの比較)
+    const TaskType_Painting = "painting"; // ペイント(Reference と Comparision のモデルの差分を塗る)
 
     // Quiz Mode を有効化する場合は 2 にする
     // 2 にすると RowPerPage == 2 になり、ジョブ実行前にクイズが挟まれるのと、1 問 Quiz 行が入る
@@ -61,6 +68,16 @@ class Job {
             $this->bonusAmountUSD = (float)$job["bonus_amount_usd"];
         }
 
+        $this->taskType = self::TaskType_Choice;
+        if (isset($job["task_type"])) {
+            $this->taskType = strtolower($job["task_type"]);
+        }
+
+        $this->questionInstructions = "";
+        if (isset($job["question_instructions"])) {
+            $this->questionInstructions = $job["question_instructions"];
+        }
+
         // CreateNewJob 呼び出し時に使用する一時的な変数
         $this->quizQuestions = [];
         if (isset($job["quiz_questions"])) {
@@ -87,6 +104,10 @@ class Job {
         return $this->instructions;
     }
 
+    public function getQuestionInstructions() {
+        return $this->questionInstructions;
+    }
+
     public function getQuestions() {
         return $this->questions;
     }
@@ -101,6 +122,10 @@ class Job {
 
     public function getBonusAmountUSD() {
         return (float)$this->bonusAmountUSD;
+    }
+
+    public function getTaskType() {
+        return $this->taskType;
     }
 
     public function getCrowdFlowerJobId() {
@@ -315,6 +340,8 @@ class Job {
             "question_order_json" => "[]",
             "quiz_accuracy_rate" => $this->getQuizAccuracyRate(),
             "quiz_question_count" => $this->getQuizQuestionCount(),
+            "task_type" => $this->getTaskType(),
+            "question_instructions" => $this->getQuestionInstructions(),
         ]);
 
         $this->insertJobUnits($db);

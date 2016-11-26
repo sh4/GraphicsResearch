@@ -160,15 +160,7 @@ class DB {
     /////////////////////////////////////////////////////////////////
 
     public function migrateSchema() {
-        $this->dbh->exec(self::initialTableSql);
-        $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
-        $schemaVersion = $version;
-
-        // メモ: JSON フォーマットを内部に持つ job テーブルの　question_order_json は、
-        //      回答データファイルのメタ情報が増えた時には内部データの変換が必要になるはずなので注意
-
-        // マイグレーション処理
-        foreach ([
+        $migraters = [
             function () { $this->extendQuestionOrderJson(); },
             function () { $this->editableQuestionPageMessage(); },
             function () { $this->migrateJudgementDataJsonToTable(); },
@@ -181,17 +173,31 @@ class DB {
             function () { $this->addQuizCount(); },
             function () { $this->addAnswerGroupId(); },
             function () { $this->addPaymentBonus(); },
-        ] as $migrateVersion => $migrater) {
-            $migrateVersion += 1; // migrate version is 1 origin 
-            if ($version < $migrateVersion) {
-                $migrater();
-                $version = $migrateVersion;
-            }
+            function () { $this->addTaskTypeAndQuestionInstructions(); },
+        ];
+        $this->dbh->exec(self::initialTableSql);
+        $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
+        $schemaVersion = $version;
+
+        if (count($migraters) == $version) {
+            return;
         }
 
-        if ($schemaVersion < $version) {
-            $this->insert("schema_version", ["version" => $version]);
-        }
+        // メモ: JSON フォーマットを内部に持つ job テーブルの　question_order_json は、
+        //      回答データファイルのメタ情報が増えた時には内部データの変換が必要になるはずなので注意
+        $this->transaction(function (DB $db) use ($migraters, $schemaVersion, $version) {
+            // マイグレーション処理
+            foreach ($migraters as $migrateVersion => $migrater) {
+                $migrateVersion += 1; // migrate version is 1 origin 
+                if ($version < $migrateVersion) {
+                    $migrater();
+                    $version = $migrateVersion;
+                }
+            }
+            if ($schemaVersion < $version) {
+                $this->insert("schema_version", ["version" => $version]);
+            }
+        });
     }
 
     /////////////////////////////////////////////////////////////////
@@ -417,5 +423,17 @@ class DB {
         ALTER TABLE job_unit_judgement ADD COLUMN is_painting_completed TINYINT NOT NULL DEFAULT 0;
         ";
         $this->dbh->exec($sql);
+    }
+
+    private function addTaskTypeAndQuestionInstructions() {
+        $defaultInstructions = $this->fetchOne("SELECT instructions FROM question_page WHERE page_key = ?", "default");
+        $sql = "
+        ALTER TABLE job ADD COLUMN task_type VARCHAR(32) NOT NULL DEFAULT 'choice';
+        ALTER TABLE job ADD COLUMN question_instructions TEXT NOT NULL DEFAULT '';
+        ";
+        $this->dbh->exec($sql);
+        $this->update("job", "1 = 1", [
+            "question_instructions" => $defaultInstructions,
+        ]);
     }
 }

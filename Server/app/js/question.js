@@ -154,7 +154,7 @@ function updateQuestions(questionRequest) {
         updateQuestionItems(questions, r.progress).then(function () {
             updateProgress(r.progress);
             // ペイントUI を有効化
-            if (window.GS.paint.UI) {
+            if (window.GS.paint.enabled) {
                 window.GS.paint.UI($(".right-test-item .index-button > label"));
             }
         });

@@ -15,6 +15,7 @@ class Index {
     private $question;
     private $questionPage;
     private $unit;
+    private $job;
     private $number;
     private $formAction;
     private $lastAnswers;
@@ -35,8 +36,9 @@ class Index {
         }
         $this->question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
         $this->unit = $this->createOrUpdateUnit();
-        $this->questionPage = QuestionPage::DefaultPage();
-        $this->isPaintMode = (int)Form::get("paint", 0) == 1;
+        $this->defaultQuestionPage = QuestionPage::DefaultPage();
+        $this->job = null;
+        $this->isPaintMode = null;
     }
 
     public function getFormAction() {
@@ -47,8 +49,8 @@ class Index {
         return $this->number;
     }
 
-    public function getQuestionPage() {
-        return $this->questionPage;
+    public function getDefaultQuestionPage() {
+        return $this->defaultQuestionPage;
     }
 
     public function getQuestionOrders() {
@@ -70,6 +72,16 @@ class Index {
 
     public function getUnitId() {
         return $this->unit->getUnitId();
+    }
+
+    public function getJob() {
+        if ($this->job !== null) {
+            return $this->job;
+        }
+        if ($jobId = $this->unit->getJobId()) {
+            return ($this->job = Job::loadFromId($jobId));
+        }
+        return null;
     }
 
     public static function loadUnit() {
@@ -184,7 +196,10 @@ class Index {
     }
 
     public function isPaintMode() {
-        return $this->isPaintMode;
+        if ($job = $this->getJob()) {
+            return $job->getTaskType() == Job::TaskType_Painting;
+        }
+        return false;
     }
 
     private function yieldModel($model) {
