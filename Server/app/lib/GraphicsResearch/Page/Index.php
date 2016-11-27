@@ -178,6 +178,9 @@ class Index {
     }
 
     public function isPaintMode() {
+        if (is_a($this->unit, "GraphicsResearch\\QuizUnit")) {
+            return false; // FIXME: クイズモードにおいてペイントは未サポートなので強制的に false とする
+        }
         if ($job = $this->getJob()) {
             return $job->getTaskType() == Job::TaskType_Painting;
         }
