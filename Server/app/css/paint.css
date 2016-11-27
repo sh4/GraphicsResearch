@@ -6,7 +6,10 @@ td.right-test-item > .index-button:hover {
     border-color:white;
 }
 
-td.right-test-item > .index-button canvas {
+td.right-test-item {
+    position: relative;
+}
+td.right-test-item canvas {
     cursor: crosshair;
 }
 

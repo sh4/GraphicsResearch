@@ -1,9 +1,5 @@
 !function ($) {
 
-$(function () {
-
-});
-
 function preloadImage(url) {
     var d = $.Deferred();
     var img = new Image();
@@ -74,9 +70,9 @@ function updateQuestionItems(questions, progress) {
             var $testItemEl = $questionEl.find(".test-item");
             $questionEl.find(".question-loading").hide();
 
-            $questionEl.find(".index-button > input").remove();
+            $questionEl.find(".index-button input").remove();
             var $activeLabelEl = null;
-            var $oldLabelEl = $questionEl.find(".index-button > label");
+            var $oldLabelEl = $questionEl.find(".index-button label");
             $oldLabelEl.each(function (i, el) {
                 var $labelEl = $(el);
                 if ($labelEl.parents(".index-button:first").hasClass("active")) {
@@ -105,12 +101,14 @@ function updateQuestionItems(questions, progress) {
 }
 
 function updateAnsweredLods(answerContext) {
-    if (!answerContext) {
+    var lastAnswer = answerContext.lastAnswer;
+    var answeredLods = answerContext.answeredLods || [];
+    if (!lastAnswer || answeredLods.length === 0) {
         return;
     }
     var $formAnsweredLods = $(".form-answered-lods").empty();
-    var modelId = answerContext.lastAnswer.model_id;
-    answerContext.answeredLods.forEach(function (lod) {
+    var modelId = lastAnswer.model_id;
+    answeredLods.forEach(function (lod) {
         var $lodEl = $($.parseHTML('<input type="hidden" name="answeredLods[]">'));
         $lodEl.val([
             modelId,
@@ -154,8 +152,8 @@ function updateQuestions(questionRequest) {
         updateQuestionItems(questions, r.progress).then(function () {
             updateProgress(r.progress);
             // ペイントUI を有効化
-            if (window.GS.paint.enabled) {
-                window.GS.paint.UI($(".right-test-item .index-button > label"));
+            if (paintingCanvasUI === null && window.GS.paint.enabled) {
+                paintingCanvasUI = window.GS.paint.UI($(".right-test-item"));
             }
         });
         updateAnsweredLods(r.answerContext);
@@ -178,29 +176,55 @@ function fetchParams(params) {
     };
 }
 
+var paintingCanvasUI = null;
 var bufferedQuestions = [];
 
 $("#answer-form").submit(function (event) {
+    function update() {
+        updateQuestions($.ajax({
+            url: "index.php/api/question?fetchLods=" + (isFetchLods ? 1 : 0),
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+        }));
+    }
+
+    event.preventDefault();
+
     var form = this;
     var isFetchLods = false;
     if (bufferedQuestions.length <= 1) {
         isFetchLods = true;
     }
-    updateQuestions($.ajax({
-        url: "index.php/api/question?fetchLods=" + (isFetchLods ? 1 : 0),
-        method: "POST",
-        data: new FormData(form),
-        processData: false,
-        contentType: false,
-    }));
+    var formData = new FormData(form);
+
+    if (window.GS.paint.enabled) {
+        var imageEl = $(".question-image")[1];
+        var grayScaleCanvas = paintingCanvasUI.toGrayScale(
+            imageEl.naturalWidth,
+            imageEl.naturalHeight);
+        PaintingCanvas.toBlob(grayScaleCanvas, function (blob) {
+            paintingCanvasUI.clear();
+            formData.append("answer[0]", $(".right-test-item input").val());
+            formData.append("paint[0][name]", "painting");
+            formData.append("painting", blob, "paint.png");
+            update();
+        }, "image/png");
+    } else {
+        update();
+    }
+
     return false;
 });
 
-if (window.GS.num == 1) {
+if (window.GS.num == 1 && window.GS.paint.enabled == false) {
     $(".index-button").change(function () {
         $(this).addClass("active");
-        $("#question-submit").click();
+        $("#question-submit-button").click();
     });
+} else {
+    $("#question-submit").show();
 }
 
 updateQuestions($.getJSON("index.php/api/question", fetchParams({ isFetchLods: true })));

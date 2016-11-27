@@ -129,11 +129,46 @@ PaintingCanvas.prototype.clear = function () {
     canvas.height = canvas.height;
 };
 
+PaintingCanvas.prototype.toGrayScale = function (width, height) {
+    var grayCanvas = document.createElement("canvas");
+    grayCanvas.width = width;
+    grayCanvas.height = height;
+    var ctx = grayCanvas.getContext("2d");
+    ctx.drawImage(this.$canvas[0], 0, 0, grayCanvas.width, grayCanvas.height);
+    var image = ctx.getImageData(0, 0, grayCanvas.width, grayCanvas.height);
+    var imageData = image.data;
+    var imageLength = imageData.length;
+    for (var i = 0; i < imageLength; i += 4) {
+        var c = imageData[i] - (255 - imageData[i+3]);
+        imageData[i] = imageData[i+1] = imageData[i+2] = c;
+    }
+    image.data = imageData;
+    ctx.putImageData(image, 0, 0);
+    return grayCanvas;
+};
+
+!function toBlobPolyfill(availableToBlob) {
+    if (availableToBlob) {
+        PaintingCanvas.toBlob = function (canvasEl, callback, type, quality) {
+            return canvasEl.toBlob(callback, type, quality);
+        };
+    } else {
+        PaintingCanvas.toBlob = function (canvasEl, callback, type, quality) {
+            var bin = atob(canvasEl.toDataURL(type, quality).split(',')[1]);
+            var blob = new Uint8Array(bin.length);
+            for (var i = 0, n = bin.length; i < n; i++) {
+                blob[i] = bin.charCodeAt(i);
+            }
+            callback(new Blob([blob], { type: type || "image/png" }));
+        };
+    }
+}(!!HTMLCanvasElement.prototype.toBlob);
+
 var brushReady = prepareBrushes();
 
 window.GS.paint.UI = function ($el) {
+    var paintingCanvas = new PaintingCanvas($el);
     brushReady.then(function (brushes) {
-        var paintingCanvas = new PaintingCanvas($el);
         paintingCanvas.brush = brushes[0];
         $el.append(paintingCanvas.$canvas);
         $(window).resize(paintingCanvas.onResize);
@@ -173,10 +208,12 @@ window.GS.paint.UI = function ($el) {
             tools.$brush.click();
             return $toolbox;
         }
-
         $el.append(toolbox());
     });
-
+    $(".test-item input").attr("disabled", "disabled");
+    return paintingCanvas;
 };
+
+window.PaintingCanvas = PaintingCanvas;
 
 }(jQuery);
