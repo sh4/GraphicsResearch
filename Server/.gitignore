@@ -1,4 +1,6 @@
 images/
+painting/
 sessions/
 config.php
 logs/*
+app/vendor
