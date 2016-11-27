@@ -1,5 +1,10 @@
 <?php
 
+set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__)."/lib");
+spl_autoload_register(function ($className) {
+    include_once strtr(trim($className, "\\/"), "\\", "/").".php";
+});
+
 require_once "config.php";
 
 use GraphicsResearch\Form;
@@ -217,7 +222,7 @@ use GraphicsResearch\Page\Webhook;
         }
         // 回答済みデータダウンロード
         $downloadPage = new Download();
-        $downloadPage->echoCSV();
+        $downloadPage->echoData();
     },
 
     "/upload" => function () {
