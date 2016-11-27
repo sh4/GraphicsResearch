@@ -102,7 +102,18 @@ foreach (Job::getJobs() as $job):
         <td>
             <ul class="nav">
                 <li class="nav-item"><a class="nav-link" href="https://make.crowdflower.com/jobs/<?php echo $job->getCrowdFlowerJobId() ?>" target="_blank">CrowdFlower Job Page</a></li>
-                <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("download") ?>?jobId=<?php echo $job->getJobId() ?>">Download CSV</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("download") ?>?jobId=<?php echo $job->getJobId() ?>">Download <?php
+                switch ($job->getTaskType()) {
+                    case Job::TaskType_Choice:
+                        echo "CSV";
+                        break;
+                    case Job::TaskType_Painting:
+                        echo "ZIP";
+                        break;
+                    default:
+                        break;
+                }
+                ?></a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
                 <li class="nav-item">
@@ -119,8 +130,6 @@ foreach (Job::getJobs() as $job):
 <?php endforeach; ?>
 </tbody>
 </table>
-
-<h2><a href="<?php echo Router::Path("download") ?>" target="_blank">Download CSV (All)</a></h2>
 
 <h2>Create New Job</h2>
 
