@@ -133,9 +133,10 @@ foreach ($page->getQuestionOrders() as $i => $models):
 
 <div class="form-answered-lods">
 <?php
-if ($answerContext = $page->getAnswerContext()):
-    $modelId = $answerContext["lastAnswer"]["model_id"];
-    foreach ($answerContext["answeredLods"] as $lod):
+$answerContext = $page->getAnswerContext();
+if ($answeredLods = $answerContext->getAnsweredLods()):
+    $modelId = $answerContext->getLastAnswer()["model_id"];
+    foreach ($answeredLods as $lod):
 ?>
     <input type="hidden" name="answeredLods[]" value="<?php echo (int)$modelId ?>,<?php echo (int)$lod ?>">
 <?php
@@ -144,8 +145,8 @@ endif
 ?>
 </div>
 
-<div style="margin-top:5em;<?php if ($page->getNumber() <= 1): ?>display:none<?php endif ?>">
-    <input type="submit" id="question-submit" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
+<div id="question-submit" style="display:none;margin-top:3em;">
+    <input type="submit" id="question-submit-button" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
 </div>
 
 </form>

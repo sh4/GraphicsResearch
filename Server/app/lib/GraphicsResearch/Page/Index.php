@@ -10,6 +10,7 @@ use GraphicsResearch\JobUnit;
 use GraphicsResearch\QuizUnit;
 use GraphicsResearch\Constants;
 use GraphicsResearch\Crypto;
+use GraphicsResearch\AnswerContext;
 
 class Index {
     private $question;
@@ -54,8 +55,7 @@ class Index {
     }
 
     public function getQuestionOrders() {
-        $answerContext = $this->getAnswerContext();
-        $questions = $this->unit->getRandomQuestionOrder($this->question, $answerContext);
+        $questions = $this->unit->getRandomQuestionOrder($this->question, $this->getAnswerContext());
         // $model = [
         //   "id" => ModelID,
         //   "rotation" => RotationId,
@@ -123,40 +123,23 @@ class Index {
     }
 
     public function getQuestionInfo() {
-        $progress = $this->getAnswerProgress();
         $isFetchLods = (int)Form::get("fetchLods", 0) == 1;
+
+        // 新しいモデルデータの取得を求められているか
         $questions = [];
         if ($isFetchLods) {
-            $lastModelId = null;
-            $skipModelId = null;
-            if ($answerContext = $this->getAnswerContext()) {
-                $skipModelId = (int)$answerContext["lastAnswer"]["model_id"];
-            }
-            foreach ($this->getQuestionOrders() as $origModels) {
-                list ($model) = $origModels;
-                if ($model["id"] == $skipModelId) {
-                    continue;
-                } 
-                if ($model["id"] !== $lastModelId) {
-                    $isInitialModelId = $lastModelId === null;
-                    $lastModelId = $model["id"];
-                    if (!$isInitialModelId) {
-                        break;
-                    }
-                }
-                $modelOrder = array_keys($origModels);
-                shuffle($modelOrder);
-                $models = [];
-                foreach ($modelOrder as $order) {
-                    $models[] = $origModels[$order];
-                }
-                $questions[] = $models;
+            $isPaintMode = $this->isPaintMode();
+            if ($isPaintMode) {
+                $questions = $this->enumerateQuestionsWithPainting();                
+            } else {
+                $questions = $this->enumerateQuestions();
             }
         }
+
         return [
             "questions" => $questions,
-            "progress" => $progress,
-            "answerContext" => $this->getAnswerContext(),
+            "progress" => $this->getAnswerProgress(),
+            "answerContext" => $this->getAnswerContext()->toArray(),
             "lastJudgementIds" => $this->lastJudgementIds,
         ];
     }
@@ -166,33 +149,32 @@ class Index {
         if (!is_array($rawAnsweredLods)) {
             $rawAnsweredLods = [];
         }
-        $lastModelId = -1;
-        $answerLods = [];
-        foreach ($rawAnsweredLods as $rawAnswerLod) {
-            list ($modelId, $lod) = explode(",", $rawAnswerLod);
-            if ($lastModelId != $modelId) {
-                $answerLods = [$lod];
-                $lastModelId = $modelId;
-            } else {
-                $answerLods[] = $lod;
-            }
-        }
-        foreach ($this->lastAnswers as $answer) {
-            if ($lastModelId != $answer["model_id"]) {
+
+        $lastAnsweredLods = array_merge(
+            array_map(function ($e) {
+                list ($modelId, $lod) = explode(",", $e);
+                return [ "model_id" => $modelId, "lod" => $lod ];                
+            }, $rawAnsweredLods),
+            $this->lastAnswers
+        );
+
+        $lastModelId = -1; // 最後に回答した LOD
+        $answerLods = []; // 回答済み LOD のリスト
+        foreach ($lastAnsweredLods as $answer) {
+            if ($lastModelId != $answer["model_id"]) { // 回答モデルが異なれば、リストを 1 から構築しなおす
                 $answerLods = [$answer["lod"]];
                 $lastModelId = $answer["model_id"];
             } else {
                 $answerLods[] = $answer["lod"];
             }
         }
+
         if (empty($answerLods)) {
-            return null;
+            return new AnswerContext(null, null, $this->isPaintMode());
         }
+
         $lastAnswer = $this->lastAnswers[count($this->lastAnswers) - 1];
-        return [
-            "lastAnswer" => $lastAnswer,
-            "answeredLods" => $answerLods,
-        ];
+        return new AnswerContext($lastAnswer, $answerLods, $this->isPaintMode());
     }
 
     public function isPaintMode() {
@@ -200,6 +182,55 @@ class Index {
             return $job->getTaskType() == Job::TaskType_Painting;
         }
         return false;
+    }
+
+    private function enumerateQuestions() {
+        $questions = [];
+        // 最後に回答したモデルのID
+        $skipModelId = null;
+        $answerContext = $this->getAnswerContext();
+        if ($lastAnswer = $answerContext->getLastAnswer()) {
+            $skipModelId = (int)$lastAnswer["model_id"];
+        }
+        // 最後に比較したモデルID
+        $lastModelId = null;
+        foreach ($this->getQuestionOrders() as $origModels) {
+            list ($model) = $origModels;
+            if ($model["id"] == $skipModelId) {
+                continue;
+            }
+            if ($model["id"] !== $lastModelId) {
+                // 異なるモデルIDが現れたら、その時点で列挙は終了
+                $isInitialModelId = $lastModelId === null;
+                $lastModelId = $model["id"];
+                if (!$isInitialModelId) {
+                    break;
+                }
+            }
+
+            $modelOrder = array_keys($origModels);
+            // リファレンスと比較モデルの並びをシャッフルする
+            shuffle($modelOrder);
+
+            $models = [];
+            foreach ($modelOrder as $order) {
+                $models[] = $origModels[$order];
+            }
+            $questions[] = $models;
+        }
+        return $questions;
+    }
+
+    private function enumerateQuestionsWithPainting() {
+        $prefetchQuestions = 4; // 先読み質問数
+        $questions = [];
+        foreach ($this->getQuestionOrders() as $models) {
+            $questions[] = $models;
+            if (--$prefetchQuestions <= 0) {
+                break;
+            }
+        }
+        return $questions;
     }
 
     private function yieldModel($model) {
@@ -231,18 +262,18 @@ class Index {
         }
 
         // ペイントデータが存在すればそれを DB に保存
-        // [["name" => "upload_form_name", "id" => job_unit_judgement_id], ...]
         if ($paintRawData = Form::post("paint", [])) { 
-            $rootDir = dirname(__FILE__)."/../../../".PAINTING_TASK_IMAGES;
-            foreach ($paintRawData as $paint) {
-                $judgementId = $paint["id"];
+            $appRoot = dirname(__FILE__)."/../../..";
+            $rootDir = "$appRoot/../".PAINTING_TASK_IMAGES;
+            foreach ($paintRawData as $i => $paint) {
+                $judgementId = $this->lastJudgementIds[$i];
                 $paintingFilePath = $rootDir."/".$unit->getPaintingFilePath($this->question, $judgementId);
                 $paintingDir = dirname($paintingFilePath);
                 if (!file_exists($paintingDir)) {
                     mkdir($paintingDir, 0777, true);
                 }
                 if (Form::saveFile($paint["name"], $paintingFilePath)) {
-                    $unit->setIsPaintingCompleted($jobUnitJudgementId);
+                    $unit->setIsPaintingCompleted($judgementId);
                 }
             }
         }

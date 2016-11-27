@@ -43,23 +43,31 @@ class JobUnit extends AbstractUnit {
     }
 
     public function getRandomQuestionOrder(Question $question, $answerContext) {
+        $onlyOneLod = false; // ランダムにリストアップした単一 LOD のみ表示する
+
         if ($answerContext) {
-            $lastAnswer = $answerContext["lastAnswer"];
-            $modelId = $lastAnswer["model_id"];
-            $rotationId = $lastAnswer["rotation_id"];
-            $lodLists = $question->lodList($modelId, $rotationId);
-            // 残り回答が必要な LOD のリストを得る
-            $judgeLods = array_diff(
-                $lodLists,
-                $answerContext["answeredLods"]
-            );
-            shuffle($judgeLods);
-            foreach ($judgeLods as $lod) {
-                yield [
-                    "id" => $modelId,
-                    "rotation" => $rotationId,
-                    "lod" => $lod,
-                ];
+            // ペイントモードが有効なら単一 LOD の列挙を行う
+            $onlyOneLod = $answerContext->isPaintMode();
+
+            $lastAnswer = $answerContext->getLastAnswer();
+            $answeredLods = $answerContext->getAnsweredLods();
+            if ($lastAnswer !== null 
+                && count($answeredLods) > 0
+                && !$onlyOneLod)
+            {
+                $modelId = $lastAnswer["model_id"];
+                $rotationId = $lastAnswer["rotation_id"];
+                $lodLists = $question->lodList($modelId, $rotationId);
+                // 残り回答が必要な LOD のリストを得る
+                $judgeLods = array_diff($lodLists, $answeredLods);
+                shuffle($judgeLods);
+                foreach ($judgeLods as $lod) {
+                    yield [
+                        "id" => $modelId,
+                        "rotation" => $rotationId,
+                        "lod" => $lod,
+                    ];
+                }
             }
         }
         // 回答完了済み ModelID のリスト (テスト対象から除外するため)
@@ -76,6 +84,10 @@ class JobUnit extends AbstractUnit {
                     "rotation" => $order["rotation"],
                     "lod" => $lod,
                 ];
+                if ($onlyOneLod) {
+                    // 単一 LOD のみのリストアップで次のモデルの列挙を行う
+                    break;
+                }
             }
         }
     }
