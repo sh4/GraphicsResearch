@@ -112,6 +112,8 @@ class Router {
 
     private function toErrorMessage(Exception $e) {
         $error  = "";
+        $error .= date("Y/m/d H:i:s");
+        $error .= "\r\n";
         $error .= $e->getMessage();
         $error .= "\r\n";
         $error .= str_repeat("-", 70);
