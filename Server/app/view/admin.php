@@ -234,6 +234,8 @@ $jobForm = array_merge($jobForm, [
         </div>
     </div>
 
+    <div class="quiz-form">
+
     <h3>Quiz</h3>
 
     <div class="form-group">
@@ -259,6 +261,8 @@ $jobForm = array_merge($jobForm, [
         <input type="text" class="form-control numeric" id="new-job-quiz-accuracy-rate" name="job[quiz_accuracy_rate]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["quiz_accuracy_rate"]) ?>">
         %
         <label for="new-job-quiz-accuracy-rate" class="form-control-label validate"></label>
+    </div>
+
     </div>
 
     <div class="form-group">
@@ -353,6 +357,7 @@ function clearError($el) {
 }
 
 var lodVariationCount = <?php echo $question->lodVariationCount() ?>;
+var rowPerPage = 2;
 
 var validateRules = {
     "#new-job-title": function () {
@@ -390,7 +395,6 @@ var validateRules = {
     "#new-job-num-question": function () {
         var $el = $("#new-job-num-question");
         var num = parseInt($el.val(), 10);
-        var rowPerPage = <?php echo Job::crowdFlowerRowPerPage ?>;
         var availableSceneCount = <?php echo $question->availableModelCount() ?>;
         if (num % rowPerPage !== 0) {
             onError($el, "Number of scenes must be a multiple of " + rowPerPage + ".");
@@ -468,7 +472,6 @@ var validateRules = {
     "#new-job-quiz-question-count": function () {
         var $el = $("#new-job-quiz-question-count");
         var num = parseInt($el.val(), 10);
-        var rowPerPage = <?php echo Job::crowdFlowerRowPerPage ?>;
         if (num % rowPerPage !== 0) {
             onError($el, "Number of questions must be a multiple of " + rowPerPage + ".");
             return false;
@@ -533,13 +536,21 @@ function updateTotalQuestions() {
     $("#total-questions").text(formatNumber(questionsPerWorker * parseInt($("#new-job-num-assignments").val(), 10)));
 }
 
-function refreshEtimsateNumbers() {
+function refreshFormInputs() {
     updateTotalCost();
     updateTotalQuestions();
+    // FIXME: ペイントモードが Quiz をサポートするようになったらなおす
+    if ($("#new-job-task-type").val() === "<?php echo Job::TaskType_Painting ?>") {
+        $(".quiz-form").hide();
+        rowPerPage = 1;
+    } else {
+        $(".quiz-form").show();
+        rowPerPage = 2;
+    }
 }
 
-setInterval(refreshEtimsateNumbers, 500);
-refreshEtimsateNumbers();
+setInterval(refreshFormInputs, 500);
+refreshFormInputs();
 
 $(".table-sorter").sortableTable();
 

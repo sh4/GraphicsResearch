@@ -7,6 +7,9 @@ class QuizUnit extends AbstractUnit {
     private $answeredQuestions;
     private $questionCount;
 
+    // クイズが有効な場合の 1 ページあたりの質問数
+    const CrowdFlowerRowPerPageOnQuizEnabled = 2;
+
     public function __construct($hash) {
         $unitId = $hash["unit_id"];
         if (!Crypto::isValidUniqueId($unitId)) {
@@ -83,7 +86,7 @@ class QuizUnit extends AbstractUnit {
     }
 
     public function getTotalQuestionCount(Question $question) {
-        return (int)($this->questionCount / Job::crowdFlowerRowPerPage);
+        return (int)($this->questionCount / self::CrowdFlowerRowPerPageOnQuizEnabled);
     }
 
     public function getAnsweredQuestionCount() {

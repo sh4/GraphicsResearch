@@ -14,6 +14,7 @@ class Job {
 
     private $crowdFlowerJobId;
     private $crowdFlower;
+    private $crowdFlowerRowPerPage;
 
     private $taskType;
 
@@ -21,9 +22,6 @@ class Job {
     const TaskType_Choice   = "choice";   // 選択(Reference と Comparision モデルの比較)
     const TaskType_Painting = "painting"; // ペイント(Reference と Comparision のモデルの差分を塗る)
 
-    // Quiz Mode を有効化する場合は 2 にする
-    // 2 にすると RowPerPage == 2 になり、ジョブ実行前にクイズが挟まれるのと、1 問 Quiz 行が入る
-    const crowdFlowerRowPerPage = 2;
     // CrowdFlower の Quiz Mode を有効化するために必要な問題数 
     // クラウドワーカーはこのクイズ数分だけジョブをアサインされる
     // 同じクイズ行が単一クラウドワーカーに 2 回以上現れることはない
@@ -86,6 +84,7 @@ class Job {
 
         $this->crowdFlower = new Crowdsourcing\CrowdFlower();
         $this->crowdFlower->setAPIKey(CROWDFLOWER_API_KEY);
+        $this->crowdFlowerRowPerPage = 1;
     }
 
     public function createdOn() {
@@ -248,7 +247,11 @@ class Job {
 
     public static function getQuestionsPerUnitFromId($jobId) {
         $questions = (int)DB::instance()->fetchOne("SELECT questions FROM job WHERE job_id = ?", $jobId);
-        return (int)($questions / self::crowdFlowerRowPerPage);
+        $hasJobQuizUnit = (int)DB::instance()->fetchOne(
+            "SELECT COUNT(*) FROM job_quiz_unit WHERE job_id = ?", 
+            $jobId) > 0;
+        $crowdFlowerRowPerPage = $hasJobQuizUnit ? 2 : 1;
+        return (int)($questions / $crowdFlowerRowPerPage);
     }
 
     public static function getJobs() {
@@ -276,7 +279,7 @@ class Job {
         // 報酬の設定 (ドル => セント単位に変換)
         $this->crowdFlower->jobTaskPayment($job->id, $this->getRewardAmountUSD() * 100);
         // 1 ページ (報酬を支払う最低単位) あたりのテスト数
-        $this->crowdFlower->rowsPerPage($job->id, self::crowdFlowerRowPerPage);
+        $this->crowdFlower->rowsPerPage($job->id, $this->crowdFlowerRowPerPage);
         // 1 Row (Unit) あたりの判定数 (回答可能な Contributor 数)
         $this->crowdFlower->judgementsPerUnit($job->id, 1);
         // 1クラウドワーカーあたりの最大回答数を 1 回に制限する
@@ -346,8 +349,11 @@ class Job {
 
         $this->insertJobUnits($db);
     
-        // クイズ必要回答数も質問数も 1 以上ならクイズ用データを挿入
-        if ($this->quizQuestionCount >= 1 && count($this->quizQuestions) >= 1) {
+        // 回答形式が選択式で、かつクイズ必要回答数も質問数も 1 以上ならクイズ用データを挿入
+        if ($this->getTaskType() === self::TaskType_Choice // FIXME: クイズの有無はもっと別に判定すべき
+            && $this->quizQuestionCount >= 1 
+            && count($this->quizQuestions) >= 1) {
+            $this->crowdFlowerRowPerPage = 2;
             $this->insertQuizJobUnits($db);
             $this->insertQuizGoldenData($db);
         }
@@ -357,8 +363,6 @@ class Job {
         $now = date("Y-m-d H:i:s");
         $rows = [];
         // 必要回答数分の Unit を作成する
-        // 1 Unit 当たりの回答数は questions / 2 (crowdFlowerRowPerPage) 件だが、
-        // 残りの半分は QuizMode 用の行から動的に Unit を作成する
         for ($i = 0, $n = $this->getMaxAssignments(); $i < $n; $i++) {
             $rows[] = [
                 "unit_id" => Crypto::CreateUniqueId(16),
