@@ -6,11 +6,8 @@ td.right-test-item > .index-button:hover {
     border-color:white;
 }
 
-td.right-test-item {
+.index-button {
     position: relative;
-}
-td.right-test-item canvas {
-    cursor: crosshair;
 }
 
 .invalid-selection {
@@ -22,36 +19,79 @@ td.right-test-item canvas {
 
 .painting-toolbox {
     position: absolute;
-    top: -3.5em;
+    top: 0;
     left: 0;
     height: 2em;
+    z-index: 110;
 }
 .painting-toolbox ul {
     margin: 0;
     padding: 0;
     list-style-type: none;
-    border: 1px solid #333;
-    border-width: 1px 0 1px 0;
-    background: white;
 }
 .painting-toolbox ul > li {
     margin: 0;
     padding: 0;
-    display: inline-block;
-    border-right: 1px solid #333;
+    display: block;
+    text-align: left;
+    height: 44px;
 }
-.painting-toolbox ul > li:first-child {
-    border-left: 1px solid #333;
+.painting-toolbox ul > li:last-child > i {
+    border-bottom: 1px solid #333;
 }
 .painting-toolbox ul i {
+    border: 1px solid #333;
+    border-bottom: none;
     padding: 6px 12px;
+    width: 30px;
 }
 
 .painting-canvas {
-    z-index: 100;
+    cursor: crosshair;
     position: absolute;
+    z-index: 100;
     top: 0;
     left: 0;
     display: block;
-    opacity: 0.2;
+    opacity: 0.23;
+}
+
+.painting-expandable-tool {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+.painting-expandable-tool td {
+    padding: 0;
+}
+
+.painting-expandable-tool td.button > i {
+    border-left: none;
+    width: 20px;
+    padding: 14px 0;
+}
+
+.painting-brush-selection {
+    display: none;
+    background: #4aaaa5;
+}
+.painting-brush-selection a {
+    display: block;
+    text-align: center;
+    width: 48px;
+    height: 43px;
+    border:1px solid #333;
+    float: left;
+}
+.painting-brush-selection a.active {
+    background: #32716e;
+}
+.painting-brush-selection a:hover {
+    background: #59d2cc;
+}
+.painting-brush-selection a {
+    border-left: none;
+}
+
+.painting-brush-selection img {
+    position: relative;
 }

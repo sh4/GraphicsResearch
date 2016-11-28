@@ -66,7 +66,9 @@ function PaintingCanvas($el) {
     ctx.lineCap = "round";
 
     this.$canvas = $(canvas);
+    this.isDirty = false;
     this.brush = null;
+    this.brushSize = 0;
 
     this.onMouseMove = function (e) {
         if (!isDrawing) {
@@ -76,9 +78,9 @@ function PaintingCanvas($el) {
         var dist = distanceBetween(lastPoint, point);
         var rad = radianBetween(lastPoint, point);
         for (var i = 0; i < dist; i++) {
-            var x = lastPoint.x + (Math.sin(rad) * i) - 16;
-            var y = lastPoint.y + (Math.cos(rad) * i) - 16;
-            ctx.drawImage(self.brush, x, y);
+            var x = lastPoint.x + (Math.sin(rad) * i) - self.brushSize/2;
+            var y = lastPoint.y + (Math.cos(rad) * i) - self.brushSize/2;
+            ctx.drawImage(self.brush, x, y, self.brushSize, self.brushSize);
         }
         lastPoint = point;
     };
@@ -90,6 +92,9 @@ function PaintingCanvas($el) {
             .unbind("mouseup", self.onMouseUp)
             .unbind("mousemove", self.onMouseMove);
         isDrawing = false;
+        if (ctx.globalCompositeOperation === "source-over") {
+            self.isDirty = true;
+        }
     };
 
     this.onMouseDown = function (e) {
@@ -127,6 +132,11 @@ PaintingCanvas.prototype.clear = function () {
     var canvas = this.$canvas[0];
     canvas.width = canvas.width;
     canvas.height = canvas.height;
+    this.isDirty = false;
+};
+
+PaintingCanvas.prototype.isDirtyCanvas = function () {
+    return this.isDirty;
 };
 
 PaintingCanvas.prototype.toGrayScale = function (width, height) {
@@ -138,13 +148,20 @@ PaintingCanvas.prototype.toGrayScale = function (width, height) {
     var image = ctx.getImageData(0, 0, grayCanvas.width, grayCanvas.height);
     var imageData = image.data;
     var imageLength = imageData.length;
+    var emptyPixels = 0;
     for (var i = 0; i < imageLength; i += 4) {
         var c = imageData[i] - (255 - imageData[i+3]);
+        if (c <= 0) {
+            emptyPixels++;
+        }
         imageData[i] = imageData[i+1] = imageData[i+2] = c;
     }
     image.data = imageData;
     ctx.putImageData(image, 0, 0);
-    return grayCanvas;
+    return { 
+        canvas: grayCanvas,
+        fillRatio: 1.0-(emptyPixels/(imageData.length/4)),
+    };
 };
 
 !function toBlobPolyfill(availableToBlob) {
@@ -170,17 +187,83 @@ window.GS.paint.UI = function ($el) {
     var paintingCanvas = new PaintingCanvas($el);
     brushReady.then(function (brushes) {
         paintingCanvas.brush = brushes[0];
+
+        var brushSize = paintingCanvas.brush.width;
+        var eraserBrushSize = paintingCanvas.brush.width;
+
         $el.append(paintingCanvas.$canvas);
         $(window).resize(paintingCanvas.onResize);
         paintingCanvas.onResize();
+
+        function selectBrush(size) {
+            if (size === undefined) {
+                paintingCanvas.brushSize = brushSize;
+            } else {
+                paintingCanvas.brushSize = brushSize = size;
+            }
+        }
+
+        function selectEraser(size) {
+            if (size === undefined) {
+                paintingCanvas.brushSize = eraserBrushSize;
+            } else {
+                paintingCanvas.brushSize = eraserBrushSize = size;
+            }
+        }
+
+        function expandableToolHtml(toolHtml, expandToolClassName) {
+            var html = "";
+            html += '<table class="painting-expandable-tool">';
+            html += '<tr>'
+            html += '<td>';
+            html += toolHtml;
+            html += '</td>';
+            html += '<td class="button"><i class="';
+            html += expandToolClassName;
+            html += ' fa fa-caret-right"></i></td>';
+            html += '<td class="painting-brush-selection">';
+            html += '<a class="paint-brush-item" data-brush-size="32" href="javascript:void(0)"><img src="app/images/brush2.png" width="16" height="16" style="top:16px"></a>';
+            html += '<a class="paint-brush-item" data-brush-size="48" href="javascript:void(0)"><img src="app/images/brush2.png" width="32" height="32" style="top:6px"></a>';
+            html += '<a class="paint-brush-item" data-brush-size="64" href="javascript:void(0)"><img src="app/images/brush2.png" width="42" height="42"></a>';
+            html += '</td>';
+            html += '</tr>';
+            html += '</table>';
+            return html;
+        }
+
+        function clickExpandTool(callback) {
+            return function (e) {
+                function hideMenu() {
+                    $(document).unbind("click", hideMenu);
+                    $button.removeClass("button-checked");
+                    $expand.hide();
+                }
+                var $button = $(this).parents("td.button");
+                var $expand = $(this).parents(".painting-expandable-tool:first").find(".painting-brush-selection");
+                if ($expand.is(":visible")) {
+                    hideMenu();
+                    return;
+                }
+                $button.addClass("button-checked");
+                callback($expand);
+                $expand.show();
+                setTimeout(function () {
+                    $(document).bind("click", hideMenu);
+                }, 0);
+            };
+        }
 
         function toolbox() {
             var html = "";
             html += '<div class="painting-toolbox">';
             html += "<ul>";
-            html += '<li><i class="tool-brush button fa fa-paint-brush fa-2x"></i></li>';
-            html += '<li><i class="tool-eraser button fa fa-eraser fa-2x"></i></li>';
-            html += '<li><i class="tool-clear button fa fa-trash fa-2x"></i></li>';
+            html += '<li>';
+            html += expandableToolHtml('<i title="Painting Brush" class="tool-brush button fa fa-paint-brush fa-2x"></i>', 'tool-brush-expand');
+            html += '</li>';
+            html += '<li>';
+            html += expandableToolHtml('<i title="Eraser" class="tool-eraser button fa fa-eraser fa-2x"></i>', 'tool-eraser-expand');
+            html += '</li>';
+            html += '<li><i title="Clear Painting" class="tool-clear button fa fa-trash fa-2x"></i></li>';
             html += "</ul>";
             html += "</div>";
             var $toolbox = $($.parseHTML(html));
@@ -188,13 +271,17 @@ window.GS.paint.UI = function ($el) {
                 $brush: $toolbox.find(".tool-brush"),
                 $eraser: $toolbox.find(".tool-eraser"),
                 $clear: $toolbox.find(".tool-clear"),
+                $brushExpand: $toolbox.find(".tool-brush-expand"),
+                $eraserExpand: $toolbox.find(".tool-eraser-expand"),
             };
             tools.$brush.click(function () {
+                selectBrush();
                 paintingCanvas.enableEraserMode(false);
                 tools.$brush.addClass("button-checked");
                 tools.$eraser.removeClass("button-checked");
             });
             tools.$eraser.click(function () {
+                selectEraser();
                 paintingCanvas.enableEraserMode(true);
                 tools.$eraser.addClass("button-checked");
                 tools.$brush.removeClass("button-checked");
@@ -205,12 +292,34 @@ window.GS.paint.UI = function ($el) {
                 }
                 paintingCanvas.clear();
             });
+            tools.$brushExpand.parents(".painting-expandable-tool").on("click", ".paint-brush-item", function () {
+                selectBrush($(this).data("brush-size"));
+            });
+            tools.$brushExpand.click(clickExpandTool(function ($expand) {
+                $expand.find("a").removeClass("active");
+                $expand.find('a[data-brush-size="'+brushSize+'"]').addClass("active");
+            }));
+            tools.$eraserExpand.click(clickExpandTool(function ($expand) {
+                $expand.find("a").removeClass("active");
+                $expand.find('a[data-brush-size="'+eraserBrushSize+'"]').addClass("active");
+            }));
+            tools.$eraserExpand.parents(".painting-expandable-tool").on("click", ".paint-brush-item", function () {
+                selectEraser($(this).data("brush-size"));
+            });
             tools.$brush.click();
             return $toolbox;
         }
         $el.append(toolbox());
     });
     $(".test-item input").attr("disabled", "disabled");
+    $("#question-submit-button").attr("disabled", "disabled");
+    setInterval(function () {
+        if (paintingCanvas.isDirtyCanvas()) {
+            $("#question-submit-button").removeAttr("disabled");
+        } else {
+            $("#question-submit-button").attr("disabled", "disabled");
+        }
+    })
     return paintingCanvas;
 };
 

@@ -93,6 +93,7 @@ function updateQuestionItems(questions, progress) {
                     });
                 }, 600);
             } else {
+                $oldLabelEl.remove();
                 showNewQuestion();
             }
         });
@@ -153,7 +154,7 @@ function updateQuestions(questionRequest) {
             updateProgress(r.progress);
             // ペイントUI を有効化
             if (paintingCanvasUI === null && window.GS.paint.enabled) {
-                paintingCanvasUI = window.GS.paint.UI($(".right-test-item"));
+                paintingCanvasUI = window.GS.paint.UI($(".right-test-item > .index-button"));
             }
         });
         updateAnsweredLods(r.answerContext);
@@ -201,10 +202,15 @@ $("#answer-form").submit(function (event) {
 
     if (window.GS.paint.enabled) {
         var imageEl = $(".question-image")[1];
-        var grayScaleCanvas = paintingCanvasUI.toGrayScale(
+        var grayscale = paintingCanvasUI.toGrayScale(
             imageEl.naturalWidth,
             imageEl.naturalHeight);
-        PaintingCanvas.toBlob(grayScaleCanvas, function (blob) {
+        // グレースケールに占めるペイント率が 1% 以下ならちゃんと塗ってないとみなす
+        if (grayscale.fillRatio <= 0.01) {
+            alert("Please paint the character difference.");
+            return;
+        }
+        PaintingCanvas.toBlob(grayscale.canvas, function (blob) {
             paintingCanvasUI.clear();
             formData.append("answer[0]", $(".right-test-item input").val());
             formData.append("paint[0][name]", "painting");
