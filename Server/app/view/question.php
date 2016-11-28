@@ -149,6 +149,8 @@ endif
     <input type="submit" id="question-submit-button" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
 </div>
 
+</div>
+
 </form>
 
 <script type="text/javascript">
