@@ -77,13 +77,13 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 <tbody>
 <?php
 foreach (Job::getJobs() as $job):
-    $progressPercent = min([100.0, round($job->getProgress($question) * 100, 2)]);
+    $progressPercent = min([100.0, round($job->getProgress() * 100, 2)]);
     ?>
     <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td><a href="<?php echo Router::Path("admin/jobs") ?>/?jobId=<?php echo $job->getJobId() ?>"><?php Form::e($job->getTitle()) ?></a></td>
         <td>
             <?php echo $job->getQuestions() ?>
-            (<?php echo $job->getQuestions() * $question->lodVariationCount() ?> questions)
+            (<?php echo $job->getTotalQuestion() ?> questions)
         </td>
         <td><?php echo $job->getMaxAssignments() ?></td>
         <td><?php echo $progressPercent ?>%</td>
@@ -473,7 +473,7 @@ var validateRules = {
     "#new-job-quiz-question-count": function () {
         var $el = $("#new-job-quiz-question-count");
         var num = parseInt($el.val(), 10);
-        if (num % rowPerPage !== 0) {
+        if (num > 0 && num % rowPerPage !== 0) {
             onError($el, "Number of questions must be a multiple of " + rowPerPage + ".");
             return false;
         }
@@ -537,18 +537,25 @@ function updateTotalQuestions() {
     $("#total-questions").text(formatNumber(questionsPerWorker * parseInt($("#new-job-num-assignments").val(), 10)));
 }
 
+var selectedTaskType = null;
+
 function refreshFormInputs() {
     updateTotalCost();
     updateTotalQuestions();
     // FIXME: ペイントモードが Quiz をサポートするようになったらなおす
-    if ($("#new-job-task-type").val() === "<?php echo Job::TaskType_Painting ?>") {
-        $(".quiz-form").hide();
-        rowPerPage = 1;
-        lodVariationCount = 1;
-    } else {
-        $(".quiz-form").show();
-        rowPerPage = 2;
-        lodVariationCount = defaultLodVariationCount;
+    if ($("#new-job-task-type").val() !== selectedTaskType) {
+        selectedTaskType = $("#new-job-task-type").val();
+        if (selectedTaskType === "<?php echo Job::TaskType_Painting ?>") {
+            $(".quiz-form").hide();
+            rowPerPage = 1;
+            lodVariationCount = 1;
+            $("#new-job-quiz-question-count").attr("disabled", "disabled");
+        } else {
+            $(".quiz-form").show();
+            rowPerPage = 2;
+            lodVariationCount = defaultLodVariationCount;
+            $("#new-job-quiz-question-count").removeAttr("disabled");
+        }
     }
 }
 

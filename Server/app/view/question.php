@@ -31,7 +31,7 @@ $gsParams = [
 ];
 
 // すでに作業が完了していれば、完了ページに遷移
-if ($progress->remain <= 0) {
+if ($progress->completed) {
     Router::redirect("done", $gsParams);
 }
 $num = $page->getNumber();

@@ -110,29 +110,11 @@ class Question {
         }
     }
 
-    public function answerProgress(AbstractUnit $unit) {
-        $answeredCount = $unit->getAnsweredQuestionCount();
-        $totalCount = $unit->getTotalQuestionCount($this);
-        // 設定された出題数よりも既存のモデル数が少ない場合は、そちらにキャップする
-        $existsTotalCount = count($this->modelLodMap) * $this->lodVariationCount();
-        if ($totalCount === null) {
-            $totalCount = $existsTotalCount;
-        } else {
-            $totalCount = min($existsTotalCount, $totalCount);
-        }
-        $remainCount = $totalCount - $answeredCount;            
-        $progress = new \stdClass();
-        $progress->remain = max(0, $remainCount);
-        $progress->answered = $answeredCount;
-        $progress->total = $totalCount;
-        $progress->ratio = 0.0;
-        if ($totalCount > 0) {
-            $progress->ratio = min(1.0, $progress->answered / $progress->total);
-        }
-        $progress->completed = $remainCount <= 0;
-        return $progress;
+    public function totalModelCount() {
+        return count($this->modelLodMap);
     }
 
+    // LOD0 を除いた全モデル共通の LOD 数
     public function lodVariationCount() {
         return $this->lodSetCount;
     }

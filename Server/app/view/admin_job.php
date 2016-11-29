@@ -2,9 +2,7 @@
 
 use GraphicsResearch\Job;
 use GraphicsResearch\Form;
-use GraphicsResearch\Question;
 
-$question = Question::instance();
 $unitStatusFilter = strtolower(Form::get("status", ""));
 
 ?><!DOCTYPE html>
@@ -45,7 +43,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     </tr>
     </thead>
     <tbody>
-    <?php $progressPercent = min([100.0, round($job->getProgress($question) * 100, 2)]); ?>
+    <?php $progressPercent = min([100.0, round($job->getProgress() * 100, 2)]); ?>
     <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td>
             <?php echo sprintf("%.2f", $job->estimateTotalAmountUSD()) ?> USD
@@ -53,7 +51,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
         </td>
         <td>
             <?php echo $job->getQuestions() ?>
-            (<?php echo $job->getQuestions() * $question->lodVariationCount() ?> questions)
+            (<?php echo $job->getTotalQuestion() ?> questions)
         </td>
         <td><?php echo $job->getMaxAssignments() ?></td>
         <td><?php echo $progressPercent ?>%</td>
@@ -136,7 +134,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
 $no = 0;
 foreach ($job->getUnitsByAnswerGroup() as $unit):
     $status = "";
-    $progress = $question->answerProgress($unit);
+    $progress = $unit->getAnswerProgress();
     $judgedCount = $progress->answered;
 
     if ($progress->completed) {

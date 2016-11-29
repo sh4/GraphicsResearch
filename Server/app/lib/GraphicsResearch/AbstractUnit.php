@@ -36,11 +36,9 @@ abstract class AbstractUnit {
         $this->workerId = $workerId;
     }
 
-    abstract public function getRandomQuestionOrder(Question $question, $answerContext);
+    abstract public function getRandomQuestionOrder($answerContext);
 
-    abstract public function getTotalQuestionCount(Question $question);
-
-    abstract public function getAnsweredQuestionCount();
+    abstract public function getAnswerProgress();
 
     // return [
     //   [
@@ -76,6 +74,19 @@ abstract class AbstractUnit {
 
     protected function setUnitId($unitId) {
         $this->unitId = $unitId;
+    }
+
+    protected function createAnswerProgress($total, $answered) {
+        $progress = new \stdClass();
+        $progress->remain = max(0, $total - $answered);
+        $progress->answered = $answered;
+        $progress->total = $total;
+        $progress->ratio = 0.0;
+        if ($total > 0) {
+            $progress->ratio = min(1.0, $progress->answered / $progress->total);
+        }
+        $progress->completed = ($total - $answered) <= 0;
+        return $progress;
     }
 }
 

@@ -4,8 +4,8 @@ namespace GraphicsResearch;
 
 class QuizUnit extends AbstractUnit {
     private $judgementData;
-    private $answeredQuestions;
     private $questionCount;
+    private $progress;
 
     // クイズが有効な場合の 1 ページあたりの質問数
     const CrowdFlowerRowPerPageOnQuizEnabled = 2;
@@ -19,7 +19,7 @@ class QuizUnit extends AbstractUnit {
         $this->judgementData = null;
         $this->quizSessionId = "";
         $this->questionCount = 0;
-        $this->answeredQuestions = null;
+        $this->progress = null;
         if (isset($hash["question_count"])) {
             $this->questionCount = $hash["question_count"];
         }
@@ -57,7 +57,7 @@ class QuizUnit extends AbstractUnit {
         return $missedCount <= $allowedMissCount;
     }
 
-    public function getRandomQuestionOrder(Question $question, $answerContext) {
+    public function getRandomQuestionOrder($answerContext) {
         // ジョブごとのクイズ回答データから未回答なものをランダムに列挙する 
         $remainQuestions = DB::instance()->fetchAll("
             SELECT golden.model_id, golden.rotation_id, golden.lod
@@ -85,19 +85,17 @@ class QuizUnit extends AbstractUnit {
         }
     }
 
-    public function getTotalQuestionCount(Question $question) {
-        return (int)($this->questionCount / self::CrowdFlowerRowPerPageOnQuizEnabled);
-    }
-
-    public function getAnsweredQuestionCount() {
-        if ($this->answeredQuestions === null) {
-            $this->answeredQuestions = (int)DB::instance()->fetchOne("
-                SELECT COUNT(*) 
-                FROM job_quiz_unit_judgement
-                WHERE unit_id = ? AND quiz_sid = ?",
-                [$this->getUnitId(), $this->quizSessionId]);
+    public function getAnswerProgress() {
+        if ($this->progress !== null) {
+            return $this->progress;
         }
-        return $this->answeredQuestions;
+        $total = (int)($this->questionCount / self::CrowdFlowerRowPerPageOnQuizEnabled);
+        $answered = (int)DB::instance()->fetchOne("
+            SELECT COUNT(*) 
+            FROM job_quiz_unit_judgement
+            WHERE unit_id = ? AND quiz_sid = ?",
+            [$this->getUnitId(), $this->quizSessionId]);
+        return ($this->progress = $this->createAnswerProgress($total, $answered));
     }
 
     public function getJudgementData() {

@@ -45,8 +45,7 @@ use GraphicsResearch\Page\Webhook;
         $unitId = Form::get("unitId", "");
         $verificationCode = Form::get("verificationCode", "");
         if ($unit = JobUnit::loadFromId($unitId)) {
-            $question = Question::instance();
-            if ($question->answerProgress($unit)->completed) {
+            if ($unit->getAnswerProgress()->completed) {
                 $ok = $unit->getVerificationCode() == $verificationCode;
             }
         }

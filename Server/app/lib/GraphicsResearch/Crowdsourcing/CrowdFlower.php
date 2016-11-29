@@ -18,6 +18,10 @@ class CrowdFlower {
     const Url = "https://api.crowdflower.com/v1";
     const JobsUrl = "https://make.crowdflower.com/jobs";
 
+    const Param_UnitPerAssignment  = "units_per_assignment";
+    const Param_JudgementsPerUnit  = "judgments_per_unit";
+    const Param_PaymentCents       = "payment_cents";
+
     public function __construct() {
         $this->restClient = new Rest\Client();
         $this->restClient->getEvent()->onResponse(function (Rest\Response $response)  {
@@ -199,6 +203,16 @@ class CrowdFlower {
         $bonusUrl = self::Url."/jobs/$jobId/workers/$workerId/bonus.json?key=$this->apiKey";
         $form = Rest\Request::form($params);
         return $this->restClient->post($bonusUrl, $form);
+    }
+
+    public function updateJobParameters($jobId, $params) {
+        $url = self::Url."/jobs/$jobId.json?key=$this->apiKey";
+        $jobParams = [];
+        foreach ($params as $key => $value) {
+            $jobParams["job[".$key."]"] = $value;
+        }
+        $form = Rest\Request::form($jobParams);
+        return $this->restClient->put($url, $form);
     }
 
     private function unitUrl($jobId, $unitId) {

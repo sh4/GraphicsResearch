@@ -55,7 +55,7 @@ class Index {
     }
 
     public function getQuestionOrders() {
-        $questions = $this->unit->getRandomQuestionOrder($this->question, $this->getAnswerContext());
+        $questions = $this->unit->getRandomQuestionOrder($this->getAnswerContext());
         // $model = [
         //   "id" => ModelID,
         //   "rotation" => RotationId,
@@ -67,7 +67,7 @@ class Index {
     }
 
     public function getAnswerProgress() {
-        return $this->question->answerProgress($this->unit);
+        return $this->unit->getAnswerProgress();
     }
 
     public function getUnitId() {

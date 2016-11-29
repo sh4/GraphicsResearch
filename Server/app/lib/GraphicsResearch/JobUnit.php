@@ -7,7 +7,7 @@ class JobUnit extends AbstractUnit {
     private $createdOn;
     private $judgementData;
     private $answeredQuestions;
-    private $questions;
+    private $progress;
     private $answerGroupId;
 
     public function __construct($hash) {
@@ -19,7 +19,7 @@ class JobUnit extends AbstractUnit {
         $this->updatedOn = $hash["updated_on"] ? new \DateTime($hash["updated_on"]) : null;
         $this->createdOn = $hash["created_on"] ? new \DateTime($hash["created_on"]) : null;
         $this->judgementData = null;
-        $this->questions = null;
+        $this->progress = null;
 
         $this->answeredQuestions = 0;
         if (isset($hash["answered_questions"])) {
@@ -42,7 +42,8 @@ class JobUnit extends AbstractUnit {
         return $this->updatedOn;
     }
 
-    public function getRandomQuestionOrder(Question $question, $answerContext) {
+    public function getRandomQuestionOrder($answerContext) {
+        $question = Question::instance(); 
         $onlyOneLod = false; // ランダムにリストアップした単一 LOD のみ表示する
 
         if ($answerContext) {
@@ -92,17 +93,21 @@ class JobUnit extends AbstractUnit {
         }
     }
 
-    public function getTotalQuestionCount(Question $question) {
-        if ($this->questions === null) {
-            if ($jobId = $this->getJobId()) {
-                $this->questions = Job::getQuestionsPerUnitFromId($jobId) * $question->lodVariationCount();
-            }   
+    public function getAnswerProgress() {
+        if ($this->progress !== null) {
+            return $this->progress;
         }
-        return $this->questions;
-    }
-
-    public function getAnsweredQuestionCount() {
-        return $this->answeredQuestions;
+        $answered = $this->answeredQuestions;
+        if ($jobId = $this->getJobId()) {
+            // ジョブが指定されている場合はモードによって必要回答数が異なる
+            $job = Job::loadFromIdWithCache($jobId);
+            $total = $job->getTotalQuestionPerUnit();
+        } else {
+            // ジョブが未指定の場合はデフォルトの回答モード (全回答モード)
+            $question = Question::instance();
+            $total = $question->totalModelCount() * $question->lodVariationCount();
+        }
+        return ($this->progress = $this->createAnswerProgress($total, $answered));
     }
 
     public function getJudgementData() {
@@ -238,8 +243,19 @@ class JobUnit extends AbstractUnit {
             GROUP BY model_id HAVING COUNT(model_id) >= ?", 
             [
                 $this->getUnitId(),
-                $question->lodVariationCount() - 1,
+                $question->lodVariationCount(),
             ]);
         return $modelIds;
+    }
+
+    private function getPerModelQuetsionCount(Question $question) {
+        if ($jobId = $this->getJobId()) {
+            // ジョブが指定されている場合はモードによって必要回答数が異なる
+            $job = Job::loadFromIdWithCache($jobId);
+            return $job->getPerModelQuestionCount();
+        } else {
+            // ジョブが未指定の場合はデフォルトの回答モード (LOD0vsLODx の全比較)
+            return $question->lodVariationCount() - 1;
+        }
     }
 }

@@ -2,6 +2,8 @@
 
 namespace GraphicsResearch;
 
+use GraphicsResearch\Crowdsourcing\CrowdFlower;
+
 class Job {
     private $jobId;
     private $title;
@@ -17,6 +19,8 @@ class Job {
     private $crowdFlowerRowPerPage;
 
     private $taskType;
+
+    private static $jobRepository;
 
     // タスク種別
     const TaskType_Choice   = "choice";   // 選択(Reference と Comparision モデルの比較)
@@ -36,6 +40,7 @@ class Job {
         {
             throw new \Exception("Job create parameter required");
         }
+        $this->question = Question::instance();
         $this->title = $job["title"];
         $this->instructions = $job["instructions"];
         $this->questions = (int)$job["questions"];
@@ -84,7 +89,7 @@ class Job {
 
         $this->crowdFlower = new Crowdsourcing\CrowdFlower();
         $this->crowdFlower->setAPIKey(CROWDFLOWER_API_KEY);
-        $this->crowdFlowerRowPerPage = 1;
+        $this->crowdFlowerRowPerPage = $this->quizQuestionCount == 0 ? 1 : 2;
     }
 
     public function createdOn() {
@@ -176,11 +181,43 @@ class Job {
         }
     }
 
-    public function getProgress(Question $question) {
-        $totalQuestions = $this->getQuestions() * $question->lodVariationCount() * $this->getMaxAssignments();
+    public function getTotalQuestion() {
+        $question = Question::instance();
+        switch ($this->getTaskType()) {
+        case self::TaskType_Choice:
+            // 選択式の場合、LOD0vsLODx の全比較
+            return $this->getQuestions() * $question->lodVariationCount() * $this->crowdFlowerRowPerPage;
+        case self::TaskType_Painting:
+            // ペイントの場合は LOD0vsLODx の単一比較 (シーンごとにいずれか 1 つの LOD と比較)
+            return $this->getQuestions() * $this->crowdFlowerRowPerPage;
+        default:
+            return 0;
+        }
+    }
+
+    public function getTotalQuestionPerUnit() {
+        return $this->getTotalQuestion() / $this->crowdFlowerRowPerPage;
+    }
+
+    public function getPerModelQuestionCount() {
+        $question = Question::instance();
+        switch ($this->getTaskType()) {
+        case self::TaskType_Choice:
+            // 選択式の場合、LOD0vsLODx の全比較
+            return $question->lodVariationCount() - 1;
+        case self::TaskType_Painting:
+            // ペイントの場合は LOD0vsLODx の単一比較 (シーンごとにいずれか 1 つの LOD と比較)
+            return 1;
+        default:
+            return 0;
+        }
+    }
+
+    public function getProgress() {
+        $totalQuestions = $this->getTotalQuestion() * $this->getMaxAssignments();
         $answeredQuestions =  0;
         foreach ($this->getUnits() as $unit) {
-            $answeredQuestions += $unit->getAnsweredQuestionCount();
+            $answeredQuestions += $unit->getAnswerProgress()->answered;
         }
         return $answeredQuestions / $totalQuestions;
     }
@@ -239,19 +276,17 @@ class Job {
         }
     }
 
+    public static function loadFromIdWithCache($jobId) {
+        if (isset(self::$jobRepository[$jobId])) {
+            return self::$jobRepository[$jobId];
+        }
+        return self::$jobRepository[$jobId] = self::loadFromId($jobId);
+    }
+
     public static function deleteFromId($jobId) {
         return DB::instance()->transaction(function (DB $db) use ($jobId) {
             return self::deleteJobOnDB($jobId, $db);
         });
-    }
-
-    public static function getQuestionsPerUnitFromId($jobId) {
-        $questions = (int)DB::instance()->fetchOne("SELECT questions FROM job WHERE job_id = ?", $jobId);
-        $hasJobQuizUnit = (int)DB::instance()->fetchOne(
-            "SELECT COUNT(*) FROM job_quiz_unit WHERE job_id = ?", 
-            $jobId) > 0;
-        $crowdFlowerRowPerPage = $hasJobQuizUnit ? 2 : 1;
-        return (int)($questions / $crowdFlowerRowPerPage);
     }
 
     public static function getJobs() {
@@ -276,12 +311,15 @@ class Job {
         $this->uploadJobUnitsToCrowdFlower($job->id, $db);
         // クイズ用データが存在すれば、それを行としてアップロード
         $this->uploadQuizUnitsToCrowdFlower($job->id, $db);
-        // 報酬の設定 (ドル => セント単位に変換)
-        $this->crowdFlower->jobTaskPayment($job->id, $this->getRewardAmountUSD() * 100);
-        // 1 Row (Unit) あたりの判定数 (回答可能な Contributor 数)
-        $this->crowdFlower->judgementsPerUnit($job->id, 1);
-        // 1 ページ (報酬を支払う最低単位) あたりのテスト数
-        $this->crowdFlower->rowsPerPage($job->id, $this->crowdFlowerRowPerPage);
+        // ジョブパラメータを設定
+        $this->crowdFlower->updateJobParameters($job->id, [
+            // 報酬の設定 (ドル => セント単位に変換)
+            CrowdFlower::Param_PaymentCents => round($this->getRewardAmountUSD() * 100),
+            // 1 Row (Unit) あたりの判定数 (回答可能な Contributor 数)
+            CrowdFlower::Param_JudgementsPerUnit => 1,
+            // 1 ページ (報酬を支払う最低単位) あたりのテスト数
+            CrowdFlower::Param_UnitPerAssignment => $this->crowdFlowerRowPerPage,
+        ]);
         // 1クラウドワーカーあたりの最大回答数を 1 回に制限する
         // (この値を指定しなくても、最大回答数は Job あたりの QuizUnit 数にキャップされる)
         //$this->crowdFlower->maxJudgmentsPerWorker($job->id, 1);
@@ -353,7 +391,6 @@ class Job {
         if ($this->getTaskType() === self::TaskType_Choice // FIXME: クイズの有無はもっと別に判定すべき
             && $this->quizQuestionCount >= 1 
             && count($this->quizQuestions) >= 1) {
-            $this->crowdFlowerRowPerPage = 2;
             $this->insertQuizJobUnits($db);
             $this->insertQuizGoldenData($db);
         }
