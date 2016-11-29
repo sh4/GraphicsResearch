@@ -3,7 +3,7 @@ use GraphicsResearch\Question;
 use GraphicsResearch\JobUnit;
 use GraphicsResearch\Form;
 
-$question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+$question = Question::instance();
 $units = [];
 $jobId = (int)Form::get("jobId", 0);
 $unitId = Form::get("unitId", "");

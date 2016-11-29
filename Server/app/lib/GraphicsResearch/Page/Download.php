@@ -46,7 +46,7 @@ class Download {
     }
 
     private function echoJobJudgementCSV(Job $job) {
-        $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+        $question = Question::instance();
 
         // ヘッダ行を書き出し
         echo implode(",", [

@@ -4,8 +4,7 @@ use GraphicsResearch\Job;
 use GraphicsResearch\Form;
 use GraphicsResearch\Question;
 
-$question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
-
+$question = Question::instance();
 $unitStatusFilter = strtolower(Form::get("status", ""));
 
 ?><!DOCTYPE html>

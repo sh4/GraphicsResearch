@@ -12,15 +12,24 @@ class Question {
     private $invalidModelSet;
     private $lodSetCount;
 
+    private static $defaultQuestion;
+
     private function __constructor() {
         $this->lodSetCount = null;
     }
 
-    public static function buildFromModelDirectory($relativeModelDirectory) {
-        $question = new Question();
-        $question->buildModelSet($relativeModelDirectory);
-        $question->removeInvalidModelSet();
-        return $question;
+    public static function instance() {
+        return self::buildFromModelDirectory(JUDGEMENT_IMAGES);
+    }
+
+    private static function buildFromModelDirectory($relativeModelDirectory) {
+        if (self::$defaultQuestion === null) {
+            $question = new Question();
+            $question->buildModelSet($relativeModelDirectory);
+            $question->removeInvalidModelSet();
+            self::$defaultQuestion = $question;
+        }
+        return self::$defaultQuestion;
     }
 
     public static function removeModelFiles($relativeModelDirectory, $removeFiles) {

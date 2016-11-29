@@ -274,14 +274,14 @@ class Job {
         ]));
         // 回答用データを CrowdFlower にアップロード
         $this->uploadJobUnitsToCrowdFlower($job->id, $db);
-        // クイズ用データをアップロード
+        // クイズ用データが存在すれば、それを行としてアップロード
         $this->uploadQuizUnitsToCrowdFlower($job->id, $db);
         // 報酬の設定 (ドル => セント単位に変換)
         $this->crowdFlower->jobTaskPayment($job->id, $this->getRewardAmountUSD() * 100);
-        // 1 ページ (報酬を支払う最低単位) あたりのテスト数
-        $this->crowdFlower->rowsPerPage($job->id, $this->crowdFlowerRowPerPage);
         // 1 Row (Unit) あたりの判定数 (回答可能な Contributor 数)
         $this->crowdFlower->judgementsPerUnit($job->id, 1);
+        // 1 ページ (報酬を支払う最低単位) あたりのテスト数
+        $this->crowdFlower->rowsPerPage($job->id, $this->crowdFlowerRowPerPage);
         // 1クラウドワーカーあたりの最大回答数を 1 回に制限する
         // (この値を指定しなくても、最大回答数は Job あたりの QuizUnit 数にキャップされる)
         //$this->crowdFlower->maxJudgmentsPerWorker($job->id, 1);

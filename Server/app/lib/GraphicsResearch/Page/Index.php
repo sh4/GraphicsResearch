@@ -35,7 +35,7 @@ class Index {
         if ($this->number !== null && $this->number > 0) {
             $this->formAction .= "?num=$this->number";
         }
-        $this->question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+        $this->question = Question::instance();
         $this->unit = $this->createOrUpdateUnit();
         $this->defaultQuestionPage = QuestionPage::DefaultPage();
         $this->job = null;

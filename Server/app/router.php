@@ -45,7 +45,7 @@ use GraphicsResearch\Page\Webhook;
         $unitId = Form::get("unitId", "");
         $verificationCode = Form::get("verificationCode", "");
         if ($unit = JobUnit::loadFromId($unitId)) {
-            $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+            $question = Question::instance();
             if ($question->answerProgress($unit)->completed) {
                 $ok = $unit->getVerificationCode() == $verificationCode;
             }
@@ -118,7 +118,7 @@ use GraphicsResearch\Page\Webhook;
                 $targetFiles = Question::getModelFileWithPattern(JUDGEMENT_IMAGES, $removeFilePattern);
             }
             else if (Form::post("cleanup_invalid_dataset")) {
-                $question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+                $question = Question::instance();
                 $targetFiles = $question->invalidModelFiles();
             }
             $removedFiles = Question::removeModelFiles(JUDGEMENT_IMAGES, $targetFiles);

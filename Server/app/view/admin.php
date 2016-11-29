@@ -4,7 +4,7 @@ use GraphicsResearch\Job;
 use GraphicsResearch\Form;
 use GraphicsResearch\Question;
 
-$question = Question::buildFromModelDirectory(JUDGEMENT_IMAGES);
+$question = Question::instance();
 $invalidModelInfos = $question->invalidModelInfos();
 
 $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
@@ -356,7 +356,8 @@ function clearError($el) {
     $el.parent().removeClass("has-danger");
 }
 
-var lodVariationCount = <?php echo $question->lodVariationCount() ?>;
+var defaultLodVariationCount = <?php echo $question->lodVariationCount() ?>;
+var lodVariationCount = defaultLodVariationCount;
 var rowPerPage = 2;
 
 var validateRules = {
@@ -543,9 +544,11 @@ function refreshFormInputs() {
     if ($("#new-job-task-type").val() === "<?php echo Job::TaskType_Painting ?>") {
         $(".quiz-form").hide();
         rowPerPage = 1;
+        lodVariationCount = 1;
     } else {
         $(".quiz-form").show();
         rowPerPage = 2;
+        lodVariationCount = defaultLodVariationCount;
     }
 }
 
