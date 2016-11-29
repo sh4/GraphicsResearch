@@ -126,17 +126,23 @@ class JobUnit extends AbstractUnit {
         return $this->answerGroupId;
     }
 
-    public function getPaintingFilePath(Question $question, $judgementId) {
+    public function getPaintingFilePath($judgementId) {
         $judgement = DB::instance()->fetchRow("
             SELECT * FROM job_unit_judgement WHERE id = ? 
         ", $judgementId);
+        return $this->getPaintingFilePathFromJudgement($judgement);
+    }
+
+    public function getPaintingFilePathFromJudgement($judgement) {
+        $question = Question::instance();
         $modelFilename = basename($question->modelPath(
             $judgement["model_id"], 
             $judgement["rotation_id"], 
             $judgement["lod"]));
-        return $this->getJobId() . "/" .
+        return PAINTING_TASK_IMAGES . "/" .
+               $this->getJobId() . "/" .
                $this->getUnitId() . "/" . 
-               preg_replace('#\.jpe?g$#ui', ".png", $modelFilename);
+               preg_replace('#\.jpe?g$#ui', ".png", $modelFilename);        
     }
 
     public function writeJudgeData($answers) {

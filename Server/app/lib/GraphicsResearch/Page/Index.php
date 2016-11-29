@@ -267,10 +267,10 @@ class Index {
         // ペイントデータが存在すればそれを DB に保存
         if ($paintRawData = Form::post("paint", [])) { 
             $appRoot = dirname(__FILE__)."/../../..";
-            $rootDir = "$appRoot/../".PAINTING_TASK_IMAGES;
+            $rootDir = "$appRoot/../";
             foreach ($paintRawData as $i => $paint) {
                 $judgementId = $this->lastJudgementIds[$i];
-                $paintingFilePath = $rootDir."/".$unit->getPaintingFilePath($this->question, $judgementId);
+                $paintingFilePath = $rootDir."/".$unit->getPaintingFilePath($judgementId);
                 $paintingDir = dirname($paintingFilePath);
                 if (!file_exists($paintingDir)) {
                     mkdir($paintingDir, 0777, true);

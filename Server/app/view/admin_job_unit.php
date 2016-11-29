@@ -2,10 +2,13 @@
 use GraphicsResearch\Question;
 use GraphicsResearch\JobUnit;
 use GraphicsResearch\Form;
+use GraphicsResearch\Job;
 
 $question = Question::instance();
 $units = [];
 $jobId = (int)Form::get("jobId", 0);
+$job = Job::loadFromId($jobId);
+$isChoiceMode = $job->getTaskType() == Job::TaskType_Choice;
 $unitId = Form::get("unitId", "");
 if ($answerGroupId = Form::get("gid", "")) {
     $units = JobUnit::loadsFromAnswerGroupId($answerGroupId);
@@ -55,17 +58,19 @@ $judgementFilter = Form::get("filter", "");
     <?php else: ?>
         <a href="<?php echo $baseUrl ?>">All</a>
     <?php endif ?>
-    |
-    <?php if ($judgementFilter === "ref"): ?>
-        Reference is better
-    <?php else: ?>
-        <a href="<?php echo $baseUrl ?>&amp;filter=ref">Reference is better</a>
-    <?php endif ?>
-    |
-    <?php if ($judgementFilter === "comp"): ?>
-        Comparison is better
-    <?php else: ?>
-        <a href="<?php echo $baseUrl ?>&amp;filter=comp">Comparison is better</a>
+    <?php if ($isChoiceMode): ?>
+        |
+        <?php if ($judgementFilter === "ref"): ?>
+            Reference is better
+        <?php else: ?>
+            <a href="<?php echo $baseUrl ?>&amp;filter=ref">Reference is better</a>
+        <?php endif ?>
+        |
+        <?php if ($judgementFilter === "comp"): ?>
+            Comparison is better
+        <?php else: ?>
+            <a href="<?php echo $baseUrl ?>&amp;filter=comp">Comparison is better</a>
+        <?php endif ?>
     <?php endif ?>
 </div>
 
@@ -94,7 +99,13 @@ foreach ($units as $unit):
         </tr>
         <tr>
             <th>Reference</th>
-            <th>Comparison</th>
+            <th>
+                <?php if ($isChoiceMode): ?>
+                Comparison
+                <?php else: ?>
+                User Painting
+                <?php endif ?>
+            </th>
         </tr>
     </thead>
     <tbody>
@@ -103,8 +114,13 @@ foreach ($units as $unit):
             <td>LOD <?php echo $modelLod ?></td>
         </tr>
         <tr>
-            <td<?php if (!$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
-            <td<?php if ($modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>"></td>
+            <td<?php if ($isChoiceMode && !$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
+            <td<?php if ($isChoiceMode && $modelIsBetterThanRef): ?> class="active"<?php endif ?> style="position:relative">
+                <img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>">
+                <?php if ($job->getTaskType() === Job::TaskType_Painting): ?>
+                    <img src="<?php echo $root, "/../", $unit->getPaintingFilePathFromJudgement($data) ?>" style="border:none;display:block;position:absolute;top:0;left:0;opacity:0.25">
+                <?php endif ?>
+            </td>
         </tr>
     </tbody>
     </table>
