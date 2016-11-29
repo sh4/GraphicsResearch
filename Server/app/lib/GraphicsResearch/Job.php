@@ -186,10 +186,10 @@ class Job {
         switch ($this->getTaskType()) {
         case self::TaskType_Choice:
             // 選択式の場合、LOD0vsLODx の全比較
-            return $this->getQuestions() * $question->lodVariationCount() * $this->crowdFlowerRowPerPage;
+            return $this->getQuestions() * $question->lodVariationCount();
         case self::TaskType_Painting:
             // ペイントの場合は LOD0vsLODx の単一比較 (シーンごとにいずれか 1 つの LOD と比較)
-            return $this->getQuestions() * $this->crowdFlowerRowPerPage;
+            return $this->getQuestions();
         default:
             return 0;
         }
