@@ -267,10 +267,12 @@ class JobUnit extends AbstractUnit {
         ]);
         $valueGenerated = false;
         foreach ($qustionsOrder as $row) {
+            $lodMap = [];
+            $lodMap[(int)$row["lod"]] = true;
             yield [
                 "id" => (int)$row["model_id"],
                 "rotation" => (int)$row["rotation_id"],
-                "lodMap" => [(int)$row["lod"]],
+                "lodMap" => $lodMap,
             ];
             $valueGenerated = true;
         }
