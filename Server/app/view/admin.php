@@ -45,21 +45,6 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 
 <?php include "_flash_alert.php" ?>
 
-<h2>Question Page (Default)</h2>
-
-<form method="post" id="form-update-question-page" action="<?php echo Router::Path("admin/question") ?>">
-    <?php Form::enableCSRF() ?>
-
-    <div class="form-group">
-        <label for="question-instructions">Instructions (Default)</label>
-        <textarea class="form-control longfield" id="question-instructions" name="question[instructions]"><?php Form::e($questionPage["instructions"]) ?></textarea>
-    </div>
-
-    <div class="form-group">
-        <input id="submit-update-question-page" type="submit">
-    </div>
-</form>
-
 <h2>Job List</h2>
 
 <table class="table table-hover table-sorter job-list-table">
