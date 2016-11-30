@@ -57,7 +57,7 @@ class QuizUnit extends AbstractUnit {
         return $missedCount <= $allowedMissCount;
     }
 
-    public function getRandomQuestionOrder($answerContext) {
+    public function getRandomQuestionOrder(AnswerContext $answerContext) {
         // ジョブごとのクイズ回答データから未回答なものをランダムに列挙する 
         $remainQuestions = DB::instance()->fetchAll("
             SELECT golden.model_id, golden.rotation_id, golden.lod

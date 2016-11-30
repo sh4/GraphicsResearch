@@ -443,10 +443,11 @@ class DB {
         CREATE TABLE IF NOT EXISTS job_unit_question_order (
             id INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
             job_id INTEGER NOT NULL,
+            no INTEGER NOT NULL,
             model_id MEDIUMINT UNSIGNED NOT NULL,
             rotation_id TINYINT UNSIGNED NOT NULL,
             lod TINYINT UNSIGNED NOT NULL,
-            INDEX (job_id)
+            INDEX (job_id, no)
         );
         ";
         $this->dbh->exec($sql);

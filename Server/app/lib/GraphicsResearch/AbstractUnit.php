@@ -36,7 +36,7 @@ abstract class AbstractUnit {
         $this->workerId = $workerId;
     }
 
-    abstract public function getRandomQuestionOrder($answerContext);
+    abstract public function getRandomQuestionOrder(AnswerContext $answerContext);
 
     abstract public function getAnswerProgress();
 

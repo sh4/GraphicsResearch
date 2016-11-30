@@ -81,11 +81,16 @@ class Job {
             $this->questionInstructions = $job["question_instructions"];
         }
 
-        // CreateNewJob 呼び出し時に使用する一時的な変数
+        //// CreateNewJob 呼び出し時に使用する一時的な変数
         $this->quizQuestions = [];
         if (isset($job["quiz_questions"])) {
             $this->quizQuestions = $job["quiz_questions"];
         }
+        $this->questionsOrder = [];
+        if (isset($job["questions_order"])) {
+            $this->questionsOrder = $job["questions_order"];
+        }
+        /////
 
         $this->crowdFlower = new Crowdsourcing\CrowdFlower();
         $this->crowdFlower->setAPIKey(CROWDFLOWER_API_KEY);
@@ -369,6 +374,14 @@ class Job {
     }
 
     private function createNewJobOnDB(DB $db) {
+        $enabledQuestionOrder = $this->getTaskType() == self::TaskType_Painting 
+                                && count($this->questionsOrder) > 0;
+
+        // 回答順序の指定が有効な場合、必要回答数の最大値を回答順序数にキャップさせる
+        if ($enabledQuestionOrder) {
+            $this->questions = min($this->questions, count($this->questionsOrder));
+        }
+
         $this->jobId = $db->insert("job", [
             "title" => $this->getTitle(),
             "instructions" => $this->getInstructions(),
@@ -390,9 +403,15 @@ class Job {
         // 回答形式が選択式で、かつクイズ必要回答数も質問数も 1 以上ならクイズ用データを挿入
         if ($this->getTaskType() === self::TaskType_Choice // FIXME: クイズの有無はもっと別に判定すべき
             && $this->quizQuestionCount >= 1 
-            && count($this->quizQuestions) >= 1) {
+            && count($this->quizQuestions) >= 1)
+        {
             $this->insertQuizJobUnits($db);
             $this->insertQuizGoldenData($db);
+        }
+
+        // タスクの種別がペイントで、かつクイズの表示順序が与えられている
+        if ($enabledQuestionOrder) {
+            $this->insertQuestionsOrder($db);
         }
     }
 
@@ -444,6 +463,20 @@ class Job {
             $rows[] = $row;
         }
         $db->insertMulti("job_quiz_unit_golden", $rows);
+    }
+
+    private function insertQuestionsOrder(DB $db) {
+        $rows = [];
+        foreach ($this->questionsOrder as $i => $order) {
+            $rows[] = [
+                "job_id" => $this->getJobId(),
+                "no" => $i,
+                "model_id" => $order["model_id"],
+                "rotation_id" => $order["rotation_id"],
+                "lod" => $order["lod"],
+            ];
+        }
+        $db->insertMulti("job_unit_question_order", $rows);
     }
 
     private static function deleteJobOnDB($jobId, DB $db) {

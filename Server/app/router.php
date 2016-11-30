@@ -143,6 +143,9 @@ use GraphicsResearch\Page\Webhook;
                 if ($quizQuestions = Form::getFile("quiz_questions")) {
                     $rawJob["quiz_questions"] = Question::parseQuizGoldenDataFromCSV($quizQuestions);
                 }
+                if ($questionsOrder = Form::getFile("questions_order")) {
+                    $rawJob["questions_order"] = Question::parseQuizGoldenDataFromCSV($questionsOrder);
+                }
                 $job = Job::createNewJob($rawJob);
                 unset($_SESSION["job"]);
                 Router::Flash("success", "You have successfully created the job: ".htmlspecialchars($job->getTitle()));

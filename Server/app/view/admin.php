@@ -202,6 +202,18 @@ $jobForm = array_merge($jobForm, [
 */ ?>
 
     <div class="form-group">
+        <label for="new-job-questions-order">Questions Order (Optional)</label>
+        <input type="file" id="new-job-questions-order" name="questions_order">
+        <div style="margin:0.5em 1em">
+        CSV File Examples (filename list):<br>
+        <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">
+00776_1_4_05028_09_0_104_099.jpg
+00763_3_1_05022_01_1_351_011.jpg
+</pre>
+        </div>
+    </div>
+
+    <div class="form-group">
         <label>Estimated Total Reward Cost</label>
         <div>
             <b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD
