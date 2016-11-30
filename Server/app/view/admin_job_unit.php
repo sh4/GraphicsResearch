@@ -41,6 +41,14 @@ $judgementFilter = Form::get("filter", "");
         .judgement-table td.active > img {
             border: 5px solid red;
         }
+        .user-painting-image {
+            border: none;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0.35;
+        }
     </style>
 </head>
 <body>
@@ -116,9 +124,9 @@ foreach ($units as $unit):
         <tr>
             <td<?php if ($isChoiceMode && !$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
             <td<?php if ($isChoiceMode && $modelIsBetterThanRef): ?> class="active"<?php endif ?> style="position:relative">
-                <img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>">
+                <img class="reference-model-image" src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>">
                 <?php if ($job->getTaskType() === Job::TaskType_Painting): ?>
-                    <img src="<?php echo $root, "/../", $unit->getPaintingFilePathFromJudgement($data) ?>" style="border:none;display:block;position:absolute;top:0;left:0;opacity:0.35">
+                    <a class="download-painting" href="javascript:void(0)"><img src="<?php echo $root, "/../", $unit->getPaintingFilePathFromJudgement($data) ?>" class="user-painting-image"></a>
                 <?php endif ?>
             </td>
         </tr>
@@ -129,6 +137,61 @@ foreach ($units as $unit):
 <?php endforeach ?>
 
 </div>
+
+<script type="text/javascript">
+!function ($) {
+
+function renderHighlightBrush(texture, img) {
+    texture.width = img.naturalWidth;
+    texture.height = img.naturalHeight;
+    var ctx = texture.getContext("2d");
+    ctx.clearRect(0, 0, texture.width, texture.height);
+    ctx.drawImage(img, 0, 0);
+    var image = ctx.getImageData(0, 0, texture.width, texture.height);
+    var imageData = image.data; // rgbargba..
+    var imageLength = imageData.length;
+    for (var i = 0; i < imageLength; i += 4) {
+        if (imageData[i] > 0) {
+            imageData[i+1] = imageData[i];
+            imageData[i+2] = 0;
+            imageData[i+3] -= 192;
+        }
+    }
+    image.data = imageData;
+    ctx.putImageData(image, 0, 0);
+}
+
+$(".download-painting").click(function () {
+    var $referenceModelImg = $(".reference-model-image");
+    var referenceModel = {
+        width: $referenceModelImg[0].naturalWidth,
+        height: $referenceModelImg[0].naturalHeight,
+    };
+    var $userPaintingImg = $(".user-painting-image");
+    var texture = document.createElement("canvas");
+
+    renderHighlightBrush(texture, $userPaintingImg[0]);
+
+    var canvas = document.createElement("canvas");
+    canvas.width = referenceModel.width;
+    canvas.height = referenceModel.height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage($referenceModelImg[0], 0, 0);
+    ctx.drawImage(texture, 0, 0);
+
+    var dataHeader = "data:image/jpeg;";
+    var dataImage = canvas.toDataURL("image/jpeg");
+    var downloadImage = "data:application/octet-stream;";
+    downloadImage += dataImage.substr(dataHeader.length - 1);
+
+    if (/([0-9_\-a-z]+\.jpe?g)$/ig.test($referenceModelImg.attr("src"))) {
+        this.href = downloadImage;
+        this.download = RegExp.$1;
+    }
+});
+
+}(jQuery);
+</script>
 
 </body>
 </html>
