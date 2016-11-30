@@ -174,6 +174,7 @@ class DB {
             function () { $this->addAnswerGroupId(); },
             function () { $this->addPaymentBonus(); },
             function () { $this->addTaskTypeAndQuestionInstructions(); },
+            function () { $this->addJobUnitQuestionOrder(); },
         ];
         $this->dbh->exec(self::initialTableSql);
         $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
@@ -435,5 +436,19 @@ class DB {
         $this->update("job", "1 = 1", [
             "question_instructions" => $defaultInstructions,
         ]);
+    }
+
+    private function addJobUnitQuestionOrder() {
+        $sql = "
+        CREATE TABLE IF NOT EXISTS job_unit_question_order (
+            id INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT,
+            job_id INTEGER NOT NULL,
+            model_id MEDIUMINT UNSIGNED NOT NULL,
+            rotation_id TINYINT UNSIGNED NOT NULL,
+            lod TINYINT UNSIGNED NOT NULL,
+            INDEX (job_id)
+        );
+        ";
+        $this->dbh->exec($sql);
     }
 }
