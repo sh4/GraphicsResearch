@@ -253,15 +253,4 @@ class JobUnit extends AbstractUnit {
             ]);
         return $modelIds;
     }
-
-    private function getPerModelQuetsionCount(Question $question) {
-        if ($jobId = $this->getJobId()) {
-            // ジョブが指定されている場合はモードによって必要回答数が異なる
-            $job = Job::loadFromIdWithCache($jobId);
-            return $job->getPerModelQuestionCount();
-        } else {
-            // ジョブが未指定の場合はデフォルトの回答モード (LOD0vsLODx の全比較)
-            return $question->lodVariationCount() - 1;
-        }
-    }
 }
