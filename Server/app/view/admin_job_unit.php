@@ -162,12 +162,12 @@ function renderHighlightBrush(texture, img) {
 }
 
 $(".download-painting").click(function () {
-    var $referenceModelImg = $(".reference-model-image");
+    var $referenceModelImg = $(this).parents("td:first").find(".reference-model-image");
     var referenceModel = {
         width: $referenceModelImg[0].naturalWidth,
         height: $referenceModelImg[0].naturalHeight,
     };
-    var $userPaintingImg = $(".user-painting-image");
+    var $userPaintingImg = $(this).find(".user-painting-image");
     var texture = document.createElement("canvas");
 
     renderHighlightBrush(texture, $userPaintingImg[0]);
