@@ -29,6 +29,8 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
 
 <p><a href="<?php echo Router::Path("admin") ?>">Return Job list</a></p>
 
+<?php include "_flash_alert.php" ?>
+
 <h1><?php Form::e($job->getTitle()) ?></h1>
 
 <table class="table table-hover">
@@ -139,9 +141,7 @@ $jobForm = array_merge($jobForm, [
         <label for="new-job-question-instructions" class="form-control-label validate"></label>
     </div>
 
-    <div class="form-group">
-        <input id="submit-create-new-job" type="submit" value="Refresh">
-    </div>
+    <p><input id="submit-create-new-job" type="submit" value="Refresh"></p>
 </form>
 
 <h2>Units</h2>

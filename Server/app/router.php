@@ -198,6 +198,7 @@ use GraphicsResearch\Page\Webhook;
                     $rawJob["title"], 
                     $rawJob["instructions"], 
                     $rawJob["question_instructions"]);
+                Router::Flash("success", "Successfully update the job information.");
                 Router::redirect("admin/jobs", [ "jobId" => $job->getJobId() ]);
             }
         }
