@@ -118,7 +118,7 @@ foreach ($units as $unit):
             <td<?php if ($isChoiceMode && $modelIsBetterThanRef): ?> class="active"<?php endif ?> style="position:relative">
                 <img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>">
                 <?php if ($job->getTaskType() === Job::TaskType_Painting): ?>
-                    <img src="<?php echo $root, "/../", $unit->getPaintingFilePathFromJudgement($data) ?>" style="border:none;display:block;position:absolute;top:0;left:0;opacity:0.25">
+                    <img src="<?php echo $root, "/../", $unit->getPaintingFilePathFromJudgement($data) ?>" style="border:none;display:block;position:absolute;top:0;left:0;opacity:0.35">
                 <?php endif ?>
             </td>
         </tr>
