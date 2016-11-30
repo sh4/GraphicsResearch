@@ -13,6 +13,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     <link rel="stylesheet" type="text/css" href="<?php echo Router::Path() ?>/css/bootstrap.css">
     <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-3.0.0.js"></script>
     <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-sortable-table.js"></script>
+    <script type="text/javascript" src="<?php echo Router::Path() ?>/js/admin.js"></script>
     <style type="text/css">
         td {
             vertical-align:  middle;
@@ -90,7 +91,60 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     </tbody>
 </table>
 
-<h2>Job Units</h2>
+<h2>Information</h2>
+
+<?php
+$jobForm = Form::session("job");
+if (!is_array($jobForm)) {
+    $jobForm = [];
+}
+$jobForm = array_merge($jobForm, [
+    "title" => $job->getTitle(),
+    "instructions" => $job->getInstructions(),
+    "question_instructions" => $job->getQuestionInstructions(),
+    "questions" => $job->getQuestions(),
+    "max_assignments" => $job->getMaxAssignments(),
+    "reward_amount_usd" => $job->getRewardAmountUSD(),
+    "bonus_amount_usd" => $job->getBonusAmountUSD(),
+    "quiz_accuracy_rate" => $job->getQuizAccuracyRate(),
+    "quiz_question_count" => $job->getQuizQuestionCount(),
+    "task_type" => $job->getTaskType(),
+]);
+?>
+
+<form method="post" id="form-update-job" action="<?php echo Router::Path("admin/jobs/update") ?>">
+    <?php Form::enableCSRF() ?>
+
+    <input type="hidden" name="jobId" value="<?php echo $job->getJobId() ?>">
+
+    <h3>Summary</h3>
+
+    <div class="form-group">
+        <label for="new-job-title">Title</label>
+        <input type="text" class="form-control longfield" id="new-job-title" name="job[title]" value="<?php Form::e($jobForm["title"]) ?>">
+        <label for="new-job-title" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <label for="new-job-instructions">Instructions(HTML)</label>
+        <textarea class="form-control longfield" id="new-job-instructions" name="job[instructions]"><?php Form::e($jobForm["instructions"]) ?></textarea>
+        <label for="new-job-instructions" class="form-control-label validate"></label>
+    </div>
+
+    <h3>Question Page</h3>
+
+    <div class="form-group">
+        <label for="new-job-question-instructions">Question Instructions (HTML)</label>
+        <textarea class="form-control longfield" id="new-job-question-instructions" name="job[question_instructions]"><?php Form::e($jobForm["question_instructions"]) ?></textarea>
+        <label for="new-job-question-instructions" class="form-control-label validate"></label>
+    </div>
+
+    <div class="form-group">
+        <input id="submit-create-new-job" type="submit" value="Refresh">
+    </div>
+</form>
+
+<h2>Units</h2>
 
 <div style="margin:1em">
     <?php $baseUrl = Router::Path("admin/jobs")."?jobId=".$job->getJobId() ?>
@@ -184,6 +238,8 @@ foreach ($job->getUnitsByAnswerGroup() as $unit):
 
 <script type="text/javascript">
 !function () {
+
+window.GS.admin.activateValidateRules();
 
 $(".table-sorter").sortableTable();
 

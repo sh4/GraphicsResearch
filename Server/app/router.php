@@ -183,6 +183,27 @@ use GraphicsResearch\Page\Webhook;
         Router::redirect("admin");
     },
 
+    "/admin/jobs/update" => function () {
+        // ジョブの更新
+        session_start();
+        if (!Form::session("admin_login", false)) {
+            Router::redirect("admin");
+        }
+        if (Form::isPOST()) {
+            Form::ensureCSRFToken();
+            if ($job = Job::loadFromId(Form::post("jobId", ""))) {
+                $rawJob = Form::post("job", []);
+                // ジョブの説明文を更新
+                $job->updateSummary(
+                    $rawJob["title"], 
+                    $rawJob["instructions"], 
+                    $rawJob["question_instructions"]);
+                Router::redirect("admin/jobs", [ "jobId" => $job->getJobId() ]);
+            }
+        }
+        Router::redirect("admin");
+    },
+
     "/admin/jobs/delete" => function () {
         // ジョブの削除
         session_start();

@@ -20,7 +20,7 @@ class Job {
 
     private $taskType;
 
-    private static $jobRepository;
+    private static $jobRepository = [];
 
     // タスク種別
     const TaskType_Choice   = "choice";   // 選択(Reference と Comparision モデルの比較)
@@ -263,6 +263,23 @@ class Job {
         return $passRate;
     }
 
+    public function updateSummary($title, $instructions, $questionInstructions) {
+        DB::instance()->transaction(function (DB $db) use ($title, $instructions, $questionInstructions) {
+            $this->title = $title;
+            $this->instructions = $instructions;
+            $this->questionInstructions = $questionInstructions;
+            $db->update("job", "job_id = ".(int)$this->getJobId(), [
+                "title" => $this->getTitle(),
+                "instructions" => $this->getInstructions(),
+                "question_instructions" => $this->getQuestionInstructions(),
+            ]);
+            $this->crowdFlower->updateJobParameters($this->getCrowdFlowerJobId(), [
+                CrowdFlower::Param_Title => $this->getTitle(),
+                CrowdFlower::Param_Instructions => $this->getInstructions(),
+            ]);
+        });
+    }
+
     public static function createNewJob($jobAssoc) {
         $job = new Job($jobAssoc);
         DB::instance()->transaction(function (DB $db) use ($job) {
@@ -285,7 +302,7 @@ class Job {
         if (isset(self::$jobRepository[$jobId])) {
             return self::$jobRepository[$jobId];
         }
-        return self::$jobRepository[$jobId] = self::loadFromId($jobId);
+        return (self::$jobRepository[$jobId] = self::loadFromId($jobId));
     }
 
     public static function deleteFromId($jobId) {

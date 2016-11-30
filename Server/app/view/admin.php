@@ -17,6 +17,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
     <link rel="stylesheet" type="text/css" href="<?php echo Router::Path() ?>/css/bootstrap.css">
     <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-3.0.0.js"></script>
     <script type="text/javascript" src="<?php echo Router::Path() ?>/js/jquery-sortable-table.js"></script>
+    <script type="text/javascript" src="<?php echo Router::Path() ?>/js/admin.js"></script>
     <style type="text/css">
     label {
         display: block;
@@ -339,153 +340,55 @@ $jobForm = array_merge($jobForm, [
 <script type="text/javascript">
 (function ($) {
 
+var defaultLodVariationCount = <?php echo $question->lodVariationCount() ?>;
+var lodVariationCount = defaultLodVariationCount;
+var selectedTaskType = null;
+
 function formatNumber(num) {
     return num.toString().replace(/(\d)(?=(\d{3})+$)/g , '$1,');
 }
 
-function onError($el, text) {
-    $el.siblings(".validate:first").show().text(text);
-    $el.parent().addClass("has-danger");
+function updateTotalCost() {
+    var maxAssignments = parseInt($("#new-job-num-assignments").val(), 10);
+    var totalCostUSD = (parseFloat($("#new-job-reward-amount").val(), 10) * maxAssignments);
+    $("#total-job-cost").text(totalCostUSD.toFixed(2));
+    //var maximumBonusCostUSD = (parseFloat($("#new-job-bonus-amount").val(), 10) * lodVariationCount * maxAssignments);
+    //$("#total-job-bonus-cost").text(maximumBonusCostUSD.toFixed(2));
 }
 
-function clearError($el) {
-    $el.siblings(".validate:first").hide();
-    $el.parent().removeClass("has-danger");
+function updateTotalQuestions() {
+    var questionsPerWorker = $("#new-job-num-question").val() * lodVariationCount;
+    $("#questions-per-worker").text(formatNumber(questionsPerWorker));
+    $("#total-questions").text(formatNumber(questionsPerWorker * parseInt($("#new-job-num-assignments").val(), 10)));
 }
 
-var defaultLodVariationCount = <?php echo $question->lodVariationCount() ?>;
-var lodVariationCount = defaultLodVariationCount;
-var rowPerPage = 2;
-
-var validateRules = {
-    "#new-job-title": function () {
-        var $el = $("#new-job-title");
-        var titleLength = ($el.val() || "").length;
-        if (titleLength < 5) {
-            onError($el, "Enter at least 5 characters.");
-            return false;
-        } else if (titleLength > 255) {
-            onError($el, "Enter less than 255 characters.");
-            return false;
+function refreshFormInputs() {
+    updateTotalCost();
+    updateTotalQuestions();
+    // FIXME: ペイントモードが Quiz をサポートするようになったらなおす
+    if ($("#new-job-task-type").val() !== selectedTaskType) {
+        selectedTaskType = $("#new-job-task-type").val();
+        if (selectedTaskType === "<?php echo Job::TaskType_Painting ?>") {
+            $(".quiz-form").hide();
+            window.GS.admin.rowPerPage = 1;
+            lodVariationCount = 1;
+            $("#new-job-quiz-question-count").attr("disabled", "disabled");
         } else {
-            clearError($el);
-            return true;
+            $(".quiz-form").show();
+            window.GS.admin.rowPerPage = 2;
+            lodVariationCount = defaultLodVariationCount;
+            $("#new-job-quiz-question-count").removeAttr("disabled");
         }
-    },
-    "#new-job-instructions": function () {
-        var $el = $("#new-job-instructions");
-        if ($el.val().length === 0) {
-            onError($el, "Enter the job instructions.");
-            return false;
-        }
-        clearError($el);
-        return true;
-    },
-    "#new-job-question-instructions": function () {
-        var $el = $("#new-job-question-instructions");
-        if ($el.val().length === 0) {
-            onError($el, "Enter the question page instructions.");
-            return false;
-        }
-        clearError($el);
-        return true;
-    },
-    "#new-job-num-question": function () {
-        var $el = $("#new-job-num-question");
-        var num = parseInt($el.val(), 10);
-        var availableSceneCount = <?php echo $question->availableModelCount() ?>;
-        if (num % rowPerPage !== 0) {
-            onError($el, "Number of scenes must be a multiple of " + rowPerPage + ".");
-            return false;
-        }
-        if (num <= 0) {
-            onError($el, "One or more the number of scenes.");
-            return false;
-        } else if (num > availableSceneCount) {
-            onError($el, "Number of scenes must be less than " + availableSceneCount + ".");
-            return false;
-        } else {
-            clearError($el);
-            return true;
-        }
-    },
-    "#max_assignments": function () {
-        var $el = $("#max_assignments");
-        var num = parseInt($el.val(), 10);
-        if (num <= 0) {
-            onError($el, "One or more the assignments.");
-            return false;
-        } else if (num > 1000) {
-            onError($el, "Less than 1,000 is the assignments.");
-            return false;
-        } else {
-            clearError($el);
-            return true;
-        }
-    },
-    "#new-job-reward-amount": function () {
-        var $el = $("#new-job-reward-amount");
-        var maxAssignments = parseInt($("#max_assignments").val(), 10);
-        var amount = parseFloat($el.val());
-        if (amount < 0.1) {
-            onError($el, "Reward amount must be above 10 cents.");
-            return false;
-        } else if (amount * maxAssignments > 100) {
-            onError($el, "Reward amount limit exceeded: 100 dollars");
-            return false;
-        } else {
-            clearError($el);
-            return true;
-        }
-    },
-    "#new-job-bonus-amount": function () {
-        var $el = $("#new-job-bonus-amount");
-        var maxAssignments = parseInt($("#max_assignments").val(), 10);
-        var amount = parseFloat($el.val());
-        if (amount < 0.01) {
-            onError($el, "Bonus amount must be above 1 cents.");
-            return false;
-        } else if (amount > 10) {
-            onError($el, "Bonus amount limit exceeded: 10 dollars");
-            return false;
-        } else {
-            clearError($el);
-            return true;
-        }
-    },
-    "#new-job-quiz-accuracy-rate": function () {
-        var $el = $("#new-job-quiz-accuracy-rate");
-        var accuracyRate = parseFloat($el.val());
-        if (accuracyRate <= 0) {
-            onError($el, "Quiz accuracy rate must be above 1%");
-            return false;
-        } else if (accuracyRate > 100) {
-            onError($el, "Quiz accuracy rate less than or equal to 100%");
-            return false;
-        } else {
-            clearError($el);
-            return true;
-        }
-    },
-    "#new-job-quiz-question-count": function () {
-        var $el = $("#new-job-quiz-question-count");
-        var num = parseInt($el.val(), 10);
-        if (num > 0 && num % rowPerPage !== 0) {
-            onError($el, "Number of questions must be a multiple of " + rowPerPage + ".");
-            return false;
-        }
-        clearError($el);
-        return true;
-    },
-};
-
-for (var elemId in validateRules) {
-    $(elemId).change(validateRules[elemId]);
+    }
 }
+
+window.GS.admin.availableSceneCount = <?php echo $question->availableModelCount() ?>;
+window.GS.admin.rowPerPage = 2;
+window.GS.admin.activateValidateRules();
 
 $("#form-create-new-job").submit(function () {
-    for (var elemId in validateRules) {
-        var ok = (validateRules[elemId])();
+    for (var elemId in window.GS.admin.validateRules) {
+        var ok = (window.GS.admin.validateRules[elemId])();
         if (!ok) {
             return false;
         }
@@ -518,43 +421,6 @@ $(".form-delete-job-page").submit(function (e) {
         return false;
     }
 });
-
-function updateTotalCost() {
-    var maxAssignments = parseInt($("#new-job-num-assignments").val(), 10);
-    var totalCostUSD = (parseFloat($("#new-job-reward-amount").val(), 10) * maxAssignments);
-    $("#total-job-cost").text(totalCostUSD.toFixed(2));
-
-    //var maximumBonusCostUSD = (parseFloat($("#new-job-bonus-amount").val(), 10) * lodVariationCount * maxAssignments);
-    //$("#total-job-bonus-cost").text(maximumBonusCostUSD.toFixed(2));
-}
-
-function updateTotalQuestions() {
-    var questionsPerWorker = $("#new-job-num-question").val() * lodVariationCount;
-    $("#questions-per-worker").text(formatNumber(questionsPerWorker));
-    $("#total-questions").text(formatNumber(questionsPerWorker * parseInt($("#new-job-num-assignments").val(), 10)));
-}
-
-var selectedTaskType = null;
-
-function refreshFormInputs() {
-    updateTotalCost();
-    updateTotalQuestions();
-    // FIXME: ペイントモードが Quiz をサポートするようになったらなおす
-    if ($("#new-job-task-type").val() !== selectedTaskType) {
-        selectedTaskType = $("#new-job-task-type").val();
-        if (selectedTaskType === "<?php echo Job::TaskType_Painting ?>") {
-            $(".quiz-form").hide();
-            rowPerPage = 1;
-            lodVariationCount = 1;
-            $("#new-job-quiz-question-count").attr("disabled", "disabled");
-        } else {
-            $(".quiz-form").show();
-            rowPerPage = 2;
-            lodVariationCount = defaultLodVariationCount;
-            $("#new-job-quiz-question-count").removeAttr("disabled");
-        }
-    }
-}
 
 setInterval(refreshFormInputs, 500);
 refreshFormInputs();

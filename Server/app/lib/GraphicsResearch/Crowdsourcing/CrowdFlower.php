@@ -18,6 +18,8 @@ class CrowdFlower {
     const Url = "https://api.crowdflower.com/v1";
     const JobsUrl = "https://make.crowdflower.com/jobs";
 
+    const Param_Title              = "title";
+    const Param_Instructions       = "instructions";
     const Param_UnitPerAssignment  = "units_per_assignment";
     const Param_JudgementsPerUnit  = "judgments_per_unit";
     const Param_PaymentCents       = "payment_cents";
