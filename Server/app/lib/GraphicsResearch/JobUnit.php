@@ -238,32 +238,24 @@ class JobUnit extends AbstractUnit {
         ], $params));
     }
 
-    private function getFinishedAnsweredIds(Question $question) {
-        $modelIds = DB::instance()->fetchColumn("
-            SELECT model_id FROM job_unit_judgement
-            WHERE unit_id = ?
-            GROUP BY model_id HAVING COUNT(model_id) >= ?", 
-            [
-                $this->getUnitId(),
-                $this->getPerModelQuestionCount($question),
-            ]);
-        return $modelIds;
-    }
-
     private function getJobQuestionsOrder() {
         $question = Question::instance();
 
-        // 回答完了済み ModelID のリスト (テスト対象から除外するため)
-        $answeredIds = $this->getFinishedAnsweredIds($question);
         // あらかじめ与えられた回答順を得ようとする
         $qustionsOrder = DB::instance()->each("
-            SELECT model_id, rotation_id, lod
-            FROM job_unit_question_order
-            WHERE job_id = ? AND no >= ?
-            ORDER BY id
+            SELECT question.model_id, question.rotation_id, question.lod
+            FROM job_unit_question_order AS question
+            WHERE question.job_id = ? AND model_id NOT IN (
+                SELECT judgement.model_id FROM job_unit_judgement AS judgement
+                WHERE judgement.unit_id = ?
+                GROUP BY judgement.model_id
+                HAVING COUNT(judgement.model_id) >= ?
+            )
+            ORDER BY no ASC
         ", [
             $this->getJobId(),
-            count($answeredIds),
+            $this->getUnitId(),
+            $this->getPerModelQuestionCount($question),
         ]);
         $valueGenerated = false;
         foreach ($qustionsOrder as $row) {
@@ -277,6 +269,15 @@ class JobUnit extends AbstractUnit {
             $valueGenerated = true;
         }
         if ($valueGenerated === false) {
+            // 回答完了済み ModelID のリスト (テスト対象から除外するため)
+            $answeredIds = DB::instance()->fetchColumn("
+                SELECT model_id FROM job_unit_judgement
+                WHERE unit_id = ?
+                GROUP BY model_id HAVING COUNT(model_id) >= ?", 
+            [
+                $this->getUnitId(),
+                $this->getPerModelQuestionCount($question),
+            ]);
             $questions = $question->createRandomOrderQuestions($answeredIds);
             foreach ($questions as $row) {
                 yield $row;

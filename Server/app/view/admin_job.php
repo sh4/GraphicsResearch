@@ -72,7 +72,9 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
         <td><?php echo $job->createdOn()->format("Y/m/d H:i:s") ?></td>
         <td>
             <ul class="nav">
+                <?php if ($job->getCrowdFlowerJobId() > 0): ?>
                 <li class="nav-item"><a class="nav-link" href="https://make.crowdflower.com/jobs/<?php echo $job->getCrowdFlowerJobId() ?>" target="_blank">CrowdFlower Job Page</a></li>
+                <?php endif ?>
                 <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("download") ?>?jobId=<?php echo $job->getJobId() ?>">Download <?php
                 switch ($job->getTaskType()) {
                     case Job::TaskType_Choice:
@@ -85,8 +87,10 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
                         break;
                 }
                 ?></a></li>
+                <?php if ($job->getCrowdFlowerJobId() > 0): ?>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
+                <?php endif ?>
             </ul>
         </td>
     </tr>

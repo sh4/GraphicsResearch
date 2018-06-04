@@ -69,6 +69,8 @@ function PaintingCanvas($el) {
     this.isDirty = false;
     this.brush = null;
     this.brushSize = 0;
+    this.maskCanvas = null;
+    this.checkDirtyTimer = null;
 
     this.onMouseMove = function (e) {
         if (!isDrawing) {
@@ -139,29 +141,80 @@ PaintingCanvas.prototype.isDirtyCanvas = function () {
     return this.isDirty;
 };
 
-PaintingCanvas.prototype.toGrayScale = function (width, height) {
+PaintingCanvas.prototype.setMaskImage = function ($maskImage) {
+    if ($maskImage.length === 0) {
+        return;
+    }
+    var maskImage = $maskImage[0];
+    var maskCanvas = document.createElement("canvas");
+    maskCanvas.width = maskImage.naturalWidth;
+    maskCanvas.height = maskImage.naturalHeight;
+
+    var ctx = maskCanvas.getContext("2d");
+    ctx.drawImage(maskImage, 0, 0);
+
+    this.maskCanvas = maskCanvas;
+};
+
+PaintingCanvas.prototype.toGrayScaleAndMaskTest = function (width, height) {
     var grayCanvas = document.createElement("canvas");
     grayCanvas.width = width;
     grayCanvas.height = height;
+
     var ctx = grayCanvas.getContext("2d");
     ctx.drawImage(this.$canvas[0], 0, 0, grayCanvas.width, grayCanvas.height);
     var image = ctx.getImageData(0, 0, grayCanvas.width, grayCanvas.height);
     var imageData = image.data;
     var imageLength = imageData.length;
-    var emptyPixels = 0;
-    for (var i = 0; i < imageLength; i += 4) {
-        var c = imageData[i] - (255 - imageData[i+3]);
-        if (c <= 0) {
-            emptyPixels++;
+    var ok = false;
+
+    if (this.maskCanvas !== null) {
+        var maskCtx = this.maskCanvas.getContext("2d");
+        var maskImage = maskCtx.getImageData(0, 0, grayCanvas.width, grayCanvas.height);
+        var maskImageData = maskImage.data;
+        var filled = 0;
+        var white = 0;
+        var black = 0;
+        var whiteFilled = 0;
+        var blackFilled = 0;
+        for (var i = 0; i < imageLength; i += 4) {
+            var m = maskImageData[i];
+            var c = imageData[i] - (255 - imageData[i+3]);
+            imageData[i] = imageData[i+1] = imageData[i+2] = c;
+            if (c > 0) {
+                filled++;
+                if (m === 255) whiteFilled++;
+                else if (m === 0) blackFilled++;
+            }
+            if (m === 255) white++;
+            else if (m === 0) black++;
         }
-        imageData[i] = imageData[i+1] = imageData[i+2] = c;
+        var whiteRatio = whiteFilled / white;
+        var blackRatio = blackFilled / black;
+        if (whiteRatio >= 0.2 && blackRatio <= 0.5) {
+            ok = true;
+        }
+    } else {
+        for (var i = 0; i < imageLength; i += 4) {
+            var c = imageData[i] - (255 - imageData[i+3]);
+            imageData[i] = imageData[i+1] = imageData[i+2] = c;
+        }
+        ok = true;
     }
+
     image.data = imageData;
     ctx.putImageData(image, 0, 0);
     return { 
         canvas: grayCanvas,
-        fillRatio: 1.0-(emptyPixels/(imageData.length/4)),
+        ok: ok,
     };
+};
+
+PaintingCanvas.prototype.dispose = function () {
+    clearInterval(this.checkDirtyTimer);
+    $("#question-submit-button").removeAttr("disabled");
+    $(".test-item input").removeAttr("disabled");
+    $(".painting-toolbox, .painting-canvas").remove();
 };
 
 !function toBlobPolyfill(availableToBlob) {
@@ -185,6 +238,7 @@ var brushReady = prepareBrushes();
 
 window.GS.paint.UI = function ($el) {
     var paintingCanvas = new PaintingCanvas($el);
+    paintingCanvas.setMaskImage($el.find(".paint-mask-image"));
     brushReady.then(function (brushes) {
         paintingCanvas.brush = brushes[0];
 
@@ -313,13 +367,13 @@ window.GS.paint.UI = function ($el) {
     });
     $(".test-item input").attr("disabled", "disabled");
     $("#question-submit-button").attr("disabled", "disabled");
-    setInterval(function () {
+    paintingCanvas.checkDirtyTimer = setInterval(function () {
         if (paintingCanvas.isDirtyCanvas()) {
             $("#question-submit-button").removeAttr("disabled");
         } else {
             $("#question-submit-button").attr("disabled", "disabled");
         }
-    })
+    }, 500);
     return paintingCanvas;
 };
 

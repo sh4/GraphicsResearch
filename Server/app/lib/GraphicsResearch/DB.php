@@ -175,6 +175,7 @@ class DB {
             function () { $this->addPaymentBonus(); },
             function () { $this->addTaskTypeAndQuestionInstructions(); },
             function () { $this->addJobUnitQuestionOrder(); },
+            function () { $this->addDifferentFlag(); }
         ];
         $this->dbh->exec(self::initialTableSql);
         $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
@@ -449,6 +450,13 @@ class DB {
             lod TINYINT UNSIGNED NOT NULL,
             INDEX (job_id, no)
         );
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    private function addDifferentFlag() {
+        $sql = "
+        ALTER TABLE job_unit_judgement ADD COLUMN is_different TINYINT NOT NULL DEFAULT 1;
         ";
         $this->dbh->exec($sql);
     }

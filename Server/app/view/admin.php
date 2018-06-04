@@ -87,12 +87,15 @@ foreach (Job::getJobs() as $job):
         <td><?php echo $job->createdOn()->format("Y/m/d H:i:s") ?></td>
         <td>
             <ul class="nav">
+                <?php if ($job->getCrowdFlowerJobId() > 0): ?>
                 <li class="nav-item"><a class="nav-link" href="https://make.crowdflower.com/jobs/<?php echo $job->getCrowdFlowerJobId() ?>" target="_blank">CrowdFlower Job Page</a></li>
+                <?php endif ?>
                 <li class="nav-item"><a class="nav-link" href="<?php echo Router::Path("download") ?>?jobId=<?php echo $job->getJobId() ?>">Download <?php
                 switch ($job->getTaskType()) {
                     case Job::TaskType_Choice:
                         echo "CSV";
                         break;
+                    case Job::TaskType_ThresholdJudgement:
                     case Job::TaskType_Painting:
                         echo "ZIP";
                         break;
@@ -100,8 +103,10 @@ foreach (Job::getJobs() as $job):
                         break;
                 }
                 ?></a></li>
+                <?php if ($job->getCrowdFlowerJobId() > 0): ?>                
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
+                <?php endif ?>
                 <li class="nav-item">
                     <form method="post" class="form-delete-job-page" action="<?php echo Router::Path("admin/jobs/delete") ?>">
                         <?php Form::enableCSRF() ?>
@@ -124,7 +129,7 @@ $jobForm = Form::session("job");
 if (!is_array($jobForm)) {
     $jobForm = [];
 }
-$jobForm = array_merge($jobForm, [
+$jobForm = array_merge([
     "title" => "",
     "instructions" => "",
     "question_instructions" => $questionPage["instructions"],
@@ -135,7 +140,8 @@ $jobForm = array_merge($jobForm, [
     "quiz_accuracy_rate" => "70",
     "quiz_question_count" => "10",
     "task_type" => Job::TaskType_Choice,
-]);
+    "create_crowdflower_job" => "1",
+], $jobForm);
 ?>
 
 <form method="post" enctype="multipart/form-data" id="form-create-new-job" action="<?php echo Router::Path("admin/jobs") ?>">
@@ -166,10 +172,16 @@ $jobForm = array_merge($jobForm, [
     <h3>Order</h3>
 
     <div class="form-group">
+        <input type="checkbox" id="new-job-create-cf" style="width:auto" name="job[create_crowdflower_job]" value="1"<?php if ($jobForm["create_crowdflower_job"] == 1): ?> checked=""<?php endif ?>>
+        <label for="new-job-create-cf" style="display:inline">Create CrowdFlower Job</label>
+    </div>
+
+    <div class="form-group">
         <label for="new-job-task-type">Type</label>
         <select class="form-control" id="new-job-task-type" style="width:auto" name="job[task_type]">
             <option value="<?php echo Job::TaskType_Choice ?>"<?php if ($jobForm["task_type"] == Job::TaskType_Choice): ?> selected=""<?php endif ?>>Choice</option>
             <option value="<?php echo Job::TaskType_Painting ?>"<?php if ($jobForm["task_type"] == Job::TaskType_Painting): ?> selected=""<?php endif ?>>Painting</option>
+            <option value="<?php echo Job::TaskType_ThresholdJudgement ?>"<?php if ($jobForm["task_type"] == Job::TaskType_ThresholdJudgement): ?> selected=""<?php endif?>>Threshold Judgement</option>
         </select>
         <label for="new-job-task-type" class="form-control-label validate"></label>
     </div>
@@ -203,7 +215,7 @@ $jobForm = array_merge($jobForm, [
 */ ?>
 
     <div class="form-group">
-        <label for="new-job-questions-order">Questions Order (Optional)</label>
+        <label for="new-job-questions-order">Questions Order</label>
         <input type="file" id="new-job-questions-order" name="questions_order">
         <div style="margin:0.5em 1em">
         CSV File Examples (filename list):<br>
@@ -374,8 +386,13 @@ function refreshFormInputs() {
             lodVariationCount = 1;
             $("#new-job-quiz-question-count").attr("disabled", "disabled");
         } else {
-            $(".quiz-form").show();
-            window.GS.admin.rowPerPage = 2;
+            if (selectedTaskType === "<?php echo Job::TaskType_ThresholdJudgement ?>") {
+                $(".quiz-form").hide();                
+                window.GS.admin.rowPerPage = 1;
+            } else {
+                $(".quiz-form").show();
+                window.GS.admin.rowPerPage = 2;
+            }
             lodVariationCount = defaultLodVariationCount;
             $("#new-job-quiz-question-count").removeAttr("disabled");
         }
@@ -417,7 +434,7 @@ $(".form-delete-job-page").submit(function (e) {
     if (!confirm("Do you really want to delete job '" + jobTitle + "' ?")) {
         return false;
     }
-    if (!confirm("Deleted job data cannot be UNDO. Do you reaally want to delete job?")) {
+    if (!confirm("Deleted job data cannot be UNDO. Do you really want to delete job?")) {
         return false;
     }
 });

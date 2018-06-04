@@ -21,6 +21,10 @@ class Download {
 
         $job = Job::loadFromId($jobId);
         switch ($job->getTaskType()) {
+        case Job::TaskType_ThresholdJudgement:
+            header("Content-Disposition: attachment; filename=judgement.zip");
+            $this->echoJobThresholdJudgementZip($job);
+            break;
         case Job::TaskType_Choice:
             header("Content-Disposition: attachment; filename=judgement.csv");
             $this->echoJobJudgementCSV($job);
@@ -35,10 +39,59 @@ class Download {
         }
     }
 
+    private function echoJobThresholdJudgementZip(Job $job) {
+        $paintingDir = $this->getPaintingDir($job);
+        $lastCwd = getcwd();
+        chdir($paintingDir);
+
+        $question = Question::instance();
+
+        $fp = fopen("export.csv", "wb");
+
+        // ヘッダ行を書き出し
+        fwrite($fp, implode(",", [
+            "WorkerID",
+            "ModelID",
+            "RotationID",
+            "LOD",
+            "IsBetterThanReferenceModel",
+            "IsDifferent",
+            "IsThresholdModel",
+            "Filename",
+        ]));
+        fwrite($fp, "\r\n");
+
+        // 回答データを書き出し
+        foreach (JobUnit::eachJudgementData($job->getJobId()) as $judgement) {
+            // 連想配列をローカル変数に展開
+            extract($judgement);
+            // ワーカーIDが未設定なら、正確ではないが UnitId を設定
+            // （必ずしも単一の人物が回答したとは限らないため）
+            if (empty($worker_id)) {
+                $worker_id = $unit_id;
+            }
+            $modelPath = $question->modelPath($model_id, $rotation_id, $lod);
+            fwrite($fp, implode(",", [
+                $worker_id,
+                $model_id,
+                $rotation_id,
+                $lod,
+                $is_better_than_ref,
+                $is_different,
+                $is_painting_completed,
+                basename($modelPath),
+            ]));
+            fwrite($fp, "\r\n");
+        }
+
+        fclose($fp);
+
+        passthru("zip -q -0 -r - .");
+        chdir($lastCwd);
+    }
+
     private function echoJobPaintingZip(Job $job) {
-        $paintingDir = dirname(__FILE__)."/../../../../".
-            PAINTING_TASK_IMAGES.
-            "/".$job->getJobId();
+        $paintingDir = $this->getPaintingDir($job);
         $lastCwd = getcwd();
         chdir($paintingDir);
         passthru("zip -q -0 -r - .");
@@ -79,5 +132,12 @@ class Download {
             ]);
             echo "\r\n";
         }
+    }
+
+    private function getPaintingDir(Job $job) {
+        $paintingDir = dirname(__FILE__)."/../../../../".
+            PAINTING_TASK_IMAGES.
+            "/".$job->getJobId();
+        return $paintingDir;
     }
 }

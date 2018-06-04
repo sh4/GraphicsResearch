@@ -8,7 +8,9 @@ $question = Question::instance();
 $units = [];
 $jobId = (int)Form::get("jobId", 0);
 $job = Job::loadFromId($jobId);
-$isChoiceMode = $job->getTaskType() == Job::TaskType_Choice;
+$isChoiceMode = 
+    $job->getTaskType() === Job::TaskType_Choice ||
+    $job->getTaskType() === Job::TaskType_ThresholdJudgement;
 $unitId = Form::get("unitId", "");
 if ($answerGroupId = Form::get("gid", "")) {
     $units = JobUnit::loadsFromAnswerGroupId($answerGroupId);

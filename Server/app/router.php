@@ -151,15 +151,16 @@ use GraphicsResearch\Page\Webhook;
                 Router::Flash("success", "You have successfully created the job: ".htmlspecialchars($job->getTitle()));
             } catch (Exception $e) {
                 $_SESSION["job"] = $rawJob;
-                Router::Flash("warning", "Create job failed, Please check job form input.");
+                Router::Flash("warning", "Create job failed, Please check job form input: <ul><li>" . $e->getMessage() . "</li></ul>");
             }
             Router::redirect("admin");
+        } else {
+            $job = Job::loadFromId(Form::get("jobId", ""));
+            if ($job === null) {
+                Router::redirect("admin");
+            }
+            include "view/admin_job.php";
         }
-        $job = Job::loadFromId(Form::get("jobId", ""));
-        if ($job === null) {
-            Router::redirect("admin");
-        }
-        include "view/admin_job.php";
     },
 
     "/admin/jobs/launch" => function () {
@@ -218,10 +219,14 @@ use GraphicsResearch\Page\Webhook;
                 if (Job::deleteFromId($job->getJobId())) {
                     // ジョブの削除を行っても、外部サイトの情報は消えない点に注意
                     $cfJobId = $job->getCrowdFlowerJobId();
-                    Router::Flash("success", 
-                        "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
-                        ', <a href="https://make.crowdflower.com/jobs/'.$cfJobId.'/">Please delete manually of the CrowdFlower job.</a>'
-                    );
+                    if ($cfJobId > 0) {
+                        Router::Flash("success", 
+                            "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
+                            ', <a href="https://make.crowdflower.com/jobs/'.$cfJobId.'/">Please delete manually of the CrowdFlower job.</a>'
+                        );
+                    } else {
+                        Router::Flash("success", "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()));
+                    }
                 } else {
                     Router::Flash("warning", "Delete job failed.");
                 }

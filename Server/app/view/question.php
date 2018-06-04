@@ -1,10 +1,14 @@
 <?php
+use GraphicsResearch\Job;
 use GraphicsResearch\Page;
 use GraphicsResearch\Form;
 use GraphicsResearch\Crypto;
+use GraphicsResearch\Question;
 
 $page = new Page\Index();
 $progress = $page->getAnswerProgress();
+
+$question = Question::instance();
 
 $unitId = "";
 if (Crypto::isValidUniqueId($page->getUnitId())) {
@@ -63,15 +67,15 @@ function question(Page\Index $page, $models, $no) {
 <?php
 }
 
+$appRoot = dirname(__FILE__)."/../";
+
 ?><!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/index.css">
-<?php if ($page->isPaintMode()): ?>
-<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/paint.css">
+<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/index.css?_=<?php echo filemtime("$appRoot/css/index.css") ?>">
+<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/paint.css?_=<?php echo filemtime("$appRoot/css/paint.css") ?>">
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/vendor/font-awesome-4.7.0/css/font-awesome.css">
-<?php endif ?>
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <title>Test</title>
 </head>
@@ -127,8 +131,14 @@ foreach ($page->getQuestionOrders() as $i => $models):
             </td>
         </tr>
         </table>
+
+        <?php if ($job && $job->getTaskType() === Job::TaskType_ThresholdJudgement): ?>
+        <div style="margin:0;margin-top:1em;width:100%;" class="test-item-no-different radio-button">
+        </div>
+        <?php endif ?>
     </div>
 </div>
+
 <?php endforeach ?>
 
 <div class="form-answered-lods">
@@ -145,8 +155,13 @@ endif
 ?>
 </div>
 
-<div id="question-submit" style="display:none;margin-top:3em;">
-    <input type="submit" id="question-submit-button" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
+<div id="question-submit" style="display:none;margin-top:3em;text-align: center">
+<?php if ($job && $job->getTaskType () === Job::TaskType_ThresholdJudgement): ?>
+    <input type="submit" id="question-submit-button" name="submit" value="Submit" style="font-size:140%; padding: 0.8em; width:49%">
+    <input type="submit" id="question-continue-paint-button" name="submit" value="Continue Painting" style="font-size:140%; padding: 0.8em; width:49%">
+<?php else: ?>
+    <input type="submit" id="question-submit-button" name="submit" value="Submit" style="font-size:140%; padding: 0.8em; width:100%">
+<?php endif ?>
 </div>
 
 </div>
@@ -159,18 +174,17 @@ endif
 window.GS = {
     params: <?php echo json_encode($gsParams) ?>,
     num: <?php echo $page->getNumber() ?>,
+    lodCount: <?php echo $question->lodVariationCount() ?>,
     paint: {
         enabled: <?php echo json_encode($page->isPaintMode()) ?>,
+        onceEnabled: false,
     },
 };
 
 }();
 </script>
-<script type="text/javascript" src="<?php echo $root ?>/js/question.js"></script>
-
-<?php if ($page->isPaintMode()): ?>
-<script type="text/javascript" src="<?php echo $root ?>/js/paint.js"></script>
-<?php endif ?>
+<script type="text/javascript" src="<?php echo $root ?>/js/question.js?_=<?php echo filemtime("$appRoot/js/question.js") ?>"></script>
+<script type="text/javascript" src="<?php echo $root ?>/js/paint.js?_=<?php echo filemtime("$appRoot/js/paint.js") ?>"></script>
 
 </body>
 </html>

@@ -11,6 +11,10 @@ class Question {
     private $testAvailableModelIdMap;
     private $invalidModelSet;
     private $lodSetCount;
+    
+    // [ "<ModelID>-<Lod>-<Rotation>" => path1, ... ]
+    // ペイント用の回答データ
+    private $maskFileMap;
 
     private static $defaultQuestion;
 
@@ -72,7 +76,12 @@ class Question {
             if (empty($row)) {
                 continue;
             }
-            list($modelFile, $isBetterThanRef) = $row;
+            if (count($row) > 1) {
+                list($modelFile, $isBetterThanRef) = $row;
+            } else {
+                list($modelFile) = $row;
+                $isBetterThanRef = 0;
+            }
             $model = self::parseModelFilename($modelFile);
             if (!is_numeric($model->modelId)) {
                 continue;
@@ -128,6 +137,15 @@ class Question {
         }
     }
 
+    public function maskPath($modelId, $rotation, $lod) {
+        $key = "$modelId-$lod-$rotation";
+        if (isset($this->maskFileMap[$key])) {
+            return $this->maskFileMap[$key];
+        } else {
+            return null;
+        }
+    }
+
     public function lodList($modelId, $rotationId) {
         if (!isset(
             $this->modelLodMap[$modelId], 
@@ -162,6 +180,7 @@ class Question {
         $this->modelIdsOfContainLod0 = [];
         $this->modelLodMap = [];
         $this->modelFileMap = [];
+        $this->maskFileMap = [];
         foreach ($modelFiles as $modelFile) {
             $model = self::parseModelFilename($modelFile);
             if (!$model) {
@@ -171,6 +190,18 @@ class Question {
             $modelId = $model->modelId;
             $rotationId = $model->rotationId;
             $lod = $model->lod;
+
+            // データタイプの指定がある場合は、通常のモデルデータとしては扱わない
+            if ($model->dataType) {
+                switch ($model->dataType) {
+                case "mask":
+                    $this->maskFileMap["$modelId-$lod-$rotationId"] = "$relativeModelDirectory/$modelFile";
+                    break;
+                default:
+                    break;
+                }
+                continue;
+            }
 
             if (!isset($this->modelLodMap[$modelId])) {
                 $this->modelLodMap[$modelId] = [];
@@ -242,15 +273,27 @@ class Question {
             }
             $this->testAvailableModelIdMap[$modelId] = true;
         }
+
+        // マスクデータが存在する場合は、それに対応するモデルが存在することをチェック
+        foreach ($this->maskFileMap as $key => $path) {
+            if (!isset($this->modelFileMap[$key])) {
+                $this->invalidModelSet[] = [
+                    "files" => [basename($path)],
+                    "message" => "Corresponding model not found.",
+                ];
+                unset($this->maskFileMap[$key]);
+            }
+        }
     }
 
     private static function parseModelFilename($modelFile) {
-        // <ModelID>_<RotationID>_<LOD>(...).gif|png|jpe?g
-        if (!preg_match('#^(\d+)_(\d+)_(\d+).*\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
+        // <DataType>_<ModelID>_<RotationID>_<LOD>(...).gif|png|jpe?g
+        if (!preg_match('#^(?:(mask)_)?(\d+)_(\d+)_(\d+).*\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
             return null;
         }
-        list (, $modelId, $rotationId, $lod) = $matches;
+        list (, $dataType, $modelId, $rotationId, $lod) = $matches;
         $model = new \StdClass();
+        $model->dataType = $dataType;
         $model->modelId = (int)$modelId;
         $model->rotationId = (int)$rotationId;
         $model->lod = (int)$lod;

@@ -1,12 +1,13 @@
-td.left-test-item > .index-button .question-image {
+td.right-test-item > .painting.index-button .question-image,
+td.left-test-item > .painting.index-button .question-image {
     cursor: not-allowed;
 }
-td.left-test-item > .index-button:hover,
-td.right-test-item > .index-button:hover {
+td.left-test-item > .painting.index-button:hover,
+td.right-test-item > .painting.index-button:hover {
     border-color:white;
 }
 
-.index-button {
+.painting.index-button {
     position: relative;
 }
 

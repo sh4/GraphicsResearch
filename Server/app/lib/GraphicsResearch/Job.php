@@ -22,9 +22,16 @@ class Job {
 
     private static $jobRepository = [];
 
-    // タスク種別
-    const TaskType_Choice   = "choice";   // 選択(Reference と Comparision モデルの比較)
-    const TaskType_Painting = "painting"; // ペイント(Reference と Comparision のモデルの差分を塗る)
+    //// タスク種別
+
+    // 選択(Reference と Comparision モデルの比較)
+    const TaskType_Choice   = "choice";
+    // ペイント(Reference と Comparision のモデルの差分を塗る) 
+    const TaskType_Painting = "painting";
+    // 選択＆ペイント(閾値となるモデルが存在すれば、その差異をペイントさせる)
+    const TaskType_ThresholdJudgement = "threshold_judgement";
+    
+    ////
 
     // CrowdFlower の Quiz Mode を有効化するために必要な問題数 
     // クラウドワーカーはこのクイズ数分だけジョブをアサインされる
@@ -90,11 +97,19 @@ class Job {
         if (isset($job["questions_order"])) {
             $this->questionsOrder = $job["questions_order"];
         }
+        $this->isCreateCrowdFlowerJob = false;
+        if (isset($job["create_crowdflower_job"])) {
+            $this->isCreateCrowdFlowerJob = $job["create_crowdflower_job"] == 1;
+        }
         /////
 
         $this->crowdFlower = new Crowdsourcing\CrowdFlower();
         $this->crowdFlower->setAPIKey(CROWDFLOWER_API_KEY);
         $this->crowdFlowerRowPerPage = $this->quizQuestionCount == 0 ? 1 : 2;
+        // ThresholdJudgement の場合は CF 上でやらない前提として、質問数の分割はナシ
+        if ($this->getTaskType() === Job::TaskType_ThresholdJudgement) {
+            $this->crowdFlowerRowPerPage = 1;
+        }
     }
 
     public function createdOn() {
@@ -190,6 +205,7 @@ class Job {
         $question = Question::instance();
         switch ($this->getTaskType()) {
         case self::TaskType_Choice:
+        case self::TaskType_ThresholdJudgement:
             // 選択式の場合、LOD0vsLODx の全比較
             return $this->getQuestions() * $question->lodVariationCount();
         case self::TaskType_Painting:
@@ -208,6 +224,7 @@ class Job {
         $question = Question::instance();
         switch ($this->getTaskType()) {
         case self::TaskType_Choice:
+        case self::TaskType_ThresholdJudgement:
             // 選択式の場合、LOD0vsLODx の全比較
             return $question->lodVariationCount() - 1;
         case self::TaskType_Painting:
@@ -224,11 +241,19 @@ class Job {
         foreach ($this->getUnits() as $unit) {
             $answeredQuestions += $unit->getAnswerProgress()->answered;
         }
-        return $answeredQuestions / $totalQuestions;
+        if ($totalQuestions == 0) {
+            return 0;
+        } else {
+            return $answeredQuestions / $totalQuestions;
+        }
     }
 
     public function launchJob($channel) {
-        return $this->crowdFlower->launchJob($this->getCrowdFlowerJobId(), $this->getMaxAssignments(), $channel);
+        if ($this->getCrowdFlowerJobId() > 0) {
+            return $this->crowdFlower->launchJob($this->getCrowdFlowerJobId(), $this->getMaxAssignments(), $channel);
+        } else {
+            return false;
+        }
     }
 
     public function getQuizPassRate() {
@@ -273,10 +298,12 @@ class Job {
                 "instructions" => $this->getInstructions(),
                 "question_instructions" => $this->getQuestionInstructions(),
             ]);
-            $this->crowdFlower->updateJobParameters($this->getCrowdFlowerJobId(), [
-                CrowdFlower::Param_Title => $this->getTitle(),
-                CrowdFlower::Param_Instructions => $this->getInstructions(),
-            ]);
+            if ($this->getCrowdFlowerJobId() > 0) {
+                $this->crowdFlower->updateJobParameters($this->getCrowdFlowerJobId(), [
+                    CrowdFlower::Param_Title => $this->getTitle(),
+                    CrowdFlower::Param_Instructions => $this->getInstructions(),
+                ]);
+            }
         });
     }
 
@@ -284,7 +311,9 @@ class Job {
         $job = new Job($jobAssoc);
         DB::instance()->transaction(function (DB $db) use ($job) {
             $job->createNewJobOnDB($db);
-            $job->createNewJobOnCrowdFlower($db);
+            if ($job->isCreateCrowdFlowerJob) {
+                $job->createNewJobOnCrowdFlower($db);
+            }
         });
         return $job;
     }
@@ -416,19 +445,22 @@ class Job {
         ]);
 
         $this->insertJobUnits($db);
-    
-        // 回答形式が選択式で、かつクイズ必要回答数も質問数も 1 以上ならクイズ用データを挿入
-        if ($this->getTaskType() === self::TaskType_Choice // FIXME: クイズの有無はもっと別に判定すべき
-            && $this->quizQuestionCount >= 1 
-            && count($this->quizQuestions) >= 1)
-        {
-            $this->insertQuizJobUnits($db);
-            $this->insertQuizGoldenData($db);
-        }
 
-        // タスクの種別がペイントで、かつクイズの表示順序が与えられている
+        if ($this->getTaskType() === self::TaskType_Choice) {
+            // 回答形式が選択式なら、クイズの入力が必須
+            if ($this->quizQuestionCount >= 1 && count($this->quizQuestions) >= 1) {
+                $this->insertQuizJobUnits($db);
+                $this->insertQuizGoldenData($db);
+            } else {
+                throw new \Exception("Must be set Quiz Questions Dataset when 'Choice' task.");
+            }
+        } else {
+            // それ以外のタイプならクイズデータは必須ではない
+        }
+    
+        // タスクの種別がペイントで、かつ質問の表示順序が与えられている
         if ($enabledQuestionOrder) {
-            $this->insertQuestionsOrder($db);
+            $this->insertQuestionsOrderForPainting($db);
         }
     }
 
@@ -482,16 +514,23 @@ class Job {
         $db->insertMulti("job_quiz_unit_golden", $rows);
     }
 
-    private function insertQuestionsOrder(DB $db) {
+    private function insertQuestionsOrderForPainting(DB $db) {
+        $existsModelId = [];
         $rows = [];
         foreach ($this->questionsOrder as $i => $order) {
+            // ペイント用回答データの場合はシーンごとに 1 モデルしか許可しない
+            $modelId = $order["model_id"];
+            if (isset($existsModelId[$modelId])) {
+                continue;
+            }
             $rows[] = [
                 "job_id" => $this->getJobId(),
                 "no" => $i,
-                "model_id" => $order["model_id"],
+                "model_id" => $modelId,
                 "rotation_id" => $order["rotation_id"],
                 "lod" => $order["lod"],
             ];
+            $existsModelId[$modelId] = true;
         }
         $db->insertMulti("job_unit_question_order", $rows);
     }
