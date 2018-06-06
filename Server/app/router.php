@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection ALL */
 
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__)."/lib");
 spl_autoload_register(function ($className) {
@@ -24,13 +24,27 @@ use GraphicsResearch\Page\Webhook;
     "/" => function () {
         // 回答ページ
         session_start();
-        include "view/question.php";
+        include "view/question_texture.php";
+    },
+
+    "/new" => function () {
+        // 新規回答ページ
+        session_start();
+        $jobId = Form::get("jobId", 0);
+        if ($job = Job::loadFromId($jobId)) {
+            $jobUnit = $job->addNewJobUnit();
+            Router::redirect("/", [
+                "jobId" => $jobId,
+                "unitId" => $jobUnit["unit_id"],
+            ]);
+        }
+        Router::redirect("");
     },
 
     "/done" => function () {
         // 回答完了
         session_start();
-        include "view/question_complete.php";
+        include "view/question_texture_complete.php";
     },
 
     "/verify" => function () {
@@ -140,11 +154,20 @@ use GraphicsResearch\Page\Webhook;
             Form::ensureCSRFToken();
             $rawJob = Form::post("job", []);
             try {
+                $_SESSION["job"] = $rawJob;
                 if ($quizQuestions = Form::getFile("quiz_questions")) {
-                    $rawJob["quiz_questions"] = Question::parseQuizGoldenDataFromCSV($quizQuestions);
+                    $rawJob["quiz_questions"] = Question::parseQuizQuestionDataFromCSV($quizQuestions);
+                    $rawJob["quiz_question_count"] = count($rawJob["quiz_questions"]);
+                } else {
+                    Router::Flash("warning", "Create job failed, You must be upload the quiz questions csv.");
+                    Router::redirect("admin");
                 }
                 if ($questionsOrder = Form::getFile("questions_order")) {
-                    $rawJob["questions_order"] = Question::parseQuizGoldenDataFromCSV($questionsOrder);
+                    $rawJob["questions_order"] = Question::parseQuestionOrderDataFromCSV($questionsOrder);
+                    $rawJob["questions"] = count($rawJob["questions_order"] );
+                } else {
+                    Router::Flash("warning", "Create job failed, You must be upload the questions order csv.");
+                    Router::redirect("admin");
                 }
                 $job = Job::createNewJob($rawJob);
                 unset($_SESSION["job"]);
@@ -178,7 +201,7 @@ use GraphicsResearch\Page\Webhook;
                 $cfJobId = $job->getCrowdFlowerJobId();
                 Router::Flash("warning", 
                     "Launch job failed, ".
-                    '<a href="https://make.crowdflower.com/jobs/'.$cfJobId.'" target="_blank">Please retry launch the job from the CrowdFlower job page.</a>');
+                    '<a href="https://make.crowdflower.com/jobs/'.$cfJobId.'" target="_blank">Please retry launch the job from the FigureEight job page.</a>');
             }
         }
         Router::redirect("admin");
@@ -222,7 +245,7 @@ use GraphicsResearch\Page\Webhook;
                     if ($cfJobId > 0) {
                         Router::Flash("success", 
                             "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()).
-                            ', <a href="https://make.crowdflower.com/jobs/'.$cfJobId.'/">Please delete manually of the CrowdFlower job.</a>'
+                            ', <a href="https://make.crowdflower.com/jobs/'.$cfJobId.'/">Please delete manually of the FigureEight job.</a>'
                         );
                     } else {
                         Router::Flash("success", "Successfully delete the job from this site: ".htmlspecialchars($job->getTitle()));
@@ -270,7 +293,7 @@ use GraphicsResearch\Page\Webhook;
         echo json_encode($info);
     },
 
-    // CrowdFlower からの Webhook を受け付ける
+    // FigureEight からの Webhook を受け付ける
     "/webhook" => function () {
         $webhook = new Webhook();
         $webhook->handle();

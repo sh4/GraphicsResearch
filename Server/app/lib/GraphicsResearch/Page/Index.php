@@ -203,7 +203,7 @@ class Index {
         $skipModelId = null;
         $answerContext = $this->getAnswerContext();
         if ($lastAnswer = $answerContext->getLastAnswer()) {
-            $skipModelId = (int)$lastAnswer["model_id"];
+            $skipModelId = $lastAnswer["model_id"];
         }
         // 最後に比較したモデルID
         $lastModelId = null;
@@ -254,7 +254,7 @@ class Index {
     }
 
     private function yieldModel($model) {
-        $refModel = $this->prepareModelParams($model, 0);
+        $refModel = $this->prepareModelParams($model, Question::ReferenceLod);
         $model    = $this->prepareModelParams($model, $model["lod"]);
         return [$refModel, $model];
     }
@@ -316,11 +316,11 @@ class Index {
         if (!($lastAnswer = $answerCtx->getLastAnswer())) {
             return null;
         }
-        $lod = (int)$lastAnswer["lod"];
+        $lod = $lastAnswer["lod"];
         $lod += 1;
         $model = [
-            "id" => (int)$lastAnswer["model_id"],
-            "rotation" => (int)$lastAnswer["rotation_id"],
+            "id" => $lastAnswer["model_id"],
+            "rotation" => $lastAnswer["rotation_id"],
             "lod" => $lod,
         ];
         return [
@@ -341,8 +341,8 @@ class Index {
             return null;
         }
 
-        $modelId = (int)$lastAnswer["model_id"];
-        $rotationId = (int)$lastAnswer["rotation_id"];
+        $modelId = $lastAnswer["model_id"];
+        $rotationId = $lastAnswer["rotation_id"];
         $judgements = DB::instance()->fetchAll("
             SELECT
                 lod,
@@ -368,7 +368,7 @@ class Index {
         foreach ($judgements as $i => $judgement) {
             $isDifferent = (int)$judgement["is_different"];
             $isBetterThanRef = (int)$judgement["is_better_than_ref"];
-            $lod = (int)$judgement["lod"];
+            $lod = $judgement["lod"];
             // is_different == 0 (差異が認められず) の後、
             // 最初に is_differnt == 1 (差異が認められたもの) なものを探す
             if ($isDifferent === 0) {
@@ -461,7 +461,7 @@ class Index {
             $model["rotation"],
             $model["lod"],
             // リファレンスモデル (LOD=0) よりよく見えるなら 1
-            $lod != 0 ? 1 : 0,
+            $lod != Question::ReferenceLod ? 1 : 0,
             // 差異が見つかれば 1, 差異がなければ 0
             1,
         ]);

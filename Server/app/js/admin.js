@@ -60,9 +60,6 @@ window.GS.admin.validateRules = {
         if (num <= 0) {
             onError($el, "One or more the number of scenes.");
             return false;
-        } else if (num > window.GS.admin.availableSceneCount) {
-            onError($el, "Number of scenes must be less than " + window.GS.admin.availableSceneCount + ".");
-            return false;
         } else {
             clearError($el);
             return true;

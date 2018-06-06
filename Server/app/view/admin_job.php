@@ -36,9 +36,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
 <table class="table table-hover">
     <thead class="thead-inverse">
     <tr>
-        <th>Total Reward Amount</th>
-        <th># of Scenes</th>
-        <th># of Workers</th>
+        <th>Total # of Questions</th>
         <th>Progress</th>
         <th>Quiz PassRate</th>
         <th>Created Date</th>
@@ -49,14 +47,8 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
     <?php $progressPercent = min([100.0, round($job->getProgress() * 100, 2)]); ?>
     <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td>
-            <?php echo sprintf("%.2f", $job->estimateTotalAmountUSD()) ?> USD
-            (<?php echo $job->getMaxAssignments() ?> * <?php echo $job->getRewardAmountUSD() ?> USD)
+            <?php echo $job->getTotalQuestion() ?> (<?php echo $job->getQuestions() ?> per loop)
         </td>
-        <td>
-            <?php echo $job->getQuestions() ?>
-            (<?php echo $job->getTotalQuestion() ?> questions)
-        </td>
-        <td><?php echo $job->getMaxAssignments() ?></td>
         <td><?php echo $progressPercent ?>%</td>
         <td>
             <?php if ($job->getQuizQuestionCount() > 0): ?>
@@ -91,6 +83,7 @@ $unitStatusFilter = strtolower(Form::get("status", ""));
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
                 <?php endif ?>
+                <li class="nav-item"><a class="nav-link" target="_blank" href="<?php echo Router::Path("new") ?>?jobId=<?php echo $job->getJobId() ?>">Create New Unit</a></li>
             </ul>
         </td>
     </tr>
@@ -149,6 +142,10 @@ $jobForm = array_merge($jobForm, [
 </form>
 
 <h2>Units</h2>
+
+<p>
+<a target="_blank" href="<?php echo Router::Path("new") ?>?jobId=<?php echo $job->getJobId() ?>">Create New Unit</a>
+</p>
 
 <div style="margin:1em">
     <?php $baseUrl = Router::Path("admin/jobs")."?jobId=".$job->getJobId() ?>

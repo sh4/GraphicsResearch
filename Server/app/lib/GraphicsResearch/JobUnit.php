@@ -97,11 +97,11 @@ class JobUnit extends AbstractUnit {
         if ($jobId = $this->getJobId()) {
             // ジョブが指定されている場合はモードによって必要回答数が異なる
             $job = Job::loadFromIdWithCache($jobId);
-            $total = $job->getTotalQuestionPerUnit();
+            $total = $job->getTotalQuestion();
         } else {
             // ジョブが未指定の場合はデフォルトの回答モード (全回答モード)
             $question = Question::instance();
-            $total = $question->totalModelCount() * $question->lodVariationCount();
+            $total = $question->totalModelCount() * 1;
         }
         return ($this->progress = $this->createAnswerProgress($total, $answered));
     }
@@ -239,49 +239,40 @@ class JobUnit extends AbstractUnit {
     }
 
     private function getJobQuestionsOrder() {
-        $question = Question::instance();
-
-        // あらかじめ与えられた回答順を得ようとする
-        $qustionsOrder = DB::instance()->each("
+        // FIXME: 普通に非効率なので最適化する
+        $questionsPerLoop = Job::loadFromIdWithCache($this->getJobId())->getQuestions();
+        // 現在のループにおける回答数を算出
+        $currentAnswerOffset = DB::instance()->fetchOne("
+        SELECT COUNT(judgement.model_id) FROM job_unit_judgement AS judgement
+        WHERE judgement.unit_id = ?
+        ", [
+            $this->getUnitId()
+        ]) % $questionsPerLoop;
+        // あらかじめ与えられた回答順を得る
+        $questionsOrder = DB::instance()->fetchAll("
             SELECT question.model_id, question.rotation_id, question.lod
             FROM job_unit_question_order AS question
-            WHERE question.job_id = ? AND model_id NOT IN (
-                SELECT judgement.model_id FROM job_unit_judgement AS judgement
-                WHERE judgement.unit_id = ?
-                GROUP BY judgement.model_id
-                HAVING COUNT(judgement.model_id) >= ?
-            )
+            WHERE question.job_id = ?
             ORDER BY no ASC
         ", [
-            $this->getJobId(),
-            $this->getUnitId(),
-            $this->getPerModelQuestionCount($question),
+            $this->getJobId()
         ]);
-        $valueGenerated = false;
-        foreach ($qustionsOrder as $row) {
+        // 現在の回答オフセットにおける 1 ループ分の回答順序を得る
+        $currentQuestionsOrder = [];
+        for ($i = $currentAnswerOffset, $n = 0; $n < $questionsPerLoop; $n++, $i = ($i + 1) % $questionsPerLoop) {
+            if (!isset($questionsOrder[$i])) {
+                continue;
+            }
+            $currentQuestionsOrder[] = $questionsOrder[$i];
+        }
+        foreach ($currentQuestionsOrder as $row) {
             $lodMap = [];
-            $lodMap[(int)$row["lod"]] = true;
+            $lodMap[$row["lod"]] = true;
             yield [
-                "id" => (int)$row["model_id"],
-                "rotation" => (int)$row["rotation_id"],
+                "id" => $row["model_id"],
+                "rotation" => $row["rotation_id"],
                 "lodMap" => $lodMap,
             ];
-            $valueGenerated = true;
-        }
-        if ($valueGenerated === false) {
-            // 回答完了済み ModelID のリスト (テスト対象から除外するため)
-            $answeredIds = DB::instance()->fetchColumn("
-                SELECT model_id FROM job_unit_judgement
-                WHERE unit_id = ?
-                GROUP BY model_id HAVING COUNT(model_id) >= ?", 
-            [
-                $this->getUnitId(),
-                $this->getPerModelQuestionCount($question),
-            ]);
-            $questions = $question->createRandomOrderQuestions($answeredIds);
-            foreach ($questions as $row) {
-                yield $row;
-            }
         }
     }
 

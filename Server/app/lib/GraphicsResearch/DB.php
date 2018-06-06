@@ -175,7 +175,11 @@ class DB {
             function () { $this->addPaymentBonus(); },
             function () { $this->addTaskTypeAndQuestionInstructions(); },
             function () { $this->addJobUnitQuestionOrder(); },
-            function () { $this->addDifferentFlag(); }
+            function () { $this->addDifferentFlag(); },
+            function () { $this->changeToTextureChoiceQuestion(); },
+            function () { $this->addQuestionsLoopCount(); },
+            function () { $this->addJobQuizUnitToJobUnitId(); },
+            function () { $this->updateLodBitness(); }
         ];
         $this->dbh->exec(self::initialTableSql);
         $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
@@ -457,6 +461,49 @@ class DB {
     private function addDifferentFlag() {
         $sql = "
         ALTER TABLE job_unit_judgement ADD COLUMN is_different TINYINT NOT NULL DEFAULT 1;
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    // テクスチャテスト用にデータベース構造を変更
+    private function changeToTextureChoiceQuestion() {
+        $sql = "
+        ALTER TABLE job_quiz_unit_golden MODIFY model_id VARCHAR(255) NOT NULL;
+        ALTER TABLE job_quiz_unit_golden MODIFY rotation_id VARCHAR(255) NOT NULL;
+        ALTER TABLE job_quiz_unit_golden MODIFY lod MEDIUMINT UNSIGNED NOT NULL;
+        
+        ALTER TABLE job_unit_judgement MODIFY model_id VARCHAR(255) NOT NULL;
+        ALTER TABLE job_unit_judgement MODIFY rotation_id VARCHAR(255) NOT NULL;
+        ALTER TABLE job_unit_judgement MODIFY lod MEDIUMINT UNSIGNED NOT NULL;
+        
+        ALTER TABLE job_unit_question_order MODIFY model_id VARCHAR(255) NOT NULL;
+        ALTER TABLE job_unit_question_order MODIFY rotation_id VARCHAR(255) NOT NULL;
+        ALTER TABLE job_unit_question_order MODIFY lod MEDIUMINT UNSIGNED NOT NULL;
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    // CSV でインポートしたデータセットを何ループ分回すかの列を追加
+    private function addQuestionsLoopCount() {
+        $sql = "
+        ALTER TABLE job ADD loop_count int(11) unsigned DEFAULT 1 NULL;
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    // Quiz モード終了後に本番の質問へ遷移できるように unit_id カラムを追加
+    private function addJobQuizUnitToJobUnitId() {
+        $sql = "
+        ALTER TABLE job_quiz_unit ADD job_unit_id VARCHAR(32) DEFAULT '' NOT NULL;
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    private function updateLodBitness() {
+        $sql ="
+        ALTER TABLE job_quiz_unit_golden MODIFY lod int unsigned NOT NULL;
+        ALTER TABLE job_unit_judgement MODIFY lod int unsigned NOT NULL;
+        ALTER TABLE job_unit_question_order MODIFY lod int unsigned NOT NULL;
         ";
         $this->dbh->exec($sql);
     }

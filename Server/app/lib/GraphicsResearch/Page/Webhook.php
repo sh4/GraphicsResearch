@@ -5,7 +5,7 @@ namespace GraphicsResearch\Page;
 use GraphicsResearch\Form;
 use GraphicsResearch\Job;
 use GraphicsResearch\JobUnit;
-use GraphicsResearch\Crowdsourcing\CrowdFlower;
+use GraphicsResearch\Crowdsourcing\FigureEight;
 
 class Webhook {
     public function __construct() {
@@ -47,7 +47,7 @@ class Webhook {
         {
             // ボーナスの支給を実行
             /*
-            $cf = new CrowdFlower();
+            $cf = new FigureEight();
             $cf->setAPIKey(CROWDFLOWER_API_KEY);
             $cf->payContributorBonus(
                 $job->getCrowdFlowerJobId(), 

@@ -52,8 +52,7 @@ $questionPage = GraphicsResearch\QuestionPage::DefaultPage();
 <thead class="thead-inverse">
     <tr>
         <th>Title</th>
-        <th># of Scenes</th>
-        <th># of Workers</th>
+        <th>Total # of Questions</th>
         <th>Progress</th>
         <th>Quiz PassRate</th>
         <th>Created Date</th>
@@ -68,10 +67,8 @@ foreach (Job::getJobs() as $job):
     <tr class="<?php if ((int)$progressPercent >= 100): ?>table-success<?php endif ?>">
         <td><a href="<?php echo Router::Path("admin/jobs") ?>/?jobId=<?php echo $job->getJobId() ?>"><?php Form::e($job->getTitle()) ?></a></td>
         <td>
-            <?php echo $job->getQuestions() ?>
-            (<?php echo $job->getTotalQuestion() ?> questions)
+            <?php echo $job->getTotalQuestion() ?> (<?php echo $job->getQuestions() ?> per loop)
         </td>
-        <td><?php echo $job->getMaxAssignments() ?></td>
         <td><?php echo $progressPercent ?>%</td>
         <td>
             <?php if ($job->getQuizQuestionCount() > 0): ?>
@@ -107,6 +104,7 @@ foreach (Job::getJobs() as $job):
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal">Launch Job (Internal)</a></li>
                 <li class="nav-item"><a class="nav-link launch-job" href="<?php echo Router::Path("admin/jobs/launch") ?>?jobId=<?php echo $job->getJobId() ?>&amp;channel[]=cf_internal&amp;channel[]=on_demand">Launch Job (External &amp; Internal)</a></li>
                 <?php endif ?>
+                <li class="nav-item"><a class="nav-link" target="_blank" href="<?php echo Router::Path("new") ?>?jobId=<?php echo $job->getJobId() ?>">Create New Unit</a></li>
                 <li class="nav-item">
                     <form method="post" class="form-delete-job-page" action="<?php echo Router::Path("admin/jobs/delete") ?>">
                         <?php Form::enableCSRF() ?>
@@ -133,21 +131,22 @@ $jobForm = array_merge([
     "title" => "",
     "instructions" => "",
     "question_instructions" => $questionPage["instructions"],
-    "questions" => "10",
-    "max_assignments" => "10",
+    "loop_count" => "10",
+    "questions" => "0",
+    "max_assignments" => "1",
     "reward_amount_usd" => "0.10",
     "bonus_amount_usd" => "0.00",
     "quiz_accuracy_rate" => "70",
-    "quiz_question_count" => "10",
+    "quiz_question_count" => "0",
     "task_type" => Job::TaskType_Choice,
-    "create_crowdflower_job" => "1",
+    "create_crowdflower_job" => "0",
 ], $jobForm);
 ?>
 
 <form method="post" enctype="multipart/form-data" id="form-create-new-job" action="<?php echo Router::Path("admin/jobs") ?>">
     <?php Form::enableCSRF() ?>
 
-    <h3>Summary</h3>
+    <h3>Summary Page (for admin)</h3>
 
     <div class="form-group">
         <label for="new-job-title">Title</label>
@@ -164,19 +163,19 @@ $jobForm = array_merge([
     <h3>Question Page</h3>
 
     <div class="form-group">
-        <label for="new-job-question-instructions">Question Instructions (HTML)</label>
+        <label for="new-job-question-instructions">Instructions (HTML)</label>
         <textarea class="form-control longfield" id="new-job-question-instructions" name="job[question_instructions]"><?php Form::e($jobForm["question_instructions"]) ?></textarea>
         <label for="new-job-question-instructions" class="form-control-label validate"></label>
     </div>
 
-    <h3>Order</h3>
+    <h3>Question Spec</h3>
 
-    <div class="form-group">
+    <div class="form-group" style="display:none">
         <input type="checkbox" id="new-job-create-cf" style="width:auto" name="job[create_crowdflower_job]" value="1"<?php if ($jobForm["create_crowdflower_job"] == 1): ?> checked=""<?php endif ?>>
         <label for="new-job-create-cf" style="display:inline">Create CrowdFlower Job</label>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" style="display:none">
         <label for="new-job-task-type">Type</label>
         <select class="form-control" id="new-job-task-type" style="width:auto" name="job[task_type]">
             <option value="<?php echo Job::TaskType_Choice ?>"<?php if ($jobForm["task_type"] == Job::TaskType_Choice): ?> selected=""<?php endif ?>>Choice</option>
@@ -187,18 +186,18 @@ $jobForm = array_merge([
     </div>
 
     <div class="form-group">
-        <label for="new-job-num-question"># of Scenes</label>
-        <input type="text" class="form-control numeric" id="new-job-num-question" name="job[questions]" value="<?php Form::e($jobForm["questions"]) ?>">
+        <label for="new-job-num-question"># of Loop</label>
+        <input type="text" class="form-control numeric" id="new-job-num-question" name="job[loop_count]" value="<?php Form::e($jobForm["loop_count"]) ?>">
         <label for="new-job-num-question" class="form-control-label validate"></label>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" style="display:none">
         <label for="new-job-num-assignments"># of Workers</label>
         <input type="text" class="form-control numeric" id="new-job-num-assignments" name="job[max_assignments]" value="<?php Form::e($jobForm["max_assignments"]) ?>">
         <label for="new-job-num-assignments" class="form-control-label validate"></label>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" style="display:none">
         <label for="new-job-reward-amount">Reward Cost</label>
         <input type="text" class="form-control numeric" id="new-job-reward-amount" name="job[reward_amount_usd]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["reward_amount_usd"]) ?>">
         &nbsp; USD/Worker
@@ -215,18 +214,18 @@ $jobForm = array_merge([
 */ ?>
 
     <div class="form-group">
-        <label for="new-job-questions-order">Questions Order</label>
+        <label for="new-job-questions-order">Questions Order Per Loop</label>
         <input type="file" id="new-job-questions-order" name="questions_order">
         <div style="margin:0.5em 1em">
         CSV File Examples (filename list):<br>
         <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">
-00776_1_4_05028_09_0_104_099.jpg
-00763_3_1_05022_01_1_351_011.jpg
+Grunt_view1_Albedo1024_Normal0128.png
+Grunt_view2_Albedo1024_Normal0512.png
 </pre>
         </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" style="display:none">
         <label>Estimated Total Reward Cost</label>
         <div>
             <b><span id="total-job-cost" style="font-size:120%">0.00</span></b> USD
@@ -236,7 +235,7 @@ $jobForm = array_merge([
             */ ?>
         </div>
     </div>
-    <div class="form-group">
+    <div class="form-group" style="display:none">
         <label>Estimated Total Answer Count</label>
         <div>
             <b><span id="total-questions" style="font-size:120%">0</span></b>
@@ -252,15 +251,15 @@ $jobForm = array_merge([
         <label for="new-job-quiz-questions">Quiz Questions Dataset</label>
         <input type="file" id="new-job-quiz-questions" name="quiz_questions">
         <div style="margin:0.5em 1em">
-        CSV File Examples ('filename' and 'Model is better than reference (1=true, 0=false)' list):<br>
+        CSV File Examples (filelist):<br>
         <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">
-00776_1_4_05028_09_0_104_099.jpg,0
-00763_3_1_05022_01_1_351_011.jpg,1
+Grunt_view1_Albedo0128_Normal0512.png
+Railing_view1_Albedo0512_Normal0032.png
 </pre>
         </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" style="display:none">
         <label for="new-job-quiz-question-count"># of Quiz Questions</label>
         <input type="text" class="form-control numeric" id="new-job-quiz-question-count" name="job[quiz_question_count]" style="width:6em;display:inline-block" value="<?php Form::e($jobForm["quiz_question_count"]) ?>">
         <label for="new-job-quiz-question-count" class="form-control-label validate"></label>
@@ -287,7 +286,7 @@ $jobForm = array_merge([
 <table class="table table-hover">
 <tbody>
     <tr>
-        <th>Test available scene count</th>
+        <th>Test available question count</th>
         <td><?php echo $question->availableModelCount() ?></td>
     </tr>
 </tbody>
@@ -352,7 +351,7 @@ $jobForm = array_merge([
 <script type="text/javascript">
 (function ($) {
 
-var defaultLodVariationCount = <?php echo $question->lodVariationCount() ?>;
+var defaultLodVariationCount = 0;
 var lodVariationCount = defaultLodVariationCount;
 var selectedTaskType = null;
 
@@ -399,7 +398,6 @@ function refreshFormInputs() {
     }
 }
 
-window.GS.admin.availableSceneCount = <?php echo $question->availableModelCount() ?>;
 window.GS.admin.rowPerPage = 2;
 window.GS.admin.activateValidateRules();
 

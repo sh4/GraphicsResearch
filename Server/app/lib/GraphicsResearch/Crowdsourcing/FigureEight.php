@@ -5,18 +5,18 @@ namespace GraphicsResearch\Crowdsourcing;
 use GraphicsResearch\Rest;
 use GraphicsResearch\DB;
 
-// CrowdFlower リリースノート:
-// https://make.crowdflower.com/product-release-notes
+// FigureEight リリースノート:
+// https://make.figure-eight.com/product-release-notes
 //
 // API リファレンス:
-// https://success.crowdflower.com/hc/en-us/articles/202703425-CrowdFlower-API-Requests-Guide
+// https://success.figure-eight.com/hc/en-us/articles/202703425-CrowdFlower-API-Requests-Guide
 // * Undocumented だが、job オブジェクトの要素は大体 PUT リクエストで書き換えが可能
-class CrowdFlower {
+class FigureEight {
     private $restClient;
     private $apiKey;
 
-    const Url = "https://api.crowdflower.com/v1";
-    const JobsUrl = "https://make.crowdflower.com/jobs";
+    const Url = "https://api.figure-eight.com/v1";
+    const JobsUrl = "https://make.figure-eight.com/jobs";
 
     const Param_Title              = "title";
     const Param_Instructions       = "instructions";
@@ -165,9 +165,28 @@ class CrowdFlower {
         ]));
     }
 
+    /*
+     * Max Judgments per Contributor
+     * This setting limits the maximum number of judgments that any one contributor can provide in the job.
+     * By default, when the setting is blank, the maximum work a contributor can perform is limited by the number of test questions in the job.
+     * If there are no test questions, the system sets a limit: a contributor can complete 50 rows or 10% of ordered rows, whichever is higher.
+     * Internal and NDA contributors are not affected by the system limit; they can complete all available work in the job.
+     * You  can further limit the system limit using this setting; a value lower than 50 or 10% of ordered rows limits max judgments to the provided value.
+     */
     public function maxJudgmentsPerWorker($jobId, $maxJudgment) {
         $url = self::JobsUrl."/$jobId/settings/quality_control?key=$this->apiKey";
         list($form, $cookie) = $this->getHTMLPageForm($url);
+
+        /*
+         * utf8: (snip)
+         * _method: patch
+         * authenticity_token: KX..Rg5eWSg==
+         * builder_job[min_assignment_duration]: 10
+         * builder_job[max_judgments_per_worker]: 2
+         * judgment_distribution[is_enabled]: 0
+         * judgment_distribution[activation_threshold]: 20
+         * commit: Save
+         */
 
         $form["builder_job[max_judgments_per_worker]"] = $maxJudgment;
 

@@ -18,6 +18,11 @@ class Question {
 
     private static $defaultQuestion;
 
+    const ReferenceTextureAlbedo = 1024;
+    const ReferenceTextureNormal = 1024;
+
+    const ReferenceLod = (self::ReferenceTextureAlbedo  << 16) | self::ReferenceTextureNormal;
+
     private function __constructor() {
         $this->lodSetCount = null;
     }
@@ -68,8 +73,12 @@ class Question {
         return $removeFiles;
     }
 
-    public static function parseQuizGoldenDataFromCSV($quizQuestions) {
-        $trimmedLines = array_map("trim", explode("\n", trim($quizQuestions)));
+    public static function parseQuizQuestionDataFromCSV($quizQuestionsCsvText) {
+        return self::parseQuestionOrderDataFromCSV($quizQuestionsCsvText);
+    }
+
+    public static function parseQuestionOrderDataFromCSV($questionsOrderCsvText) {
+        $trimmedLines = array_map("trim", explode("\n", trim($questionsOrderCsvText)));
         $questions = array_map("str_getcsv", $trimmedLines);
         $result = [];
         foreach ($questions as $row) {
@@ -83,9 +92,6 @@ class Question {
                 $isBetterThanRef = 0;
             }
             $model = self::parseModelFilename($modelFile);
-            if (!is_numeric($model->modelId)) {
-                continue;
-            }
             $result[] = [
                 "model_id" => $model->modelId,
                 "rotation_id" => $model->rotationId,
@@ -177,7 +183,6 @@ class Question {
 
     private function buildModelSet($relativeModelDirectory) {
         $modelFiles = scandir($relativeModelDirectory, SCANDIR_SORT_ASCENDING);
-        $this->modelIdsOfContainLod0 = [];
         $this->modelLodMap = [];
         $this->modelFileMap = [];
         $this->maskFileMap = [];
@@ -195,12 +200,15 @@ class Question {
             if ($model->dataType) {
                 switch ($model->dataType) {
                 case "mask":
+                    // マスクデータ
                     $this->maskFileMap["$modelId-$lod-$rotationId"] = "$relativeModelDirectory/$modelFile";
                     break;
-                default:
+                case "texture":
+                    // テクスチャ比較用
                     break;
+                default:
+                    continue;
                 }
-                continue;
             }
 
             if (!isset($this->modelLodMap[$modelId])) {
@@ -230,19 +238,19 @@ class Question {
                         $modelFiles[] = basename($modelFile);
                     }
                 }
-                if (!isset($lodMap[0])) {
+                if (!isset($lodMap[self::ReferenceLod])) {
                     // LOD0 が存在しない
                     $invalidRotationSet = true;
                     $this->invalidModelSet[] = [
                         "files" => $modelFiles,
-                        "message" => "LOD Level 0 model not found.",
+                        "message" => "Reference texture not found.",
                     ];
                 } else if (count($lodMap) < 2) {
                     // モデルが 2つ以上存在しない (LOD0 しかない)
                     $invalidRotationSet = true;
                     $this->invalidModelSet[] = [
                         "files" => $modelFiles,
-                        "message" => "Only LOD Level 0 model exists.",
+                        "message" => "Only exist reference texture.",
                     ];
                 }
                 // 無効なデータセットならテスト対象から除外
@@ -250,8 +258,10 @@ class Question {
                     unset($this->modelLodMap[$modelId][$rotationId]);
                     continue;
                 }
+
                 // LOD0 は比較先データとしては使用しない（常に比較元となるため)ので削除
-                unset($this->modelLodMap[$modelId][$rotationId][0]);
+                unset($this->modelLodMap[$modelId][$rotationId][self::ReferenceLod]);
+
                 // データセットの LOD 数が同一か比較
                 $lodCount = count($lodMap) - 1;
                 if ($this->lodSetCount === null) {
@@ -286,17 +296,17 @@ class Question {
         }
     }
 
-    private static function parseModelFilename($modelFile) {
-        // <DataType>_<ModelID>_<RotationID>_<LOD>(...).gif|png|jpe?g
-        if (!preg_match('#^(?:(mask)_)?(\d+)_(\d+)_(\d+).*\.(?:png|jpe?g|gif)$#u', basename($modelFile), $matches)) {
+    private static function parseModelFilename($textureFile) {
+        // <CharacterName>_<ViewName>_<TextureResolutionAlbedo>_<TextureResolutionNormal>.gif|png|jpe?g
+        if (!preg_match("#^([^_]+_[^_]+)_albedo(\d+)_normal(\d+).*?\.(?:png|jpe?g|gif)$#iu", basename($textureFile), $matches)) {
             return null;
         }
-        list (, $dataType, $modelId, $rotationId, $lod) = $matches;
+        list (, $characterAndViewName, $albedoRes, $normalRes) = $matches;
         $model = new \StdClass();
-        $model->dataType = $dataType;
-        $model->modelId = (int)$modelId;
-        $model->rotationId = (int)$rotationId;
-        $model->lod = (int)$lod;
+        $model->dataType = "texture";
+        $model->modelId = $characterAndViewName;
+        $model->rotationId = 0;
+        $model->lod = (((int)$albedoRes) << 16) | ((int)$normalRes);
         return $model;
     }
 }

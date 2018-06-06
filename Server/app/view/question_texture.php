@@ -148,7 +148,7 @@ if ($answeredLods = $answerContext->getAnsweredLods()):
     $modelId = $answerContext->getLastAnswer()["model_id"];
     foreach ($answeredLods as $lod):
 ?>
-    <input type="hidden" name="answeredLods[]" value="<?php echo $modelId ?>,<?php echo (int)$lod ?>">
+    <input type="hidden" name="answeredLods[]" value="<?php echo $modelId ?>,<?php echo $lod ?>">
 <?php
     endforeach;
 endif
@@ -184,7 +184,6 @@ window.GS = {
 }();
 </script>
 <script type="text/javascript" src="<?php echo $root ?>/js/question.js?_=<?php echo filemtime("$appRoot/js/question.js") ?>"></script>
-<script type="text/javascript" src="<?php echo $root ?>/js/paint.js?_=<?php echo filemtime("$appRoot/js/paint.js") ?>"></script>
 
 </body>
 </html>
