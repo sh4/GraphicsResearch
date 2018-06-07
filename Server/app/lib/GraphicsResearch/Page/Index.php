@@ -435,13 +435,14 @@ class Index {
         $model["formValue"] = implode(",", [
             $model["id"],
             $model["rotation"],
-            $model["lod"],
+            (int)$model["lod"],
             // リファレンスモデル (LOD=0) よりよく見えるなら 1
             $lod != Question::ReferenceLod ? 1 : 0,
             // 差異が見つかれば 1, 差異がなければ 0
             1,
         ]);
         $model["paint"] = $isPainting;
+        $model["lod"] = (int)$lod;
         return $model;
     }
 }

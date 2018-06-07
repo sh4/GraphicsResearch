@@ -28,6 +28,31 @@ function createQuestionInput(model, index) {
     return $input;
 }
 
+function showCheckTheAnswerDialog() {
+    var $activeLabelEl = $(".index-button.active");
+
+    // クイズモードなら、回答が正しいかどうかを表示
+    var $modalEl = $($.parseHTML('<div class="modal"><p>Check the answer.</p><div class="image-compare"></div></div>'));
+    var $imageCompare = $modalEl.find(".image-compare");
+    var $divFirst = $($.parseHTML('<div style="display:none" />'));
+    var $divSecond = $($.parseHTML('<div />'));
+
+    var isCorrect = $(".is-ref-question-image").prop("src") == $activeLabelEl.find("img").prop("src");
+    var referenceLabel = isCorrect ? "Your answer (Correct)" : "Reference";
+    var notReferenceLabel = isCorrect ? "Not Reference" : "Your answer (Incorrect)";
+
+    $imageCompare.append(
+        $divFirst
+            .append($.parseHTML('<span class="images-compare-label">' + referenceLabel + '</span>'))
+            .append($(".is-ref-question-image").clone()));
+    $imageCompare.append(
+        $divSecond
+            .append($.parseHTML('<span class="images-compare-label">' + notReferenceLabel + '</span>'))
+            .append($(".is-not-ref-question-image").clone()));
+    $modalEl.appendTo("body").modal();
+    $imageCompare.imagesCompare();
+}
+
 function updateQuestionItems(questions, progress) {
     var updateCompleted = new $.Deferred();
     var questionEls = Array.prototype.slice.call(document.querySelectorAll(".question-item"));
@@ -60,7 +85,12 @@ function updateQuestionItems(questions, progress) {
                         window.GS.paint.onceEnabled = true;
                     }
 
+                    const ReferneceLod = (1024 << 16) | 1024;
+
                     var $img = $(preload.img).addClass("question-image").hide();
+                    $img.removeClass("is-ref-question-image");
+                    $img.removeClass("is-not-ref-question-image");
+                    $img.addClass(preload.model.lod == ReferneceLod ? "is-ref-question-image" : "is-not-ref-question-image");
                     var $labelEl = $($.parseHTML('<label />'))
                         .prop("for", preload.model.formId)
                         .append($img);
@@ -99,9 +129,12 @@ function updateQuestionItems(questions, progress) {
             var $oldLabelEl = $questionEl.find(".index-button label");
             $oldLabelEl.each(function (i, el) {
                 var $labelEl = $(el);
+                // ユーザーが選択したほうの画像を後からフェードアウトして、どっちを選択したか判別しやすくする
                 if ($labelEl.parents(".index-button:first").hasClass("active")) {
+                    // ユーザーが選択した方は一拍おいて消す
                     $activeLabelEl = $labelEl;
                 } else {
+                    // ユーザーが選択してない方はすぐフェードアウト
                     $labelEl.animate({ opacity: 0.0 }, { duration: 300 });
                 }
             });
@@ -119,13 +152,25 @@ function updateQuestionItems(questions, progress) {
             }
 
             if ($activeLabelEl !== null) {
+                // ユーザーが選択した方を少し遅れてからフェードアウト
                 setTimeout(function () {
+                    function complete() {
+                        $oldLabelEl.remove();
+                        showNewQuestion();
+                    }
                     $activeLabelEl.parents(".index-button:first").removeClass("active");
                     $activeLabelEl.animate({ opacity: 0.0 }, {
                         duration: 250,
                         complete: function () {
-                            $oldLabelEl.remove();
-                            showNewQuestion();
+                            if (!window.GS.isQuizMode) {
+                                complete();
+                                return;
+                            }
+                            showCheckTheAnswerDialog();
+                            $(".modal").on($.modal.AFTER_CLOSE, function (event, modal) {
+                                $(".modal").remove();
+                                complete();
+                            });
                         }
                     });
                 }, 600);
@@ -167,18 +212,21 @@ function toQueryString(params) {
 function updateQuestions(questionRequest) {
     return questionRequest.then(function (r) {
         if (r.progress.completed) {
-            var doneUrl;
-            if (window.GS.isQuizMode) {
-                window.GS.params.quizMode = 0;
-                doneUrl = "index.php?" + toQueryString(fetchParams({
+            if (!window.GS.isQuizMode) {
+                window.location.href = "index.php/done?" + toQueryString(fetchParams({
                     isFetchLods: false
                 }));
-            } else {
-                doneUrl = "index.php/done?" + toQueryString(fetchParams({
-                    isFetchLods: false
-                }));
+                return;
             }
-            window.location.href = doneUrl;
+            // 回答結果を表示した後に本番へ行く
+            showCheckTheAnswerDialog();
+            $(".modal").on($.modal.AFTER_CLOSE, function (event, modal) {
+                $(".modal").remove();
+                window.GS.params.quizMode = 0;
+                window.location.href = "index.php?" + toQueryString(fetchParams({
+                    isFetchLods: false
+                }));
+            });
             return;
         }
         var questions = [];

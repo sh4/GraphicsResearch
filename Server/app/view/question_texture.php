@@ -59,9 +59,10 @@ function question(Page\Index $page, $models, $no) {
             ?>
             <td>
                 <?php if (file_exists($model["path"])): ?>
+                <?php $isReference = $model["lod"] == Question::ReferenceLod; ?>
                 <div class="index-button">
                     <input autocomplete="off" type="radio" id="<?php echo $model["formId"] ?>" name="answer[<?php echo $no ?>]" value="<?php echo $model["formValue"] ?>">
-                    <label for="<?php echo $model["formId"] ?>"><img class="question-image" src="<?php echo $root, "/", $model["path"]; ?>"></label>
+                    <label for="<?php echo $model["formId"] ?>"><img class="question-image <?php echo $isReference ? "is-ref-question-image" : "is-not-ref-question-image" ?>" src="<?php echo $root, "/", $model["path"]; ?>"></label>
                 </div>
                 <?php endif ?>
             </td>
@@ -81,7 +82,12 @@ $appRoot = dirname(__FILE__)."/../";
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/index.css?_=<?php echo filemtime("$appRoot/css/index.css") ?>">
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/css/paint.css?_=<?php echo filemtime("$appRoot/css/paint.css") ?>">
 <link rel="stylesheet" type="text/css" href="<?php echo $root ?>/vendor/font-awesome-4.7.0/css/font-awesome.css">
+<link rel="stylesheet" type="text/css" href="<?php echo $root ?>/vendor/jquery-images-compare/css/images-compare.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+<script type="text/javascript" src="<?php echo $root ?>/vendor/jquery-images-compare/js/jquery.images-compare.js"></script>
 <title>Test</title>
 </head>
 <body>
