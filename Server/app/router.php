@@ -11,6 +11,7 @@ use GraphicsResearch\Form;
 use GraphicsResearch\AbstractUnit;
 use GraphicsResearch\Job;
 use GraphicsResearch\JobUnit;
+use GraphicsResearch\QuizUnit;
 use GraphicsResearch\DB;
 use GraphicsResearch\Question;
 use GraphicsResearch\QuestionPage;
@@ -33,9 +34,12 @@ use GraphicsResearch\Page\Webhook;
         $jobId = Form::get("jobId", 0);
         if ($job = Job::loadFromId($jobId)) {
             $jobUnit = $job->addNewJobUnit();
+            $quizUnit = QuizUnit::loadFromJobUnitId($jobUnit["unit_id"]);
             Router::redirect("/", [
                 "jobId" => $jobId,
                 "unitId" => $jobUnit["unit_id"],
+                "quizUnitId" => $quizUnit->getUnitId(),
+                "quizMode" => "1",
             ]);
         }
         Router::redirect("");

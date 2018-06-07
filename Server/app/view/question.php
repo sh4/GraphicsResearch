@@ -148,7 +148,7 @@ if ($answeredLods = $answerContext->getAnsweredLods()):
     $modelId = $answerContext->getLastAnswer()["model_id"];
     foreach ($answeredLods as $lod):
 ?>
-    <input type="hidden" name="answeredLods[]" value="<?php echo $modelId ?>,<?php echo (int)$lod ?>">
+    <input type="hidden" name="answeredLods[]" value="<?php echo (int)$modelId ?>,<?php echo (int)$lod ?>">
 <?php
     endforeach;
 endif

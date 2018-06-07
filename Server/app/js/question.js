@@ -14,7 +14,7 @@ function preloadImage(url) {
 }
 
 function updateProgress(progress) {
-    $(".progress-label").text(progress.remain + " left");
+    $(".progress-label").text((window.GS.isQuizMode ? "Exam: " : "") + progress.remain + " left");
     $(".progress-bar-content").css("width", (progress.answered / progress.total * 100).toFixed(3) + "%");
 }
 
@@ -156,13 +156,6 @@ function updateAnsweredLods(answerContext) {
         ].join(","));
         $formAnsweredLods.append($lodEl);
     });
-
-    var unitId = answerContext.lastAnswer.unit_id;
-    if (window.GS.params.unitId != unitId) {
-        // UnitId を最新の状態に更新
-        window.GS.params.unitId = unitId;
-        $('[name="unitId"]').val(window.GS.params.unitId);
-    }
 }
 
 function toQueryString(params) {
@@ -174,9 +167,17 @@ function toQueryString(params) {
 function updateQuestions(questionRequest) {
     return questionRequest.then(function (r) {
         if (r.progress.completed) {
-            var doneUrl = "index.php/done?" + toQueryString(fetchParams({
-                isFetchLods: false,
-            }));
+            var doneUrl;
+            if (window.GS.isQuizMode) {
+                window.GS.params.quizMode = 0;
+                doneUrl = "index.php?" + toQueryString(fetchParams({
+                    isFetchLods: false
+                }));
+            } else {
+                doneUrl = "index.php/done?" + toQueryString(fetchParams({
+                    isFetchLods: false
+                }));
+            }
             window.location.href = doneUrl;
             return;
         }
@@ -228,9 +229,8 @@ function updateQuestions(questionRequest) {
 function fetchParams(params) {
     return {
         fetchLods: params.isFetchLods ? 1 : 0,
-        quizMode: window.GS.params.quizMode ? 1: 0,
+        quizMode: window.GS.params.quizMode ? 1 : 0,
         unitId: window.GS.params.unitId,
-        quizSid: window.GS.params.quizSid || "",
         quizUnitId: window.GS.params.quizUnitId || "",
     };
 }

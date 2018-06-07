@@ -179,7 +179,8 @@ class DB {
             function () { $this->changeToTextureChoiceQuestion(); },
             function () { $this->addQuestionsLoopCount(); },
             function () { $this->addJobQuizUnitToJobUnitId(); },
-            function () { $this->updateLodBitness(); }
+            function () { $this->updateLodBitness(); },
+            function () { $this->addIndexJobQuizUnitToJobUnitId(); }
         ];
         $this->dbh->exec(self::initialTableSql);
         $version = (int)$this->fetchOne("SELECT MAX(version) FROM schema_version");
@@ -504,6 +505,13 @@ class DB {
         ALTER TABLE job_quiz_unit_golden MODIFY lod int unsigned NOT NULL;
         ALTER TABLE job_unit_judgement MODIFY lod int unsigned NOT NULL;
         ALTER TABLE job_unit_question_order MODIFY lod int unsigned NOT NULL;
+        ";
+        $this->dbh->exec($sql);
+    }
+
+    private function addIndexJobQuizUnitToJobUnitId() {
+        $sql = "
+        CREATE INDEX job_quiz_unit_job_unit_id_index ON job_quiz_unit (job_unit_id);
         ";
         $this->dbh->exec($sql);
     }

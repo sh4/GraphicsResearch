@@ -87,6 +87,7 @@ class Index {
 
     public static function loadUnit() {
         $unitId = Form::request("unitId", "");
+
         $quizUnit = null;
         if ($quizUnitId = Form::request("quizUnitId", "")) {
             $quizUnit = QuizUnit::loadFromId($quizUnitId);
@@ -94,33 +95,13 @@ class Index {
 
         $quizModeEnabled = Form::request("quizMode", 0) == 1;
         if ($quizModeEnabled) {
-            // クイズモードの回答状況を復元
-            $quizSessionId = Form::request("quizSid", "");
-            if (empty($quizSessionId)) {
-                return null;
-            }
-            $unit = $quizUnit;
-            $unit->setQuizSessionId($quizSessionId);
-        } else {
-            $unit = JobUnit::loadFromId($unitId);
-            // 指定された quizUnitId で QuizUnit からの読み込みが可能な場合は、
-            // 新規に JobUnit を作成する (参照先の JobId は QuizUnit から得る)
-            if (!$unit && $quizUnit) {
-                // quiz データの回答は golden データと一致しないと正答率が下がるため、
-                // 確認コードは quiz データのそれと同一にする
-                $unit = JobUnit::createNewSession([
-                    "unit_id" => $unitId,
-                    "job_id" => $quizUnit->getJobId(),
-                    "verification_code" => $quizUnit->getVerificationCode(),
-                ]);
-            }
-            // JobUnit 同士を結びつける回答グループID が定義されていれば、それを反映
-            if ($unit && ($answerGroupId = Form::request("gid"))) {
-                $unit->setAnswerGroupId($answerGroupId);
-            }
+            // クイズモード
+            $quizUnit->setQuizSessionId("");
+            return $quizUnit;
         }
 
-        return $unit;
+        // 本番モード
+        return JobUnit::loadFromId($unitId);
     }
 
     public function getQuestionInfo() {

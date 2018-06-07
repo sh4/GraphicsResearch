@@ -112,8 +112,8 @@ window.GS.admin.validateRules = {
     "#new-job-quiz-accuracy-rate": function () {
         var $el = $("#new-job-quiz-accuracy-rate");
         var accuracyRate = parseFloat($el.val());
-        if (accuracyRate <= 0) {
-            onError($el, "Quiz accuracy rate must be above 1%");
+        if (accuracyRate < 0) {
+            onError($el, "Quiz accuracy rate must be above 0%");
             return false;
         } else if (accuracyRate > 100) {
             onError($el, "Quiz accuracy rate less than or equal to 100%");

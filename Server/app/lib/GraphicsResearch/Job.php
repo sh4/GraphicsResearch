@@ -360,7 +360,6 @@ class Job {
             $jobUnit = $job->createJobUnit();
             $db->insert("job_unit", $jobUnit);
             $job->insertQuizJobUnits($jobUnit["unit_id"], $db);
-            $job->insertQuizGoldenData($db);
             return $jobUnit;
         });
     }
@@ -464,6 +463,7 @@ class Job {
         ]);
 
         $this->insertQuestionsOrder($db);
+        $this->insertQuizGoldenData($db);
     }
 
     private function createJobUnit() {

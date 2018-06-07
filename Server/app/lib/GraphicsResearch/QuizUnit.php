@@ -58,23 +58,22 @@ class QuizUnit extends AbstractUnit {
     }
 
     public function getRandomQuestionOrder(AnswerContext $answerContext) {
-        // ジョブごとのクイズ回答データから未回答なものをランダムに列挙する 
+        // ジョブごとのクイズ回答データから未回答なものを列挙する
         $remainQuestions = DB::instance()->fetchAll("
             SELECT golden.model_id, golden.rotation_id, golden.lod
             FROM
                 job_quiz_unit_golden AS golden
                 LEFT JOIN job_quiz_unit_judgement AS judgement 
                     ON judgement.golden_id = golden.id
-                    AND judgement.quiz_sid = :quiz_sid
+                    AND judgement.unit_id = :unit_id
             WHERE
                 golden.job_id = :job_id
                 AND judgement.golden_id IS NULL
         ", [
             "job_id" => $this->getJobId(),
-            "quiz_sid" => $this->quizSessionId,
+            "unit_id" => $this->getUnitId(),
         ]);
         $remainQuestionKeys = array_keys($remainQuestions);
-        shuffle($remainQuestionKeys);
         foreach ($remainQuestionKeys as $key) {
             $q = $remainQuestions[$key];
             yield [
@@ -89,12 +88,12 @@ class QuizUnit extends AbstractUnit {
         if ($this->progress !== null) {
             return $this->progress;
         }
-        $total = (int)($this->questionCount / self::CrowdFlowerRowPerPageOnQuizEnabled);
+        $total = (int)$this->questionCount;
         $answered = (int)DB::instance()->fetchOne("
             SELECT COUNT(*) 
             FROM job_quiz_unit_judgement
-            WHERE unit_id = ? AND quiz_sid = ?",
-            [$this->getUnitId(), $this->quizSessionId]);
+            WHERE unit_id = ?",
+            [$this->getUnitId()]);
         return ($this->progress = $this->createAnswerProgress($total, $answered));
     }
 
@@ -103,8 +102,8 @@ class QuizUnit extends AbstractUnit {
             $this->judgementData = DB::instance()->each("
                 SELECT *
                 FROM job_quiz_unit_judgement
-                WHERE unit_id = ? AND quiz_sid = ?",
-                [$this->getUnitId(), $this->quizSessionId]);
+                WHERE unit_id = ?",
+                [$this->getUnitId()]);
         }
         return $this->judgementData;
     }
@@ -133,7 +132,7 @@ class QuizUnit extends AbstractUnit {
                 "unit_id" => $this->getUnitId(),
                 "is_correct" => $isCorrect,
                 "worker_id" => $this->getWorkerId(),
-                "quiz_sid" => $this->quizSessionId,
+                "quiz_sid" => "",
             ];
         }
         $db->insertMulti("job_quiz_unit_judgement", $rows);
@@ -141,6 +140,15 @@ class QuizUnit extends AbstractUnit {
 
     public static function loadFromId($unitId) {
         $row = DB::instance()->fetchRow("SELECT * FROM job_quiz_unit WHERE unit_id = ?", $unitId);
+        if ($row) {
+            return new self($row);
+        } else {
+            return null;
+        }
+    }
+
+    public static function loadFromJobUnitId($jobUnitId) {
+        $row = DB::instance()->fetchRow("SELECT * FROM job_quiz_unit WHERE job_unit_id = ?", $jobUnitId);
         if ($row) {
             return new self($row);
         } else {

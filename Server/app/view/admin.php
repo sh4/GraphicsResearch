@@ -248,10 +248,10 @@ Grunt_view2_Albedo1024_Normal0512.png
     <h3>Quiz</h3>
 
     <div class="form-group">
-        <label for="new-job-quiz-questions">Quiz Questions Dataset</label>
+        <label for="new-job-quiz-questions">Quiz Questions</label>
         <input type="file" id="new-job-quiz-questions" name="quiz_questions">
         <div style="margin:0.5em 1em">
-        CSV File Examples (filelist):<br>
+        CSV File Examples (filename list):<br>
         <pre style="font-size:90%;border:1px solid #606060;padding:0.5em">
 Grunt_view1_Albedo0128_Normal0512.png
 Railing_view1_Albedo0512_Normal0032.png

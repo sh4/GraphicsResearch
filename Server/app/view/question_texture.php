@@ -11,8 +11,8 @@ $progress = $page->getAnswerProgress();
 $question = Question::instance();
 
 $unitId = "";
-if (Crypto::isValidUniqueId($page->getUnitId())) {
-    $unitId = $page->getUnitId();
+if (Crypto::isValidUniqueId(Form::request("unitId", ""))) {
+    $unitId = Form::request("unitId");
 }
 $quizUnitId = "";
 if (Crypto::isValidUniqueId(Form::request("quizUnitId", ""))) {
@@ -26,17 +26,22 @@ $answerGroupId = "";
 if (Crypto::isValidUniqueId(Form::request("gid", ""))) {
     $answerGroupId = Form::request("gid");
 }
+$isQuizMode = (int)Form::request("quizMode", 0) == 1;
 $gsParams = [
-    "quizMode" => (int)Form::request("quizMode", 0) == 1,
+    "quizMode" => $isQuizMode,
     "unitId" => $unitId,
-    "quizSid" => $quizSid,
-    "quizUnitId" => $quizUnitId,
-    "gid" => $answerGroupId,
+    "quizUnitId" => $quizUnitId
 ];
 
 // すでに作業が完了していれば、完了ページに遷移
 if ($progress->completed) {
-    Router::redirect("done", $gsParams);
+    if ($isQuizMode) {
+        unset($gsParams["quizMode"]);
+        unset($gsParams["quizUnitId"]);
+        Router::redirect("/", $gsParams);
+    } else {
+        Router::redirect("done", $gsParams);
+    }
 }
 $num = $page->getNumber();
 $root = Router::Path();
@@ -91,9 +96,9 @@ $appRoot = dirname(__FILE__)."/../";
 
     <div style="margin:1.5em 0">
         <div class="progress-bar">
-            <span class="progress-label"><?php echo $progress->remain ?> left</span>
+            <span class="progress-label"><?php if ($isQuizMode): ?>Exam: <?php endif ?><?php echo $progress->remain ?> left</span>
             <div class="progress-bar-content" style="width:<?php echo round($progress->answered / $progress->total * 100.0, 2) ?>%">
-                <span class="progress-label"><?php echo $progress->remain ?> left</span>
+                <span class="progress-label"><?php if ($isQuizMode): ?>Exam: <?php endif ?><?php echo $progress->remain ?> left</span>
             </div>
         </div>
     </div>
@@ -111,7 +116,7 @@ foreach ($page->getQuestionOrders() as $i => $models):
     }
 ?>
 <div class="question-item">
-    <h2>No.<span class="question-no"><?php echo ($progress->answered+$i+1) ?></span></h2>
+    <h2><?php if ($isQuizMode): ?>Exam <?php endif ?>No.<span class="question-no"><?php echo ($progress->answered+$i+1) ?></span></h2>
     <div style="margin-bottom:3em">
         <div class="question"><?php echo $instructions ?></div>
         <?php
@@ -172,6 +177,7 @@ endif
 !function () {
 
 window.GS = {
+    isQuizMode: <?php echo json_encode($isQuizMode) ?>,
     params: <?php echo json_encode($gsParams) ?>,
     num: <?php echo $page->getNumber() ?>,
     lodCount: <?php echo $question->lodVariationCount() ?>,
