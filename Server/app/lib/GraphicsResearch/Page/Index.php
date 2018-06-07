@@ -427,23 +427,18 @@ class Index {
         $answerData = [];
         foreach ($answerRawData as $answer) {
             list($modelId, $rotation, $lod, $isBetterThanRef, $isDifferent) = explode(",", $answer);
-            if (is_numeric($modelId) 
-                && is_numeric($lod)
-                && is_numeric($rotation))
-            {
-                $answerData[] = [
-                    "unit_id" => $unit->getUnitId(),
-                    "worker_id" => $unit->getWorkerId(),
-                    "model_id" => $modelId,
-                    "rotation_id" => $rotation,
-                    "lod" => $lod,
-                    "is_same" => 0,
-                    // リファレンスモデル (LOD=0) よりも良く見えたかどうか
-                    "is_better_than_ref" => $isBetterThanRef == 1 ? 1 : 0,
-                    // 差異が見つかったかどうか
-                    "is_different" => $isDifferent == 1 ? 1 : 0,                   
-                ];
-            }
+            $answerData[] = [
+                "unit_id" => $unit->getUnitId(),
+                "worker_id" => $unit->getWorkerId(),
+                "model_id" => $modelId,
+                "rotation_id" => $rotation,
+                "lod" => $lod,
+                "is_same" => 0,
+                // リファレンスモデル (LOD=0) よりも良く見えたかどうか
+                "is_better_than_ref" => $isBetterThanRef == 1 ? 1 : 0,
+                // 差異が見つかったかどうか
+                "is_different" => $isDifferent == 1 ? 1 : 0,
+            ];
         }
         return $answerData;
     }

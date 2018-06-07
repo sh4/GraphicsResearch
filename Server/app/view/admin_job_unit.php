@@ -120,11 +120,11 @@ foreach ($units as $unit):
     </thead>
     <tbody>
         <tr>
-            <td>LOD 0</td>
-            <td>LOD <?php echo $modelLod ?></td>
+            <td>Reference</td>
+            <td>Albedo <?php echo ((int)$modelLod >> 16 & 0xffff) ?>, Normal <?php echo (int)$modelLod & 0xffff ?></td>
         </tr>
         <tr>
-            <td<?php if ($isChoiceMode && !$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, 0); ?>"></td>
+            <td<?php if ($isChoiceMode && !$modelIsBetterThanRef): ?> class="active"<?php endif ?>><img src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, Question::ReferenceLod); ?>"></td>
             <td<?php if ($isChoiceMode && $modelIsBetterThanRef): ?> class="active"<?php endif ?> style="position:relative">
                 <img class="reference-model-image" src="<?php echo $root, "/../", $question->modelPath($modelId, $modelRotation, $modelLod); ?>">
                 <?php if ($job->getTaskType() === Job::TaskType_Painting): ?>

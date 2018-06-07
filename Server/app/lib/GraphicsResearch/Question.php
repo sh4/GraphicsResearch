@@ -92,6 +92,10 @@ class Question {
                 $isBetterThanRef = 0;
             }
             $model = self::parseModelFilename($modelFile);
+            // 質問順序データもしくはクイズデータにリファレンスは含めないので、検出したらスキップする
+            if ($model->lod == Question::ReferenceLod) {
+                continue;
+            }
             $result[] = [
                 "model_id" => $model->modelId,
                 "rotation_id" => $model->rotationId,

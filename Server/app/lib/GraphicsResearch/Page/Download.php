@@ -104,31 +104,39 @@ class Download {
         // ヘッダ行を書き出し
         echo implode(",", [
             "WorkerID",
-            "ModelID",
-            "RotationID",
-            "LOD",
+            "Character",
+            "View",
+            "Albedo",
+            "Normal",
             "IsBetterThanReferenceModel",
+            "IsDifferent",
+            "IsThresholdModel",
             "Filename",
         ]);
         echo "\r\n";
 
         // 回答データを書き出し
         foreach (JobUnit::eachJudgementData($job->getJobId()) as $judgement) {
-            // 連想配列をローカル変数に展開
-            extract($judgement);
             // ワーカーIDが未設定なら、正確ではないが UnitId を設定
             // （必ずしも単一の人物が回答したとは限らないため）
-            if (empty($worker_id)) {
-                $worker_id = $unit_id;
+            if (empty($judgement["worker_id"])) {
+                $judgement["worker_id"] = $judgement["unit_id"];
             }
-            $modelPath = $question->modelPath($model_id, $rotation_id, $lod);
+            $modelPath = $question->modelPath($judgement["model_id"], $judgement["rotation_id"], $judgement["lod"]);
+            $modelFilename = basename($modelPath);
+            // <CharacterName>_<ViewName>_<TextureResolutionAlbedo>_<TextureResolutionNormal>.gif|png|jpe?g
+            if (!preg_match("#^([^_]+)_([^_]+)_albedo(\d+)_normal(\d+).*?\.(?:png|jpe?g|gif)$#iu", $modelFilename, $matches)) {
+                return null;
+            }
+            list (, $character, $view, $albedoRes, $normalRes) = $matches;
             echo implode(",", [
-                $worker_id,
-                $model_id,
-                $rotation_id,
-                $lod,
-                $is_better_than_ref,
-                basename($modelPath),
+                $judgement["worker_id"],
+                $character,
+                $view,
+                (int)$albedoRes,
+                (int)$normalRes,
+                $judgement["is_better_than_ref"],
+                $modelFilename,
             ]);
             echo "\r\n";
         }
